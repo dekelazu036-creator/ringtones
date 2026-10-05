@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>חותך רינגטונים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karantina:wght@400;700&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+<style>
+/* Layout: one editing bench — waveform with a 30-second window you slide, then trim settings and one export button. */
+:root{
+  --bg:#EEF1F6; --paper:#F9FAFD; --ink:#121A2B; --muted:#5B6680; --line:#CDD4E2; --well:#DCE2EC;
+  --accent:#2546F0; --accent-ink:#FFFFFF; --accent-soft:rgba(37,70,240,.13); --wave:#9AA6C0;
+  --display:"Karantina","IBM Plex Sans Hebrew",system-ui,sans-serif;
+  --body:"IBM Plex Sans Hebrew",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B0F1A; --paper:#121828; --ink:#E7ECF6; --muted:#8D98B3; --line:#263049; --well:#1D2539;
+  --accent:#7088FF; --accent-ink:#0B0F1A; --accent-soft:rgba(112,136,255,.18); --wave:#46536F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0F1A; --paper:#121828; --ink:#E7ECF6; --muted:#8D98B3; --line:#263049; --well:#1D2539;
+  --accent:#7088FF; --accent-ink:#0B0F1A; --accent-soft:rgba(112,136,255,.18); --wave:#46536F; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0}
+[hidden]{display:none!important}
+a.btn{text-decoration:none;display:inline-block}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding:0 16px}
+.wrap{max-width:900px;margin:0 auto;padding-block:20px 48px;display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(46px,9vw,72px);line-height:.9;margin:0;text-wrap:balance}
+header p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+h2{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;margin:0}
+.lbl{font-size:11px;letter-spacing:.08em;color:var(--muted)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.drop{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1.5px dashed var(--line);border-radius:14px;padding:14px;background:var(--paper)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop p{margin:0;color:var(--muted);flex:1 1 220px;min-width:0;font-size:13.5px}
+.file{position:relative;overflow:hidden}
+.file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+.deck{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:14px}
+.song{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.song label{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.song input{font-family:var(--display);font-size:34px;line-height:1;background:transparent;border:0;border-bottom:1px dashed var(--line);color:var(--ink);padding:2px 0;width:100%}
+.song input:focus{outline:none;border-bottom-color:var(--accent)}
+.badge{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+
+.wavebox{position:relative;direction:ltr;border-radius:10px;background:var(--well);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:132px;cursor:grab}
+.ruler{display:flex;justify-content:space-between;direction:ltr;font-size:11px;color:var(--muted)}
+
+.sel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;direction:ltr;justify-content:center}
+.sel .time{font-size:22px;min-width:7.5ch;text-align:center}
+.sel .arrow{color:var(--muted)}
+.nudge{font:inherit;font-family:var(--mono);font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer}
+.play{width:52px;height:52px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.play svg{width:20px;height:20px;fill:currentColor}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
+.chip .num{font-size:12px;color:var(--muted)}
+.chip.sel-on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.sel-on .num{color:var(--accent-ink)}
+
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field .row{display:flex;justify-content:space-between}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.switch{display:flex;align-items:center;gap:8px;padding-top:16px;cursor:pointer}
+.switch input{accent-color:var(--accent);width:18px;height:18px}
+
+.btn{font:inherit;font-weight:600;border-radius:10px;padding:11px 18px;cursor:pointer;border:1px solid var(--accent);background:transparent;color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,label.file:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.export{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.status{font-size:13.5px;color:var(--muted);margin:0;flex:1 1 220px;min-width:0}
+
+.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.guide section{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
+.guide h3{margin:0 0 8px;font-size:16px}
+.guide ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px}
+.note{font-size:13px;color:var(--muted);margin:0}
+code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
+</style>
+
+</head>
+<body>
+<div class="wrap" dir="rtl">
+  <header>
+    <h1>חותך רינגטונים</h1>
+    <p>בוחרים שיר, המערכת מוצאת את הפזמון, ויוצא רינגטון לאייפון של עד 29 שניות.</p>
+  </header>
+
+  <div class="drop" id="drop">
+    <label class="btn primary file">בחר שיר<input type="file" id="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg"></label>
+    <p>MP3, M4A, WAV ועוד. הקובץ נשאר במכשיר ולא נשלח לשום מקום. שירים מ‑Apple Music מוגנים ולא ייפתחו.</p>
+  </div>
+
+  <div class="deck">
+    <div class="song">
+      <label><span class="lbl">שם הרינגטון</span><input id="name" maxlength="60" value="שיר דוגמה"></label>
+      <span class="badge" id="badge">שיר דוגמה סינתטי</span>
+      <span class="badge num" id="songLen">0:00</span>
+    </div>
+
+    <div>
+      <div class="wavebox" id="wavebox"><canvas id="wave" aria-label="צורת הגל של השיר. גררו את החלון המסומן כדי לבחור קטע."></canvas></div>
+      <div class="ruler num" id="ruler"></div>
+    </div>
+
+    <div class="sel">
+      <button class="nudge" data-n="-1" aria-label="שנייה אחורה">−1s</button>
+      <button class="nudge" data-n="-0.1" aria-label="עשירית שנייה אחורה">−0.1</button>
+      <span class="time num" id="tStart">0:00.0</span>
+      <span class="arrow">→</span>
+      <span class="time num" id="tEnd">0:30.0</span>
+      <button class="nudge" data-n="0.1" aria-label="עשירית שנייה קדימה">+0.1</button>
+      <button class="nudge" data-n="1" aria-label="שנייה קדימה">+1s</button>
+      <button class="play" id="play" aria-label="השמע את הקטע"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+    </div>
+
+    <div class="field"><span class="lbl">הקטעים החזקים בשיר (זיהוי אוטומטי)</span><div class="chips" id="cands"></div></div>
+
+    <div class="controls">
+      <div class="field"><div class="row"><label class="lbl" for="len">אורך</label><span class="num" id="lenV">29 שנ׳</span></div>
+        <input type="range" id="len" min="10" max="29" step="1" value="29"></div>
+      <div class="field"><div class="row"><label class="lbl" for="fin">כניסה הדרגתית</label><span class="num" id="finV">0.5 שנ׳</span></div>
+        <input type="range" id="fin" min="0" max="3" step="0.1" value="0.5"></div>
+      <div class="field"><div class="row"><label class="lbl" for="fout">יציאה הדרגתית</label><span class="num" id="foutV">2.0 שנ׳</span></div>
+        <input type="range" id="fout" min="0" max="5" step="0.1" value="2"></div>
+      <label class="switch"><input type="checkbox" id="norm" checked> השוואת עוצמה</label>
+    </div>
+
+    <div class="export">
+      <button class="btn primary" id="export">צור רינגטון</button>
+      <button class="btn primary" id="share" hidden>הגדר כרינגטון</button>
+      <a class="btn" id="dl" hidden>הורד MP3</a>
+      <p class="status" id="status" role="status">בחרו קטע ולחצו "צור רינגטון".</p>
+    </div>
+  </div>
+
+  <h2>מהקובץ לצלצול</h2>
+  <div class="guide">
+    <section>
+      <h3>אייפון עם iOS 26 ומעלה</h3>
+      <ol>
+        <li>לוחצים <b>צור רינגטון</b>, ואז <b>הגדר כרינגטון</b>.</li>
+        <li>בתפריט השיתוף גוללים למטה ובוחרים <b>השתמש כרינגטון</b>. זהו.</li>
+        <li>אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים לחיצה ארוכה ← שתף ← השתמש כרינגטון.</li>
+      </ol>
+    </section>
+  </div>
+  <p class="note">באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29 שניות.</p>
+</div>
+
+<script>
+(() => {
+const $=id=>document.getElementById(id);
+let ctx=null, song=null, peaks=null, energy=null, FR=10; // energy frames per second
+const S={start:0,len:29,fin:.5,fout:2,norm:true,cand:0};
+let cands=[];
+
+function ensureCtx(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
+const fmt=t=>{t=Math.max(0,t);const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(1)};
+const fmtShort=t=>{const m=Math.floor(t/60),s=Math.floor(t-m*60);return m+':'+(s<10?'0':'')+s};
+function say(t){$('status').textContent=t}
+
+/* ---------- demo song (synthetic, so the page works before a file is chosen) ---------- */
+function demoSong(){
+  const sr=44100,dur=72,n=sr*dur,L=new Float32Array(n),R=new Float32Array(n);
+  const beat=.5; // 120 BPM
+  const add=(t,f,amp,dec,pan=0)=>{const s0=Math.floor(t*sr),len=Math.min(n-s0,Math.floor(sr*dec*5));
+    for(let i=0;i<len;i++){const x=i/sr,v=amp*Math.sin(2*Math.PI*f*x)*Math.exp(-x/dec)*Math.min(1,x/.004);L[s0+i]+=v*(1-pan);R[s0+i]+=v*(1+pan)}};
+  const kick=t=>{const s0=Math.floor(t*sr),len=Math.min(n-s0,Math.floor(sr*.25));let ph=0;
+    for(let i=0;i<len;i++){const x=i/sr;ph+=2*Math.PI*(50+90*Math.exp(-x/.03))/sr;const v=.55*Math.sin(ph)*Math.exp(-x/.08);L[s0+i]+=v;R[s0+i]+=v}};
+  const hat=t=>{const s0=Math.floor(t*sr),len=Math.min(n-s0,Math.floor(sr*.05));for(let i=0;i<len;i++){const v=.12*(Math.random()*2-1)*Math.exp(-i/sr/.012);L[s0+i]+=v*.7;R[s0+i]+=v*1.3}};
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  const prog=[57,53,48,55]; // A F C G
+  const mel=[76,0,81,0,79,76,74,0, 76,0,72,74,76,0,0,0, 76,0,81,0,79,76,74,0, 79,76,74,72,69,0,0,0];
+  const sections=[[0,8,'intro'],[8,28,'verse'],[28,44,'chorus'],[44,56,'verse'],[56,72,'chorus']];
+  for(const [a,b,kind] of sections){
+    for(let t=a;t<b;t+=beat/2){
+      const step=Math.round((t-a)/(beat/2)),bar=Math.floor(t/2)%4,root=prog[bar];
+      if(step%8===0)[0,4,7].forEach((iv,k)=>add(t,hz(root+12+iv),kind==='intro'?.05:.07,1.2,k-1));
+      if(kind!=='intro'&&step%4===0)add(t,hz(root-12),kind==='chorus'?.32:.22,.35);
+      if(kind==='verse'&&step%2===1)add(t,hz(root+24+[0,7,12][step%3]),.06,.2,.5);
+      if(kind==='chorus'){const m=mel[step%32];if(m)add(t,hz(m),.24,.45,-.2);if(step%4===0)kick(t);if(step%2===1)hat(t);}
+    }
+  }
+  let pk=0;for(let i=0;i<n;i++)pk=Math.max(pk,Math.abs(L[i]),Math.abs(R[i]));
+  for(let i=0;i<n;i++){L[i]*=.9/pk;R[i]*=.9/pk}
+  return {sampleRate:sr,length:n,duration:dur,numberOfChannels:2,getChannelData:c=>c?R:L};
+}
+
+/* ---------- analysis ---------- */
+function analyse(){
+  const ch=song.numberOfChannels,n=song.length,sr=song.sampleRate;
+  const a=song.getChannelData(0),b=ch>1?song.getChannelData(1):a;
+  const P=1200;peaks=new Float32Array(P);
+  const bs=Math.max(1,Math.floor(n/P));
+  for(let p=0;p<P;p++){let m=0;const e=Math.min(n,(p+1)*bs);for(let i=p*bs;i<e;i+=4){const v=Math.abs(a[i])+Math.abs(b[i]);if(v>m)m=v}peaks[p]=m/2}
+  const hop=Math.floor(sr/FR),F=Math.floor(n/hop);energy=new Float32Array(F);
+  for(let f=0;f<F;f++){let s=0;const o=f*hop;for(let i=0;i<hop;i+=2){const v=(a[o+i]+b[o+i])/2;s+=v*v}energy[f]=Math.sqrt(s/(hop/2))}
+  findCandidates();
+}
+function findCandidates(){
+  const F=energy.length,W=Math.min(F,Math.round(S.len*FR));
+  const pre=new Float64Array(F+1);for(let i=0;i<F;i++)pre[i+1]=pre[i]+energy[i];
+  const mean=(s,w)=>(pre[Math.min(F,s+w)]-pre[Math.max(0,s)])/Math.max(1,Math.min(F,s+w)-Math.max(0,s));
+  const scores=[];for(let s=0;s+W<=F;s+=5)scores.push([mean(s,W),s]);
+  scores.sort((x,y)=>y[0]-x[0]);
+  const picked=[];
+  for(const [sc,s] of scores){if(picked.length>=3)break;if(picked.every(p=>Math.abs(p.s-s)>=W*.6))picked.push({sc,s})}
+  // snap each start to the strongest energy rise nearby (a section boundary)
+  cands=picked.map(p=>{let best=p.s,bd=-1;
+    for(let s=Math.max(0,p.s-50);s<=Math.min(F-W,p.s+50);s++){const d=mean(s,10)-mean(s-10,10);if(d>bd){bd=d;best=s}}
+    return {t:best/FR,score:p.sc}});
+  if(!cands.length)cands=[{t:0,score:0}];
+  renderCands();setStart(cands[0].t);S.cand=0;markCand();
+}
+function renderCands(){
+  const box=$('cands');box.innerHTML='';
+  cands.forEach((c,i)=>{const b=document.createElement('button');b.className='chip';
+    b.innerHTML=(i===0?'הפזמון (הצעה מובילה)':'קטע '+(i+1))+' <span class="num">'+fmtShort(c.t)+'</span>';
+    b.addEventListener('click',()=>{S.cand=i;setStart(c.t);markCand();preview(true)});box.appendChild(b)});
+}
+function markCand(){[...$('cands').children].forEach((b,i)=>b.classList.toggle('sel-on',i===S.cand))}
+
+/* ---------- waveform ---------- */
+const cv=$('wave');
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function draw(playT){
+  if(!peaks)return;
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  const D=song.duration,x0=S.start/D*w,x1=(S.start+S.len)/D*w;
+  g.fillStyle=css('--accent-soft');g.fillRect(x0,0,x1-x0,h);
+  const wave=css('--wave'),acc=css('--accent');
+  for(let x=0;x<w;x+=2){const p=peaks[Math.floor(x/w*peaks.length)]||0,bh=Math.max(1,p*(h-16));
+    g.fillStyle=(x>=x0&&x<=x1)?acc:wave;g.fillRect(x,(h-bh)/2,1.4,bh)}
+  g.fillStyle=acc;g.fillRect(x0-1,0,2,h);g.fillRect(x1-1,0,2,h);
+  g.beginPath();g.moveTo(x0-1,0);g.lineTo(x0+9,0);g.lineTo(x0-1,10);g.fill();
+  if(playT!=null){const px=playT/D*w;g.fillStyle=css('--ink');g.fillRect(px-1,0,2,h)}
+}
+function ruler(){const D=song.duration,r=$('ruler');r.innerHTML='';for(let i=0;i<=4;i++){const s=document.createElement('span');s.textContent=fmtShort(D*i/4);r.appendChild(s)}}
+new ResizeObserver(()=>draw()).observe(cv);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>draw());
+new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+let drag=null;
+cv.addEventListener('pointerdown',e=>{
+  if(!song)return;cv.setPointerCapture(e.pointerId);
+  const t=e.offsetX/cv.clientWidth*song.duration;
+  drag=(t>=S.start&&t<=S.start+S.len)?t-S.start:S.len/2;
+  setStart(t-drag);S.cand=-1;markCand();cv.style.cursor='grabbing';
+});
+cv.addEventListener('pointermove',e=>{if(drag==null)return;setStart(e.offsetX/cv.clientWidth*song.duration-drag)});
+const endDrag=()=>{if(drag==null)return;drag=null;cv.style.cursor='grab';if(playing)preview(true)};
+cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
+
+function setStart(t){
+  const max=Math.max(0,song.duration-S.len);S.start=Math.min(max,Math.max(0,Math.round(t*10)/10));
+  $('tStart').textContent=fmt(S.start);$('tEnd').textContent=fmt(S.start+Math.min(S.len,song.duration));draw();
+}
+document.querySelectorAll('.nudge').forEach(b=>b.addEventListener('click',()=>{setStart(S.start+ +b.dataset.n);S.cand=-1;markCand()}));
+
+/* ---------- controls ---------- */
+$('len').addEventListener('input',e=>{S.len=+e.target.value;$('lenV').textContent=S.len+' שנ׳';setStart(S.start)});
+$('len').addEventListener('change',()=>findCandidates());
+$('fin').addEventListener('input',e=>{S.fin=+e.target.value;$('finV').textContent=S.fin.toFixed(1)+' שנ׳'});
+$('fout').addEventListener('input',e=>{S.fout=+e.target.value;$('foutV').textContent=S.fout.toFixed(1)+' שנ׳'});
+$('norm').addEventListener('change',e=>{S.norm=e.target.checked});
+
+function selGain(){
+  if(!S.norm)return 1;const sr=song.sampleRate,a=Math.floor(S.start*sr),b=Math.min(song.length,a+Math.floor(S.len*sr));let pk=0;
+  for(let c=0;c<Math.min(2,song.numberOfChannels);c++){const d=song.getChannelData(c);for(let i=a;i<b;i+=3){const v=Math.abs(d[i]);if(v>pk)pk=v}}
+  return pk>0?Math.min(4,.89/pk):1;
+}
+
+/* ---------- preview ---------- */
+let playing=false,src=null,raf=0,t0=0,buf=null;
+function toAudioBuffer(){
+  if(song instanceof AudioBuffer)return song;
+  if(buf&&buf._for===song)return buf;
+  const c=ensureCtx();buf=c.createBuffer(2,song.length,song.sampleRate);buf.copyToChannel(song.getChannelData(0),0);buf.copyToChannel(song.getChannelData(1),1);buf._for=song;return buf;
+}
+function preview(restart){
+  if(playing)stopPreview();if(restart===false)return;
+  const c=ensureCtx(),b=toAudioBuffer(),len=Math.min(S.len,song.duration-S.start),g=c.createGain(),k=selGain();
+  src=c.createBufferSource();src.buffer=b;src.connect(g);g.connect(c.destination);
+  t0=c.currentTime+.05;
+  g.gain.setValueAtTime(S.fin>0?0:k,t0);if(S.fin>0)g.gain.linearRampToValueAtTime(k,t0+S.fin);
+  g.gain.setValueAtTime(k,t0+Math.max(S.fin,len-S.fout));g.gain.linearRampToValueAtTime(S.fout>0?0:k,t0+len);
+  src.start(t0,S.start,len);playing=true;setIcon();
+  src.onended=()=>{if(playing){playing=false;setIcon();cancelAnimationFrame(raf);draw()}};
+  const loop=()=>{if(!playing)return;draw(S.start+Math.max(0,c.currentTime-t0));raf=requestAnimationFrame(loop)};loop();
+}
+function stopPreview(){playing=false;try{src&&src.stop()}catch(e){}cancelAnimationFrame(raf);setIcon();draw()}
+function setIcon(){$('playIcon').innerHTML=playing?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',playing?'עצור':'השמע את הקטע')}
+$('play').addEventListener('click',()=>playing?stopPreview():preview(true));
+
+/* ---------- load a file ---------- */
+async function loadFile(f){
+  if(!f)return;stopPreview();say('פותח את '+f.name+'…');
+  try{
+    const ab=await f.arrayBuffer();const c=ensureCtx();
+    song=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
+    let fname=f.name;try{fname=decodeURIComponent(fname)}catch(e){}
+    $('name').value=fname.replace(/\.[^.]+$/,'').slice(0,60);$('badge').textContent=fname;
+    $('songLen').textContent=fmtShort(song.duration);
+    $('len').max=String(Math.max(10,Math.min(29,Math.floor(song.duration))));
+    if(S.len>song.duration){S.len=Math.max(5,Math.floor(song.duration));$('len').value=S.len;$('lenV').textContent=S.len+' שנ׳'}
+    analyse();ruler();say('השיר נטען. הקטע המסומן הוא ההצעה לפזמון.');
+  }catch(e){say('לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.')}
+}
+$('file').addEventListener('change',e=>loadFile(e.target.files[0]));
+const drop=$('drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
+
+/* ---------- render + encode ---------- */
+function renderClip(){
+  const sr=song.sampleRate,a=Math.floor(S.start*sr),n=Math.min(song.length-a,Math.floor(S.len*sr)),k=selGain();
+  const fi=Math.floor(S.fin*sr),fo=Math.floor(S.fout*sr),chans=[];
+  for(let c=0;c<2;c++){const src=song.getChannelData(Math.min(c,song.numberOfChannels-1)),out=new Float32Array(n);
+    for(let i=0;i<n;i++){let env=k;if(i<fi)env*=i/fi;if(i>n-fo)env*=(n-i)/fo;out[i]=src[a+i]*env}chans.push(out)}
+  return {sr,n,chans};
+}
+/* ---------- mp3 (what iOS 26 "Use as Ringtone" accepts) ---------- */
+function toMp3(clip){
+  if(!window.lamejs||!lamejs.Mp3Encoder)return null;
+  try{
+    const enc=new lamejs.Mp3Encoder(2,clip.sr,192),B=1152,out=[];
+    const i16=a=>{const r=new Int16Array(a.length);for(let i=0;i<a.length;i++)r[i]=Math.max(-1,Math.min(1,a[i]))*32767;return r};
+    const L=i16(clip.chans[0]),R=i16(clip.chans[1]);
+    for(let o=0;o<clip.n;o+=B){const b=enc.encodeBuffer(L.subarray(o,o+B),R.subarray(o,o+B));if(b.length)out.push(new Uint8Array(b))}
+    const f=enc.flush();if(f.length)out.push(new Uint8Array(f));
+    const len=out.reduce((s,a)=>s+a.length,0),res=new Uint8Array(len);let p=0;for(const a of out){res.set(a,p);p+=a.length}
+    return res;
+  }catch(e){return null}
+}
+
+/* ---------- export: build the MP3, then hand it to the iOS share sheet ---------- */
+let ready=null,dlUrl=null;
+function invalidate(){ready=null;$('share').hidden=true;$('dl').hidden=true;$('export').hidden=false}
+['len','fin','fout','norm','name'].forEach(id=>$(id).addEventListener('input',invalidate));
+['pointerdown'].forEach(ev=>cv.addEventListener(ev,invalidate));
+document.querySelectorAll('.nudge').forEach(b=>b.addEventListener('click',invalidate));
+$('cands').addEventListener('click',invalidate);
+$('file').addEventListener('change',invalidate);
+$('export').addEventListener('click',async()=>{
+  if(!song)return;stopPreview();$('export').disabled=true;say('מקודד MP3…');
+  await new Promise(r=>setTimeout(r,30));
+  try{
+    const mp3=toMp3(renderClip());
+    if(!mp3){say('הקידוד נכשל. רעננו את הדף ונסו שוב.');return}
+    const base=($('name').value.trim()||'Ringtone').replace(/[\\/:*?"<>|%]/g,'').trim()||'Ringtone';
+    ready=new File([mp3],base+'.mp3',{type:'audio/mpeg'});
+    if(dlUrl)URL.revokeObjectURL(dlUrl);dlUrl=URL.createObjectURL(ready);
+    const a=$('dl');a.href=dlUrl;a.download=ready.name;a.hidden=false;
+    const canShare=!!(navigator.canShare&&navigator.canShare({files:[ready]}));
+    $('share').hidden=!canShare;$('export').hidden=canShare;
+    say(canShare?'מוכן. לחצו "הגדר כרינגטון" ובחרו "השתמש כרינגטון".':'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".');
+  }finally{$('export').disabled=false}
+});
+$('share').addEventListener('click',async()=>{
+  if(!ready)return;
+  try{await navigator.share({files:[ready]});say('נשלח לתפריט השיתוף.')}
+  catch(e){say(e&&e.name==='AbortError'?'השיתוף בוטל. אפשר ללחוץ שוב.':'השיתוף לא עבד. נסו "הורד MP3".')}
+});
+
+/* ---------- start with the demo ---------- */
+song=demoSong();$('songLen').textContent=fmtShort(song.duration);analyse();ruler();
+})();
+</script>
+
+</body>
+</html>
