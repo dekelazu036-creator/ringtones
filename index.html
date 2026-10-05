@@ -59,6 +59,17 @@ canvas{display:block;width:100%;height:132px;cursor:grab}
 .play{width:52px;height:52px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;cursor:pointer;flex:none}
 .play svg{width:20px;height:20px;fill:currentColor}
 
+.hint{margin:0;font-size:12.5px;color:var(--muted)}
+.trim{display:flex;flex-direction:column;gap:10px}
+.trow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}
+.tlabel{font-weight:600;min-width:3.5em}
+.tgroup{display:flex;align-items:center;gap:4px;direction:ltr}
+.tgroup .time{font-size:18px;min-width:6ch;text-align:center}
+.trow .nudge{padding:6px 8px}
+.mark{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:8px;padding:6px 10px;cursor:pointer}
+.tfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.tinfo{font-size:14px;line-height:1.3}
+#playFrom{padding:8px 12px;font-size:14px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
 .chip .num{font-size:12px;color:var(--muted)}
@@ -92,7 +103,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 <div class="wrap" dir="rtl">
   <header>
     <h1>חותך רינגטונים</h1>
-    <p>בוחרים שיר, המערכת מוצאת את הפזמון, ויוצא רינגטון לאייפון של עד 29 שניות.</p>
+    <p>בוחרים שיר, המערכת מוצאת את הפזמון, ויוצא רינגטון לאייפון באורך שתבחרו.</p>
   </header>
 
   <div class="drop" id="drop">
@@ -112,22 +123,29 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       <div class="ruler num" id="ruler"></div>
     </div>
 
-    <div class="sel">
-      <button class="nudge" data-n="-1" aria-label="שנייה אחורה">−1s</button>
-      <button class="nudge" data-n="-0.1" aria-label="עשירית שנייה אחורה">−0.1</button>
-      <span class="time num" id="tStart">0:00.0</span>
-      <span class="arrow">→</span>
-      <span class="time num" id="tEnd">0:30.0</span>
-      <button class="nudge" data-n="0.1" aria-label="עשירית שנייה קדימה">+0.1</button>
-      <button class="nudge" data-n="1" aria-label="שנייה קדימה">+1s</button>
-      <button class="play" id="play" aria-label="השמע את הקטע"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+    <p class="hint">גררו את שתי הידיות כדי לבחור התחלה וסוף, או גררו את הקטע כולו. נגיעה מחוץ לקטע מזיזה את הסמן.</p>
+
+    <div class="trim">
+      <div class="trow">
+        <span class="tlabel">התחלה</span>
+        <span class="tgroup"><button class="nudge" data-h="start" data-n="-1">−1</button><button class="nudge" data-h="start" data-n="-0.1">−0.1</button><span class="time num" id="tStart">0:00.0</span><button class="nudge" data-h="start" data-n="0.1">+0.1</button><button class="nudge" data-h="start" data-n="1">+1</button></span>
+        <button class="mark" data-h="start">סמן כאן</button>
+      </div>
+      <div class="trow">
+        <span class="tlabel">סוף</span>
+        <span class="tgroup"><button class="nudge" data-h="end" data-n="-1">−1</button><button class="nudge" data-h="end" data-n="-0.1">−0.1</button><span class="time num" id="tEnd">0:00.0</span><button class="nudge" data-h="end" data-n="0.1">+0.1</button><button class="nudge" data-h="end" data-n="1">+1</button></span>
+        <button class="mark" data-h="end">סמן כאן</button>
+      </div>
+      <div class="tfoot">
+        <button class="play" id="play" aria-label="השמע את הקטע"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+        <span class="tinfo">אורך הקטע <b class="num" id="tLen">0.0</b> שנ׳<br><span class="lbl">עד 29.5 שניות</span></span>
+        <button class="btn" id="playFrom">השמע מהסמן <span class="num" id="cursorT">0:00</span></button>
+      </div>
     </div>
 
     <div class="field"><span class="lbl">הקטעים החזקים בשיר (זיהוי אוטומטי)</span><div class="chips" id="cands"></div></div>
 
     <div class="controls">
-      <div class="field"><div class="row"><label class="lbl" for="len">אורך</label><span class="num" id="lenV">29 שנ׳</span></div>
-        <input type="range" id="len" min="10" max="29" step="1" value="29"></div>
       <div class="field"><div class="row"><label class="lbl" for="fin">כניסה הדרגתית</label><span class="num" id="finV">0.5 שנ׳</span></div>
         <input type="range" id="fin" min="0" max="3" step="0.1" value="0.5"></div>
       <div class="field"><div class="row"><label class="lbl" for="fout">יציאה הדרגתית</label><span class="num" id="foutV">2.0 שנ׳</span></div>
@@ -154,14 +172,14 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       </ol>
     </section>
   </div>
-  <p class="note">באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29 שניות.</p>
+  <p class="note">באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29.5 שניות.</p>
 </div>
 
 <script>
 (() => {
 const $=id=>document.getElementById(id);
 let ctx=null, song=null, peaks=null, energy=null, FR=10; // energy frames per second
-const S={start:0,len:29,fin:.5,fout:2,norm:true,cand:0};
+const S={cursor:0,start:0,len:25,fin:.5,fout:2,norm:true,cand:0};
 let cands=[];
 
 function ensureCtx(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
@@ -207,28 +225,42 @@ function analyse(){
   for(let f=0;f<F;f++){let s=0;const o=f*hop;for(let i=0;i<hop;i+=2){const v=(a[o+i]+b[o+i])/2;s+=v*v}energy[f]=Math.sqrt(s/(hop/2))}
   findCandidates();
 }
+const MAXLEN=29.5,MINLEN=3,DEFLEN=25;
 function findCandidates(){
-  const F=energy.length,W=Math.min(F,Math.round(S.len*FR));
+  const F=energy.length,W=Math.min(F,Math.round(Math.min(DEFLEN,song.duration)*FR));
   const pre=new Float64Array(F+1);for(let i=0;i<F;i++)pre[i+1]=pre[i]+energy[i];
   const mean=(s,w)=>(pre[Math.min(F,s+w)]-pre[Math.max(0,s)])/Math.max(1,Math.min(F,s+w)-Math.max(0,s));
   const scores=[];for(let s=0;s+W<=F;s+=5)scores.push([mean(s,W),s]);
   scores.sort((x,y)=>y[0]-x[0]);
   const picked=[];
   for(const [sc,s] of scores){if(picked.length>=3)break;if(picked.every(p=>Math.abs(p.s-s)>=W*.6))picked.push({sc,s})}
-  // snap each start to the strongest energy rise nearby (a section boundary)
   cands=picked.map(p=>{let best=p.s,bd=-1;
     for(let s=Math.max(0,p.s-50);s<=Math.min(F-W,p.s+50);s++){const d=mean(s,10)-mean(s-10,10);if(d>bd){bd=d;best=s}}
     return {t:best/FR,score:p.sc}});
   if(!cands.length)cands=[{t:0,score:0}];
-  renderCands();setStart(cands[0].t);S.cand=0;markCand();
+  renderCands();pickCand(0);
 }
+function pickCand(i){S.cand=i;const t=cands[i].t;setRange(t,t+Math.min(DEFLEN,MAXLEN),'move');markCand()}
 function renderCands(){
   const box=$('cands');box.innerHTML='';
   cands.forEach((c,i)=>{const b=document.createElement('button');b.className='chip';
     b.innerHTML=(i===0?'הפזמון (הצעה מובילה)':'קטע '+(i+1))+' <span class="num">'+fmtShort(c.t)+'</span>';
-    b.addEventListener('click',()=>{S.cand=i;setStart(c.t);markCand();preview(true)});box.appendChild(b)});
+    b.addEventListener('click',()=>{pickCand(i);previewSel()});box.appendChild(b)});
 }
 function markCand(){[...$('cands').children].forEach((b,i)=>b.classList.toggle('sel-on',i===S.cand))}
+
+/* selection: start + len, both handles free, length capped below 30 s */
+function setRange(a,b,mode){
+  const D=song.duration,r=v=>Math.round(v*10)/10;
+  if(mode==='move'){const len=Math.min(b-a,MAXLEN,D);a=Math.max(0,Math.min(D-len,a));b=a+len}
+  a=Math.max(0,Math.min(D,a));b=Math.max(0,Math.min(D,b));
+  if(mode==='start'){ if(b-a>MAXLEN)b=Math.min(D,a+MAXLEN); if(b-a<MINLEN){b=Math.min(D,a+MINLEN);a=Math.max(0,b-MINLEN)} }
+  else if(mode==='end'){ if(b-a>MAXLEN)a=Math.max(0,b-MAXLEN); if(b-a<MINLEN){a=Math.max(0,b-MINLEN);b=Math.min(D,a+MINLEN)} }
+  S.start=r(a);S.len=Math.max(0,r(b)-r(a));
+  $('tStart').textContent=fmt(S.start);$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);
+  draw();
+}
+function setStart(t){setRange(t,t+S.len,'move')}
 
 /* ---------- waveform ---------- */
 const cv=$('wave');
@@ -240,12 +272,14 @@ function draw(playT){
   const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
   const D=song.duration,x0=S.start/D*w,x1=(S.start+S.len)/D*w;
   g.fillStyle=css('--accent-soft');g.fillRect(x0,0,x1-x0,h);
-  const wave=css('--wave'),acc=css('--accent');
+  const wave=css('--wave'),acc=css('--accent'),ink=css('--ink');
   for(let x=0;x<w;x+=2){const p=peaks[Math.floor(x/w*peaks.length)]||0,bh=Math.max(1,p*(h-16));
     g.fillStyle=(x>=x0&&x<=x1)?acc:wave;g.fillRect(x,(h-bh)/2,1.4,bh)}
-  g.fillStyle=acc;g.fillRect(x0-1,0,2,h);g.fillRect(x1-1,0,2,h);
-  g.beginPath();g.moveTo(x0-1,0);g.lineTo(x0+9,0);g.lineTo(x0-1,10);g.fill();
-  if(playT!=null){const px=playT/D*w;g.fillStyle=css('--ink');g.fillRect(px-1,0,2,h)}
+  for(const x of [x0,x1]){g.fillStyle=acc;g.fillRect(x-1.5,0,3,h);
+    g.beginPath();g.roundRect?g.roundRect(x-7,h/2-18,14,36,7):g.rect(x-7,h/2-18,14,36);g.fill();
+    g.fillStyle=css('--accent-ink');g.fillRect(x-2.5,h/2-8,1.5,16);g.fillRect(x+1,h/2-8,1.5,16)}
+  const ct=playT!=null?playT:S.cursor;
+  if(ct!=null){const px=ct/D*w;g.fillStyle=ink;g.fillRect(px-1,0,2,h);g.beginPath();g.moveTo(px-5,0);g.lineTo(px+5,0);g.lineTo(px,7);g.fill()}
 }
 function ruler(){const D=song.duration,r=$('ruler');r.innerHTML='';for(let i=0;i<=4;i++){const s=document.createElement('span');s.textContent=fmtShort(D*i/4);r.appendChild(s)}}
 new ResizeObserver(()=>draw()).observe(cv);
@@ -253,25 +287,33 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>draw())
 new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
 let drag=null;
+const tAt=e=>{const r=cv.getBoundingClientRect();return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*song.duration};
 cv.addEventListener('pointerdown',e=>{
-  if(!song)return;cv.setPointerCapture(e.pointerId);
-  const t=e.offsetX/cv.clientWidth*song.duration;
-  drag=(t>=S.start&&t<=S.start+S.len)?t-S.start:S.len/2;
-  setStart(t-drag);S.cand=-1;markCand();cv.style.cursor='grabbing';
+  if(!song)return;
+  const r=cv.getBoundingClientRect(),x=e.clientX-r.left,w=r.width,D=song.duration;
+  const xs=S.start/D*w,xe=(S.start+S.len)/D*w,ds=Math.abs(x-xs),de=Math.abs(x-xe),t=tAt(e);
+  if(Math.min(ds,de)<=24)drag={mode:ds<=de?'start':'end'};
+  else if(t>S.start&&t<S.start+S.len)drag={mode:'move',off:t-S.start};
+  else{S.cursor=Math.round(t*10)/10;$('cursorT').textContent=fmtShort(S.cursor);if(playing&&mode==='full')playFull(S.cursor);else draw();return}
+  cv.setPointerCapture(e.pointerId);S.cand=-1;markCand();
 });
-cv.addEventListener('pointermove',e=>{if(drag==null)return;setStart(e.offsetX/cv.clientWidth*song.duration-drag)});
-const endDrag=()=>{if(drag==null)return;drag=null;cv.style.cursor='grab';if(playing)preview(true)};
+cv.addEventListener('pointermove',e=>{
+  if(!drag)return;const t=tAt(e),end=S.start+S.len;
+  if(drag.mode==='start')setRange(t,end,'start');else if(drag.mode==='end')setRange(S.start,t,'end');else setRange(t-drag.off,t-drag.off+S.len,'move');
+});
+const endDrag=()=>{if(!drag)return;const m=drag.mode;drag=null;if(playing&&mode==='sel')previewSel(m==='end')};
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 
-function setStart(t){
-  const max=Math.max(0,song.duration-S.len);S.start=Math.min(max,Math.max(0,Math.round(t*10)/10));
-  $('tStart').textContent=fmt(S.start);$('tEnd').textContent=fmt(S.start+Math.min(S.len,song.duration));draw();
-}
-document.querySelectorAll('.nudge').forEach(b=>b.addEventListener('click',()=>{setStart(S.start+ +b.dataset.n);S.cand=-1;markCand()}));
+document.querySelectorAll('.nudge').forEach(b=>b.addEventListener('click',()=>{
+  const n=+b.dataset.n,end=S.start+S.len;S.cand=-1;markCand();
+  if(b.dataset.h==='start')setRange(S.start+n,end,'start');else setRange(S.start,end+n,'end');
+}));
+document.querySelectorAll('.mark').forEach(b=>b.addEventListener('click',()=>{
+  const t=playing?pos():(S.cursor||0),end=S.start+S.len;S.cand=-1;markCand();
+  if(b.dataset.h==='start')setRange(t,Math.max(end,t+MINLEN),'start');else setRange(Math.min(S.start,t-MINLEN),t,'end');
+}));
 
 /* ---------- controls ---------- */
-$('len').addEventListener('input',e=>{S.len=+e.target.value;$('lenV').textContent=S.len+' שנ׳';setStart(S.start)});
-$('len').addEventListener('change',()=>findCandidates());
 $('fin').addEventListener('input',e=>{S.fin=+e.target.value;$('finV').textContent=S.fin.toFixed(1)+' שנ׳'});
 $('fout').addEventListener('input',e=>{S.fout=+e.target.value;$('foutV').textContent=S.fout.toFixed(1)+' שנ׳'});
 $('norm').addEventListener('change',e=>{S.norm=e.target.checked});
@@ -282,27 +324,34 @@ function selGain(){
   return pk>0?Math.min(4,.89/pk):1;
 }
 
-/* ---------- preview ---------- */
-let playing=false,src=null,raf=0,t0=0,buf=null;
+/* ---------- playback: the selection (with fades) or the song from the cursor ---------- */
+let playing=false,src=null,raf=0,t0=0,from=0,buf=null,mode='sel';
+const pos=()=>from+Math.max(0,ctx.currentTime-t0);
 function toAudioBuffer(){
   if(song instanceof AudioBuffer)return song;
   if(buf&&buf._for===song)return buf;
   const c=ensureCtx();buf=c.createBuffer(2,song.length,song.sampleRate);buf.copyToChannel(song.getChannelData(0),0);buf.copyToChannel(song.getChannelData(1),1);buf._for=song;return buf;
 }
-function preview(restart){
-  if(playing)stopPreview();if(restart===false)return;
-  const c=ensureCtx(),b=toAudioBuffer(),len=Math.min(S.len,song.duration-S.start),g=c.createGain(),k=selGain();
-  src=c.createBufferSource();src.buffer=b;src.connect(g);g.connect(c.destination);
-  t0=c.currentTime+.05;
-  g.gain.setValueAtTime(S.fin>0?0:k,t0);if(S.fin>0)g.gain.linearRampToValueAtTime(k,t0+S.fin);
-  g.gain.setValueAtTime(k,t0+Math.max(S.fin,len-S.fout));g.gain.linearRampToValueAtTime(S.fout>0?0:k,t0+len);
-  src.start(t0,S.start,len);playing=true;setIcon();
-  src.onended=()=>{if(playing){playing=false;setIcon();cancelAnimationFrame(raf);draw()}};
-  const loop=()=>{if(!playing)return;draw(S.start+Math.max(0,c.currentTime-t0));raf=requestAnimationFrame(loop)};loop();
+function startPlayback(at,len,fades){
+  if(playing)stopPreview();
+  const c=ensureCtx(),g=c.createGain(),k=fades?selGain():1;
+  src=c.createBufferSource();src.buffer=toAudioBuffer();src.connect(g);g.connect(c.destination);
+  t0=c.currentTime+.05;from=at;
+  if(fades){g.gain.setValueAtTime(S.fin>0?0:k,t0);if(S.fin>0)g.gain.linearRampToValueAtTime(k,t0+S.fin);
+    g.gain.setValueAtTime(k,t0+Math.max(S.fin,len-S.fout));g.gain.linearRampToValueAtTime(S.fout>0?0:k,t0+len)}
+  src.start(t0,at,len);playing=true;setIcon();
+  const me=src;src.onended=()=>{if(playing&&src===me){playing=false;if(mode==='full'){S.cursor=Math.min(song.duration,from+len)}setIcon();cancelAnimationFrame(raf);draw()}};
+  const loop=()=>{if(!playing)return;const p=pos();if(mode==='full'){$('cursorT').textContent=fmtShort(p)}draw(p);raf=requestAnimationFrame(loop)};loop();
 }
-function stopPreview(){playing=false;try{src&&src.stop()}catch(e){}cancelAnimationFrame(raf);setIcon();draw()}
-function setIcon(){$('playIcon').innerHTML=playing?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',playing?'עצור':'השמע את הקטע')}
-$('play').addEventListener('click',()=>playing?stopPreview():preview(true));
+function previewSel(tail){mode='sel';const len=Math.min(S.len,song.duration-S.start);
+  if(tail&&len>4)startPlayback(S.start+len-4,4,false);else startPlayback(S.start,len,true)}
+function playFull(at){mode='full';startPlayback(at,song.duration-at,false)}
+function preview(){previewSel()}
+function stopPreview(){if(playing&&mode==='full')S.cursor=Math.round(pos()*10)/10;playing=false;try{src&&src.stop()}catch(e){}cancelAnimationFrame(raf);setIcon();$('cursorT').textContent=fmtShort(S.cursor||0);draw()}
+function setIcon(){const on=playing&&mode==='sel';$('playIcon').innerHTML=on?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',on?'עצור':'השמע את הקטע');
+  $('playFrom').firstChild.textContent=(playing&&mode==='full')?'עצור ':'השמע מהסמן '}
+$('play').addEventListener('click',()=>(playing&&mode==='sel')?stopPreview():previewSel());
+$('playFrom').addEventListener('click',()=>(playing&&mode==='full')?stopPreview():playFull(S.cursor||0));
 
 /* ---------- load a file ---------- */
 async function loadFile(f){
@@ -313,9 +362,8 @@ async function loadFile(f){
     let fname=f.name;try{fname=decodeURIComponent(fname)}catch(e){}
     $('name').value=fname.replace(/\.[^.]+$/,'').slice(0,60);$('badge').textContent=fname;
     $('songLen').textContent=fmtShort(song.duration);
-    $('len').max=String(Math.max(10,Math.min(29,Math.floor(song.duration))));
-    if(S.len>song.duration){S.len=Math.max(5,Math.floor(song.duration));$('len').value=S.len;$('lenV').textContent=S.len+' שנ׳'}
-    analyse();ruler();say('השיר נטען. הקטע המסומן הוא ההצעה לפזמון.');
+    S.cursor=0;$('cursorT').textContent='0:00';
+    analyse();ruler();say('השיר נטען. הקטע המסומן הוא ההצעה לפזמון. אפשר להזיז כל ידית בנפרד.');
   }catch(e){say('לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.')}
 }
 $('file').addEventListener('change',e=>loadFile(e.target.files[0]));
@@ -349,9 +397,9 @@ function toMp3(clip){
 /* ---------- export: build the MP3, then hand it to the iOS share sheet ---------- */
 let ready=null,dlUrl=null,diag='';
 function invalidate(){ready=null;$('share').hidden=true;$('dl').hidden=true;$('export').hidden=false}
-['len','fin','fout','norm','name'].forEach(id=>$(id).addEventListener('input',invalidate));
+['fin','fout','norm','name'].forEach(id=>$(id).addEventListener('input',invalidate));
 ['pointerdown'].forEach(ev=>cv.addEventListener(ev,invalidate));
-document.querySelectorAll('.nudge').forEach(b=>b.addEventListener('click',invalidate));
+document.querySelectorAll('.nudge,.mark').forEach(b=>b.addEventListener('click',invalidate));
 $('cands').addEventListener('click',invalidate);
 $('file').addEventListener('change',invalidate);
 $('export').addEventListener('click',async()=>{
