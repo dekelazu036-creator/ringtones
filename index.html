@@ -409,7 +409,7 @@ $('export').addEventListener('click',async()=>{
     const mp3=toMp3(renderClip());
     if(!mp3){say('הקידוד נכשל. רעננו את הדף ונסו שוב.');return}
     const base=($('name').value.trim()||'Ringtone').replace(/[\\/:*?"<>|%]/g,'').trim()||'Ringtone';
-    ready=new File([mp3],base+'.mp3',{type:'audio/mpeg'});
+    ready=new File([mp3],base+' - ringtone.mp3',{type:'audio/mpeg'});
     if(dlUrl)URL.revokeObjectURL(dlUrl);dlUrl=URL.createObjectURL(ready);
     const a=$('dl');a.href=dlUrl;a.download=ready.name;a.hidden=false;
     const hasShare=!!navigator.share;
