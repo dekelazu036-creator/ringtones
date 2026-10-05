@@ -347,7 +347,7 @@ function toMp3(clip){
 }
 
 /* ---------- export: build the MP3, then hand it to the iOS share sheet ---------- */
-let ready=null,dlUrl=null;
+let ready=null,dlUrl=null,diag='';
 function invalidate(){ready=null;$('share').hidden=true;$('dl').hidden=true;$('export').hidden=false}
 ['len','fin','fout','norm','name'].forEach(id=>$(id).addEventListener('input',invalidate));
 ['pointerdown'].forEach(ev=>cv.addEventListener(ev,invalidate));
@@ -364,15 +364,17 @@ $('export').addEventListener('click',async()=>{
     ready=new File([mp3],base+'.mp3',{type:'audio/mpeg'});
     if(dlUrl)URL.revokeObjectURL(dlUrl);dlUrl=URL.createObjectURL(ready);
     const a=$('dl');a.href=dlUrl;a.download=ready.name;a.hidden=false;
-    const canShare=!!(navigator.canShare&&navigator.canShare({files:[ready]}));
-    $('share').hidden=!canShare;$('export').hidden=canShare;
-    say(canShare?'מוכן. לחצו "הגדר כרינגטון" ובחרו "השתמש כרינגטון".':'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".');
+    const hasShare=!!navigator.share;
+    let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[ready]}))}catch(e){}
+    diag='share='+(hasShare?'yes':'no')+' canShare='+(canShare?'yes':'no');
+    $('share').hidden=!hasShare;$('export').hidden=hasShare;
+    say((hasShare?'מוכן. לחצו "הגדר כרינגטון" ובחרו "השתמש כרינגטון".':'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".')+' ['+diag+']');
   }finally{$('export').disabled=false}
 });
 $('share').addEventListener('click',async()=>{
   if(!ready)return;
-  try{await navigator.share({files:[ready]});say('נשלח לתפריט השיתוף.')}
-  catch(e){say(e&&e.name==='AbortError'?'השיתוף בוטל. אפשר ללחוץ שוב.':'השיתוף לא עבד. נסו "הורד MP3".')}
+  try{await navigator.share({files:[ready]});say('נשלח לתפריט השיתוף. ['+diag+']')}
+  catch(e){say((e&&e.name==='AbortError'?'השיתוף בוטל או נחסם. אפשר ללחוץ שוב.':'השיתוף לא עבד. נסו "הורד MP3".')+' ['+diag+' err='+(e&&e.name)+']')}
 });
 
 /* ---------- start with the demo ---------- */
