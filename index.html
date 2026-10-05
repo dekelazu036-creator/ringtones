@@ -149,8 +149,8 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       <h3>אייפון עם iOS 26 ומעלה</h3>
       <ol>
         <li>לוחצים <b>צור רינגטון</b>, ואז <b>הגדר כרינגטון</b>.</li>
-        <li>בתפריט השיתוף גוללים למטה ובוחרים <b>השתמש כרינגטון</b>. זהו.</li>
-        <li>אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים לחיצה ארוכה ← שתף ← השתמש כרינגטון.</li>
+        <li>בתפריט השיתוף גוללים למטה ובוחרים <b>שימוש כצלצול</b>. זהו.</li>
+        <li>אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים לחיצה ארוכה ← שתף ← שימוש כצלצול.</li>
       </ol>
     </section>
   </div>
@@ -368,7 +368,7 @@ $('export').addEventListener('click',async()=>{
     let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[ready]}))}catch(e){}
     diag='share='+(hasShare?'yes':'no')+' canShare='+(canShare?'yes':'no');
     $('share').hidden=!hasShare;$('export').hidden=hasShare;
-    say((hasShare?'מוכן. לחצו "הגדר כרינגטון" ובחרו "השתמש כרינגטון".':'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".')+' ['+diag+']');
+    say((hasShare?'מוכן. לחצו "הגדר כרינגטון" ובחרו "שימוש כצלצול".':'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".')+' ['+diag+']');
   }finally{$('export').disabled=false}
 });
 $('share').addEventListener('click',async()=>{
