@@ -179,7 +179,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 (() => {
 const $=id=>document.getElementById(id);
 let ctx=null, song=null, peaks=null, energy=null, FR=10; // energy frames per second
-const S={cursor:0,start:0,len:25,fin:.5,fout:2,norm:true,cand:0};
+const S={cursor:0,start:0,len:29,fin:.5,fout:2,norm:true,cand:0};
 let cands=[];
 
 function ensureCtx(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
@@ -225,7 +225,7 @@ function analyse(){
   for(let f=0;f<F;f++){let s=0;const o=f*hop;for(let i=0;i<hop;i+=2){const v=(a[o+i]+b[o+i])/2;s+=v*v}energy[f]=Math.sqrt(s/(hop/2))}
   findCandidates();
 }
-const MAXLEN=29.5,MINLEN=3,DEFLEN=25;
+const MAXLEN=29.5,MINLEN=3,DEFLEN=29;
 function findCandidates(){
   const F=energy.length,W=Math.min(F,Math.round(Math.min(DEFLEN,song.duration)*FR));
   const pre=new Float64Array(F+1);for(let i=0;i<F;i++)pre[i+1]=pre[i]+energy[i];
