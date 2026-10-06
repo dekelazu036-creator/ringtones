@@ -80,6 +80,10 @@ canvas{display:block;width:100%;height:132px;cursor:grab}
 .tin input{font-family:var(--mono);font-size:20px;width:4.2ch;text-align:center;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 4px}
 .tin input#ts{width:5ch}
 .tin input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.lenbox{display:flex;flex-direction:column;gap:8px}
+.lenhead{display:flex;justify-content:space-between;align-items:baseline}
+.lenhead b{font-size:18px}
+#lenR{width:100%;accent-color:var(--accent)}
 .tfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
 .tinfo{font-size:14px;line-height:1.3}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
@@ -149,6 +153,14 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       </div>
     </div>
 
+    <div class="lenbox">
+      <div class="lenhead"><label class="lbl" for="lenR">אורך הרינגטון</label><span><b class="num" id="tLen">0.0</b> שנ׳</span></div>
+      <div class="chips" id="lens">
+        <button class="chip" data-len="10">10 שנ׳</button><button class="chip" data-len="15">15 שנ׳</button><button class="chip" data-len="20">20 שנ׳</button><button class="chip" data-len="25">25 שנ׳</button><button class="chip" data-len="29.5">מקסימום</button>
+      </div>
+      <input type="range" id="lenR" min="3" max="29.5" step="0.5" value="29" aria-label="אורך הרינגטון בשניות">
+    </div>
+
     <div class="trim">
       <div class="trow">
         <span class="tlabel">התחלה</span>
@@ -160,7 +172,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       </div>
       <div class="tfoot">
         <button class="play" id="play" aria-label="השמע את הרינגטון"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
-        <span class="tinfo"><b>השמע את הרינגטון</b><br>אורך <b class="num" id="tLen">0.0</b> שנ׳ <span class="lbl">(עד 29.5)</span></span>
+        <span class="tinfo"><b>השמע את הרינגטון</b></span>
       </div>
     </div>
 
@@ -279,7 +291,7 @@ function setRange(a,b,mode){
   if(mode==='start'){ if(b-a>MAXLEN)b=Math.min(D,a+MAXLEN); if(b-a<MINLEN){b=Math.min(D,a+MINLEN);a=Math.max(0,b-MINLEN)} }
   else if(mode==='end'){ if(b-a>MAXLEN)a=Math.max(0,b-MAXLEN); if(b-a<MINLEN){a=Math.max(0,b-MINLEN);b=Math.min(D,a+MINLEN)} }
   S.start=r(a);S.len=Math.max(0,r(b)-r(a));
-  $('tStart').textContent=fmt(S.start);syncTime();$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);
+  $('tStart').textContent=fmt(S.start);syncTime();$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);$('lenR').value=S.len;[...$('lens').children].forEach(b=>b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05));
   draw();
 }
 function syncTime(){const a=document.activeElement;if(a&&(a.id==='tm'||a.id==='ts'))return;
@@ -338,6 +350,10 @@ document.querySelectorAll('.nudge').forEach(b=>b.addEventListener('click',()=>{
 function goTyped(){const m=parseFloat($('tm').value)||0,sec=parseFloat($('ts').value)||0,t=Math.max(0,Math.min(song.duration-1,m*60+sec));
   S.cand=-1;markCand();document.activeElement&&document.activeElement.blur();startAt(t);syncTime();invalidate()}
 $('goTime').addEventListener('click',goTyped);
+function setLen(L){S.cand=-1;markCand();setRange(S.start,S.start+L,'move');invalidate()}
+$('lens').addEventListener('click',e=>{const b=e.target.closest('[data-len]');if(b){setLen(+b.dataset.len);previewSel()}});
+$('lenR').addEventListener('input',e=>setLen(+e.target.value));
+$('lenR').addEventListener('change',()=>previewSel());
 ['tm','ts'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();goTyped()}}));
 $('startHere').addEventListener('click',()=>{S.cand=-1;markCand();startAt(playing&&mode==='full'?pos():(S.cursor||0))});
 
