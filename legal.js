@@ -1,6 +1,6 @@
 (() => {
-  const L = { he: { btn: 'English', home: 'חזרה ל‑SnipRing', terms: 'תנאי שימוש', privacy: 'מדיניות פרטיות' },
-              en: { btn: 'עברית', home: 'Back to SnipRing', terms: 'Terms of Use', privacy: 'Privacy Policy' } };
+  const L = { he: { btn: 'English', home: 'חזרה ל‑SnipRing', terms: 'תנאי שימוש', privacy: 'מדיניות פרטיות', a11y: 'הצהרת נגישות' },
+              en: { btn: 'עברית', home: 'Back to SnipRing', terms: 'Terms of Use', privacy: 'Privacy Policy', a11y: 'Accessibility statement' } };
   let lang;
   try { lang = localStorage.getItem('snipring-lang'); } catch (e) {}
   if (lang !== 'he' && lang !== 'en') lang = /^he|^iw/i.test(navigator.language || '') ? 'he' : 'en';

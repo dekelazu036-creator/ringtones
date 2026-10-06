@@ -143,6 +143,32 @@ button:focus-visible,input:focus-visible,label.file:focus-within{outline:2px sol
 .a2hs-x{flex:none;font:inherit;font-size:16px;background:none;border:0;color:var(--muted);cursor:pointer;padding:6px}
 .sitefoot{text-align:center;font-size:13px;color:var(--muted);padding-block:8px 24px}
 .sitefoot a{color:var(--muted)}
+.skip{position:absolute;inset-inline-start:12px;top:-60px;z-index:50;background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;font-weight:600;text-decoration:none}
+.skip:focus{top:calc(10px + env(safe-area-inset-top,0px))}
+.sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+main:focus{outline:none}
+.hbtns{display:flex;gap:8px;flex:none;flex-wrap:wrap}
+.hrow{flex-wrap:wrap}
+#a11yBtn{display:flex;align-items:center;gap:6px}
+.wavebox:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+a:focus-visible,.chip:focus-visible,.nudge:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.a11y{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.a11y-head{display:flex;justify-content:space-between;align-items:center}
+.a11y-head h2{font-family:var(--body);font-size:17px;margin:0}
+.a11y-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.a11y-opt{font:inherit;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);cursor:pointer}
+.a11y-opt b{font-size:18px}
+.a11y-opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.a11y a{color:var(--accent);font-size:14px}
+/* accessibility modes */
+html.a-bigger{font-size:125%}
+html.a-bigger body{font-size:18.75px}
+html:root.a-contrast:not([data-none]){--bg:#000;--paper:#000;--ink:#fff;--muted:#e6e6e6;--line:#fff;--well:#111;--accent:#ffd400;--accent-ink:#000;--accent-soft:rgba(255,212,0,.22);--wave:#9a9a9a;color-scheme:dark}
+html.a-links a{text-decoration:underline!important;text-underline-offset:3px;font-weight:700}
+html.a-still *,html.a-still *::before,html.a-still *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+html.a-readable body,html.a-readable input,html.a-readable button,html.a-readable select{font-family:Arial,"Arial Hebrew",Helvetica,sans-serif!important;letter-spacing:.02em;word-spacing:.08em}
+html.a-readable h1,html.a-readable .sname{font-family:Arial,"Arial Hebrew",Helvetica,sans-serif!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:st}
 .steps li{counter-increment:st;display:grid;grid-template-columns:36px 1fr;column-gap:12px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .steps li::before{content:counter(st);grid-row:span 2;width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-family:var(--mono)}
@@ -163,12 +189,27 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 
 </head>
 <body>
+<a class="skip" href="#main" data-i18n="skip"></a>
 <div class="wrap" dir="rtl">
   <header>
-    <div class="hrow"><h1 dir="ltr"><a class="logo" href="./" aria-label="SnipRing">Snip<span class="ring">Ring</span></a></h1><button class="langbtn" id="lang" type="button">English</button></div>
+    <div class="hrow"><h1 dir="ltr"><a class="logo" href="./" aria-label="SnipRing">Snip<span class="ring">Ring</span></a></h1><span class="hbtns"><button class="langbtn" id="a11yBtn" type="button" aria-haspopup="dialog" aria-controls="a11yPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="4.5" r="2" fill="currentColor"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0l-3.5 6M12 15l3.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-i18n="a11y"></span></button><button class="langbtn" id="lang" type="button" lang="en">English</button></span></div>
     <p data-i18n="tagline"></p>
   </header>
 
+  <div class="a11y" id="a11yPanel" role="dialog" aria-modal="false" aria-labelledby="a11yTitle" hidden>
+    <div class="a11y-head"><h2 id="a11yTitle" data-i18n="a11y"></h2><button class="a2hs-x" id="a11yClose" type="button" data-i18n-aria="close">✕</button></div>
+    <div class="a11y-grid">
+      <button type="button" class="a11y-opt" data-a="bigger" aria-pressed="false"><b>A+</b><span data-i18n="aBig"></span></button>
+      <button type="button" class="a11y-opt" data-a="contrast" aria-pressed="false"><b>◐</b><span data-i18n="aContrast"></span></button>
+      <button type="button" class="a11y-opt" data-a="links" aria-pressed="false"><b><u>ab</u></b><span data-i18n="aLinks"></span></button>
+      <button type="button" class="a11y-opt" data-a="still" aria-pressed="false"><b>❚❚</b><span data-i18n="aStill"></span></button>
+      <button type="button" class="a11y-opt" data-a="readable" aria-pressed="false"><b>Aa</b><span data-i18n="aFont"></span></button>
+      <button type="button" class="a11y-opt" id="a11yReset"><b>↺</b><span data-i18n="aReset"></span></button>
+    </div>
+    <a href="accessibility.html" data-i18n="aStatement"></a>
+  </div>
+
+<main id="main" tabindex="-1">
   <div class="a2hs" id="a2hs" hidden>
     <span class="a2hs-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     <p data-i18n="a2hs"></p>
@@ -188,6 +229,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
   </div>
 
   <div class="deck" id="editor" hidden>
+    <h2 class="sr" data-i18n="editorH"></h2>
     <div class="song">
       <div class="stitle"><span class="lbl" data-i18n="song"></span><span class="sname" id="songTitle"></span></div>
       <span class="badge" id="badge"></span>
@@ -195,7 +237,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     </div>
 
     <div>
-      <div class="wavebox" id="wavebox"><canvas id="wave" data-i18n-aria="waveAria"></canvas></div>
+      <div class="wavebox" id="wavebox" role="slider" tabindex="0" aria-valuemin="0" data-i18n-aria="waveAria"><canvas id="wave" aria-hidden="true"></canvas></div>
       <div class="ruler num" id="ruler"></div>
     </div>
 
@@ -230,11 +272,11 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
         <p class="hint" data-i18n="fineHint"></p>
       <div class="trow">
         <span class="tlabel" data-i18n="start"></span>
-        <span class="tgroup"><button class="nudge" data-h="start" data-n="-1">−1</button><button class="nudge" data-h="start" data-n="-0.1">−0.1</button><span class="time num" id="tStart">0:00.0</span><button class="nudge" data-h="start" data-n="0.1">+0.1</button><button class="nudge" data-h="start" data-n="1">+1</button></span>
+        <span class="tgroup"><button class="nudge" data-h="start" data-n="-1" data-i18n-aria="n_start_-1">−1</button><button class="nudge" data-h="start" data-n="-0.1" data-i18n-aria="n_start_-0.1">−0.1</button><span class="time num" id="tStart">0:00.0</span><button class="nudge" data-h="start" data-n="0.1" data-i18n-aria="n_start_0.1">+0.1</button><button class="nudge" data-h="start" data-n="1" data-i18n-aria="n_start_1">+1</button></span>
       </div>
       <div class="trow">
         <span class="tlabel" data-i18n="end"></span>
-        <span class="tgroup"><button class="nudge" data-h="end" data-n="-1">−1</button><button class="nudge" data-h="end" data-n="-0.1">−0.1</button><span class="time num" id="tEnd">0:00.0</span><button class="nudge" data-h="end" data-n="0.1">+0.1</button><button class="nudge" data-h="end" data-n="1">+1</button></span>
+        <span class="tgroup"><button class="nudge" data-h="end" data-n="-1" data-i18n-aria="n_end_-1">−1</button><button class="nudge" data-h="end" data-n="-0.1" data-i18n-aria="n_end_-0.1">−0.1</button><span class="time num" id="tEnd">0:00.0</span><button class="nudge" data-h="end" data-n="0.1" data-i18n-aria="n_end_0.1">+0.1</button><button class="nudge" data-h="end" data-n="1" data-i18n-aria="n_end_1">+1</button></span>
       </div>
       </details>
       <div class="tfoot">
@@ -264,6 +306,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     </div>
   </div>
 
+</main>
   <h2 data-i18n="guideH"></h2>
   <div class="guide">
     <section>
@@ -276,7 +319,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     </section>
   </div>
   <p class="note" data-i18n="note"></p>
-  <footer class="sitefoot"><a href="terms.html" data-i18n="terms"></a> · <a href="privacy.html" data-i18n="privacy"></a> · <span dir="ltr">hello@snipring.com</span></footer>
+  <footer class="sitefoot"><a href="terms.html" data-i18n="terms"></a> · <a href="privacy.html" data-i18n="privacy"></a> · <a href="accessibility.html" data-i18n="aStatement"></a> · <span dir="ltr">hello@snipring.com</span></footer>
 </div>
 
 <script>
@@ -449,7 +492,7 @@ function renderCands(){
     b.innerHTML=(i===0?t('chorus'):t('part')+' '+(i+1))+' <span class="num">'+fmtShort(c.t)+'</span>';
     b.addEventListener('click',()=>{pickCand(i);previewSel()});box.appendChild(b)});
 }
-function markCand(){[...$('cands').children].forEach((b,i)=>b.classList.toggle('sel-on',i===S.cand))}
+function markCand(){[...$('cands').children].forEach((b,i)=>{b.classList.toggle('sel-on',i===S.cand);b.setAttribute('aria-pressed',String(i===S.cand))})}
 
 /* selection: start + len, both handles free, length capped below 30 s */
 function setRange(a,b,mode){
@@ -459,11 +502,15 @@ function setRange(a,b,mode){
   if(mode==='start'){ if(b-a>MAXLEN)b=Math.min(D,a+MAXLEN); if(b-a<MINLEN){b=Math.min(D,a+MINLEN);a=Math.max(0,b-MINLEN)} }
   else if(mode==='end'){ if(b-a>MAXLEN)a=Math.max(0,b-MAXLEN); if(b-a<MINLEN){a=Math.max(0,b-MINLEN);b=Math.min(D,a+MINLEN)} }
   S.start=r(a);S.len=Math.max(0,r(b)-r(a));
-  $('tStart').textContent=fmt(S.start);$('sumA').textContent=fmt(S.start);$('sumB').textContent=fmt(S.start+S.len);syncTime();$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);$('lenR').value=S.len;[...$('lens').children].forEach(b=>b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05));
+  $('tStart').textContent=fmt(S.start);$('sumA').textContent=fmt(S.start);$('sumB').textContent=fmt(S.start+S.len);syncTime();$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);syncAria();$('lenR').value=S.len;[...$('lens').children].forEach(b=>b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05));
   draw();
 }
 function syncTime(){const a=document.activeElement;if(a&&(a.id==='tm'||a.id==='ts'))return;
   const m=Math.floor(S.start/60),sec=Math.round((S.start-m*60)*10)/10;$('tm').value=m;$('ts').value=sec<10?'0'+sec:sec}
+function syncAria(){const w=$('wavebox');if(!song)return;
+  w.setAttribute('aria-valuemax',String(Math.floor(song.duration)));w.setAttribute('aria-valuenow',String(Math.round(S.start)));
+  w.setAttribute('aria-valuetext',t('waveVal').replace('{a}',fmt(S.start)).replace('{b}',fmt(S.start+S.len)));
+  [...$('lens').children].forEach(b=>b.setAttribute('aria-pressed',String(b.classList.contains('sel-on'))))}
 function setStart(t){setRange(t,t+S.len,'move')}
 
 /* ---------- waveform ---------- */
@@ -511,6 +558,13 @@ const endDrag=()=>{if(!drag)return;const d=drag;drag=null;
 function startAt(t){setRange(t,t+S.len,'move');S.cursor=S.start;$('cursorT').textContent=fmtShort(S.cursor);previewSel()}
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 
+$('wavebox').addEventListener('keydown',e=>{
+  const step=e.shiftKey?5:1,k=e.key;let t0=null;
+  if(k==='ArrowRight'||k==='ArrowUp')t0=S.start+step;else if(k==='ArrowLeft'||k==='ArrowDown')t0=S.start-step;
+  else if(k==='Home')t0=0;else if(k==='End')t0=song.duration-S.len;
+  else if(k==='Enter'||k===' '){e.preventDefault();(playing&&mode==='sel')?stopPreview():previewSel();return}
+  if(t0==null)return;e.preventDefault();S.cand=-1;markCand();setRange(t0,t0+S.len,'move');invalidate&&invalidate();
+});
 document.querySelectorAll('.nudge').forEach(b=>b.addEventListener('click',()=>{
   const n=+b.dataset.n,end=S.start+S.len;S.cand=-1;markCand();
   if(b.dataset.h==='start')setRange(S.start+n,end,'start');else setRange(S.start,end+n,'end');
@@ -669,7 +723,10 @@ sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח
 sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
 sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'מוכן. לחצו "הגדר כרינגטון" ובחרו "שימוש כצלצול".',
 sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
-langBtn:'English',terms:'תנאי שימוש',privacy:'מדיניות פרטיות',a2hs:'<b>הוסיפו את SnipRing למסך הבית:</b> לחצו על כפתור השיתוף בספארי ← <b>הוספה למסך הבית</b>. ככה הוא תמיד בהישג יד, כמו אפליקציה.',close:'סגירה',step1:'בוחרים שיר מהטלפון',step1s:'כל קובץ MP3, M4A או WAV',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות'},
+langBtn:'English',skip:'דלג לתוכן הראשי',editorH:'עורך הרינגטון',a11y:'נגישות',aBig:'הגדלת טקסט',aContrast:'ניגודיות גבוהה',aLinks:'הדגשת קישורים',aStill:'עצירת אנימציות',aFont:'גופן קריא',aReset:'איפוס',aStatement:'הצהרת נגישות',
+waveVal:'הרינגטון מתחיל ב‑{a} ומסתיים ב‑{b}. חיצים מזיזים בשנייה, Shift עם חץ בחמש שניות.',
+'n_start_-1':'הזז התחלה שנייה אחורה','n_start_-0.1':'הזז התחלה עשירית שנייה אחורה','n_start_0.1':'הזז התחלה עשירית שנייה קדימה','n_start_1':'הזז התחלה שנייה קדימה',
+'n_end_-1':'הזז סוף שנייה אחורה','n_end_-0.1':'הזז סוף עשירית שנייה אחורה','n_end_0.1':'הזז סוף עשירית שנייה קדימה','n_end_1':'הזז סוף שנייה קדימה',terms:'תנאי שימוש',privacy:'מדיניות פרטיות',a2hs:'<b>הוסיפו את SnipRing למסך הבית:</b> לחצו על כפתור השיתוף בספארי ← <b>הוספה למסך הבית</b>. ככה הוא תמיד בהישג יד, כמו אפליקציה.',close:'סגירה',step1:'בוחרים שיר מהטלפון',step1s:'כל קובץ MP3, M4A או WAV',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
 pick:'Choose a song',pickNote:'MP3, M4A, WAV and more. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
@@ -687,7 +744,10 @@ sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:
 sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
 sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Ready. Tap "Set as ringtone" and choose "Use as Ringtone".',
 sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
-langBtn:'עברית',terms:'Terms of Use',privacy:'Privacy Policy',a2hs:'<b>Add SnipRing to your Home Screen:</b> tap Share in Safari → <b>Add to Home Screen</b>. It opens like an app, one tap away.',close:'Close',step1:'Pick a song from your phone',step1s:'Any MP3, M4A or WAV file',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings'}};
+langBtn:'עברית',skip:'Skip to main content',editorH:'Ringtone editor',a11y:'Accessibility',aBig:'Bigger text',aContrast:'High contrast',aLinks:'Highlight links',aStill:'Stop animations',aFont:'Readable font',aReset:'Reset',aStatement:'Accessibility statement',
+waveVal:'Ringtone starts at {a} and ends at {b}. Arrow keys move it by 1 second, Shift plus arrow by 5 seconds.',
+'n_start_-1':'Move start back 1 second','n_start_-0.1':'Move start back 0.1 second','n_start_0.1':'Move start forward 0.1 second','n_start_1':'Move start forward 1 second',
+'n_end_-1':'Move end back 1 second','n_end_-0.1':'Move end back 0.1 second','n_end_0.1':'Move end forward 0.1 second','n_end_1':'Move end forward 1 second',terms:'Terms of Use',privacy:'Privacy Policy',a2hs:'<b>Add SnipRing to your Home Screen:</b> tap Share in Safari → <b>Add to Home Screen</b>. It opens like an app, one tap away.',close:'Close',step1:'Pick a song from your phone',step1s:'Any MP3, M4A or WAV file',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings'}};
 let lang=(()=>{try{const v=localStorage.getItem('snipring-lang');if(v==='he'||v==='en')return v}catch(e){}return /^he|^iw/i.test(navigator.language||'')?'he':'en'})();
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
 function applyLang(){
@@ -697,10 +757,10 @@ function applyLang(){
   $('lang').textContent=t('langBtn');
   if(song&&song._demo){$('songTitle').textContent=t('sample');$('badge').textContent=t('sampleBadge');if(!$('name').dataset.touched)$('name').value=t('sample')}
   $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
-  if(cands.length)renderCands(),markCand();setIcon();
+  if(cands.length)renderCands(),markCand();setIcon();syncAria();
 }
 function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;
-  requestAnimationFrame(()=>{draw();if(was)ed.scrollIntoView({behavior:'smooth',block:'start'})})}
+  requestAnimationFrame(()=>{draw();if(was){const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');ed.scrollIntoView({behavior:calm?'auto':'smooth',block:'start'});$('main').focus({preventScroll:true})}})}
 $('dl').addEventListener('click',()=>track('mp3_downloaded'));
 /* home screen: hint for iPhone Safari users who haven't added it yet */
 (()=>{const standalone=window.navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
@@ -709,6 +769,20 @@ $('dl').addEventListener('click',()=>track('mp3_downloaded'));
   let dismissed=false;try{dismissed=localStorage.getItem('snipring-a2hs')==='1'}catch(e){}
   if(ios&&!dismissed){$('a2hs').hidden=false}
   $('a2hsX').addEventListener('click',()=>{$('a2hs').hidden=true;try{localStorage.setItem('snipring-a2hs','1')}catch(e){}track('a2hs_hint_closed')});
+})();
+/* accessibility panel: settings saved on this device */
+(()=>{const KEY='snipring-a11y',opts=['bigger','contrast','links','still','readable'],root=document.documentElement;
+  let on={};try{on=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){}
+  const paint=()=>{opts.forEach(o=>root.classList.toggle('a-'+o,!!on[o]));
+    document.querySelectorAll('.a11y-opt[data-a]').forEach(b=>b.setAttribute('aria-pressed',String(!!on[b.dataset.a])));
+    try{localStorage.setItem(KEY,JSON.stringify(on))}catch(e){}draw()};
+  const open=v=>{$('a11yPanel').hidden=!v;$('a11yBtn').setAttribute('aria-expanded',String(v));if(v)$('a11yClose').focus();else $('a11yBtn').focus()};
+  $('a11yBtn').addEventListener('click',()=>open($('a11yPanel').hidden));
+  $('a11yClose').addEventListener('click',()=>open(false));
+  $('a11yPanel').addEventListener('keydown',e=>{if(e.key==='Escape')open(false)});
+  document.querySelectorAll('.a11y-opt[data-a]').forEach(b=>b.addEventListener('click',()=>{on[b.dataset.a]=!on[b.dataset.a];paint();track('a11y_toggle',{option:b.dataset.a,on:!!on[b.dataset.a]})}));
+  $('a11yReset').addEventListener('click',()=>{on={};paint()});
+  paint();
 })();
 $('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('song_loaded',{source:'demo',lang})});
 $('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();track('language_switched',{to:lang});say(t('sReady0'))});
