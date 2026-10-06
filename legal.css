@@ -1,3 +1,4 @@
+@import url("fonts/fonts.css");
 :root{--bg:#EEF1F6;--paper:#F9FAFD;--ink:#121A2B;--muted:#5B6680;--line:#CDD4E2;--accent:#2546F0}
 @media (prefers-color-scheme:dark){:root{--bg:#0B0F1A;--paper:#121828;--ink:#E7ECF6;--muted:#8D98B3;--line:#263049;--accent:#7088FF;color-scheme:dark}}
 *{box-sizing:border-box}

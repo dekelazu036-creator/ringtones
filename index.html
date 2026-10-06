@@ -24,9 +24,8 @@
 <meta name="theme-color" content="#2546F0">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232546F0'/%3E%3Cpath d='M14 34h4m6-10v20m6-26v32m6-22v12m6-18v24m6-14v4' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karantina:wght@400;700&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+<link rel="stylesheet" href="fonts/fonts.css">
+<script src="vendor/lame.min.js"></script>
 <style>
 /* Layout: one editing bench — waveform with a 30-second window you slide, then trim settings and one export button. */
 :root{
@@ -1325,7 +1324,7 @@ function applyLang(){
     $('helpGuide').href=ANDROID?and:ios;$('helpOther').href=ANDROID?ios:and;$('helpVideo').href=he?'ringtone-video.html':'video-ringtone.html'}$('guideLink').href=ANDROID?(lang==='he'?'ringtone-android.html':'android-ringtone.html'):(lang==='he'?'ringtone-iphone.html':'iphone-ringtone.html');
   if(song&&song._demo){$('songTitle').textContent=t('sample');$('badge').textContent=t('sampleBadge');if(!$('name').dataset.touched)$('name').value=t('sample')}
   $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
-  if(cands.length)renderCands(),markCand();setIcon();syncAria();renderLens();renderNext();refreshOut();if(typeof renderMine==='function')renderMine();if(typeof refreshDed==='function')refreshDed();
+  if(cands.length)renderCands(),markCand();setIcon();syncAria();renderLens();renderNext();refreshOut();if(typeof renderMine==='function')renderMine();if(typeof refreshDed==='function')refreshDed();if(typeof G!=='undefined'&&!G.src)$('genPlay').textContent='▶ '+t('genPlayL');
 }
 function renderNext(){$('nx1').innerHTML=t('next1');$('nx2').innerHTML=t('next2');
   const x=S.mode==='ring'?'':t('next3_'+S.mode);$('nx3').innerHTML=x;$('nx3').hidden=!x}
@@ -1394,17 +1393,18 @@ function callInit(){const v=$('callName').value.trim();$('callInit').textContent
 function openCall(){if(!song)return;stopPreview();callPrev=document.activeElement;
   let nm='';try{nm=localStorage.getItem('snipring-callname')||''}catch(e){}$('callName').value=nm||t('callDefault');callInit();
   $('callTune').textContent=$('name').value.trim()||t('sample');
-  $('callOv').hidden=false;document.body.style.overflow='hidden';
+  $('callOv').hidden=false;document.body.style.overflow='hidden';document.querySelector('.wrap').setAttribute('aria-hidden','true');
   try{const c=ensureCtx(),clip=processClip(),b=c.createBuffer(2,clip.n,clip.sr);b.copyToChannel(clip.chans[0],0);b.copyToChannel(clip.chans[1],1);
     callSrc=c.createBufferSource();callSrc.buffer=b;callSrc.loop=true;callSrc.connect(c.destination);callSrc.start()}catch(e){}
   $('callYes').focus();track('call_preview',{mode:S.mode})}
-function closeCall(how){if($('callOv').hidden)return;try{callSrc&&callSrc.stop()}catch(e){}callSrc=null;$('callOv').hidden=true;document.body.style.overflow='';
+function closeCall(how){if($('callOv').hidden)return;try{callSrc&&callSrc.stop()}catch(e){}callSrc=null;$('callOv').hidden=true;document.body.style.overflow='';document.querySelector('.wrap').removeAttribute('aria-hidden');
   try{localStorage.setItem('snipring-callname',$('callName').value.trim())}catch(e){}callPrev&&callPrev.focus&&callPrev.focus();track('call_closed',{how})}
 $('callBtn').addEventListener('click',openCall);
 $('callYes').addEventListener('click',()=>closeCall('accept'));
 $('callNo').addEventListener('click',()=>closeCall('decline'));
 $('callName').addEventListener('input',callInit);
-$('callOv').addEventListener('keydown',e=>{if(e.key==='Escape')closeCall('esc')});
+$('callOv').addEventListener('keydown',e=>{if(e.key==='Escape'){closeCall('esc');return}
+  if(e.key==='Tab'){const f=[$('callName'),$('callNo'),$('callYes')],i=f.indexOf(document.activeElement);e.preventDefault();f[(i+(e.shiftKey?f.length-1:1))%f.length].focus()}});
 /* help: the full how-to in a popup, reachable from anywhere */
 $('helpBtn').addEventListener('click',()=>{const d=$('help');
   if(d.showModal){d.showModal()}else{d.setAttribute('open','')}track('help_opened',{editor:$('editor').hidden?'no':'yes'})});
