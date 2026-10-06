@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SnipRing</title>
+<script>/* snipring.com/?me turns analytics off on this device (owner testing); ?me=on turns it back on */
+(()=>{try{const q=new URLSearchParams(location.search);if(q.has('me')){if(q.get('me')==='on')localStorage.removeItem('umami.disabled');else localStorage.setItem('umami.disabled','1');window.__meMsg=q.get('me')==='on'?'on':'off'}}catch(e){}})();</script>
 <script defer src="https://cloud.umami.is/script.js" data-website-id="db897ad6-80a9-43c7-9b29-d7474d5f4b73" data-domains="snipring.com,www.snipring.com"></script>
 <meta name="description" content="SnipRing turns any song into an iPhone ringtone. Pick a song, it finds the chorus, and one tap makes it your ringtone.">
 <meta property="og:title" content="SnipRing">
@@ -88,7 +90,7 @@ main:focus{outline:none}
 .dropnote{margin:0;color:var(--muted);font-size:12.5px;max-width:42ch}
 /* once a song is open, the hero shrinks to a slim "choose another" bar */
 main.editing .drop{flex-direction:row;flex-wrap:wrap;justify-content:center;text-align:start;padding:12px 14px;gap:10px;border-radius:16px;box-shadow:none}
-main.editing .drop .watch,main.editing .drop .viz,main.editing .drop .droph,main.editing .drop .dropsub,main.editing .drop .trust,main.editing .drop .dropnote{display:none}
+main.editing .drop #noFile,main.editing .drop .watch,main.editing .drop .viz,main.editing .drop .droph,main.editing .drop .dropsub,main.editing .drop .trust,main.editing .drop .dropnote{display:none}
 main.editing .drop .file.big{width:auto;margin:0;font-size:15px;padding:10px 18px;box-shadow:none;border-radius:12px}
 .file{position:relative;overflow:hidden}
 .file input{position:absolute;inset:0;opacity:0;cursor:pointer}
@@ -250,6 +252,12 @@ dialog.demo video{width:100%;height:auto;max-height:calc(100dvh - 210px);aspect-
 html[dir=rtl] .watch{padding:6px 6px 6px 14px}
 .watch .wi{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
 .watch.inhelp{margin:12px 0 4px}
+ul.nf{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+ul.nf li{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:14.5px;line-height:1.45}
+ul.nf .ne{font-size:20px;line-height:1.2;flex:none}
+#nofile .btn{width:100%;margin-top:12px;padding:13px;border-radius:14px}
+#nofile p{margin:6px 0 0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);max-width:calc(100vw - 32px)}
 dialog.help::backdrop{background:rgba(5,8,15,.55)}
 dialog.help h2{margin:0;font-size:19px}
 dialog.help h3{font-size:15px;margin:14px 0 6px}
@@ -316,6 +324,20 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <a href="accessibility.html" data-i18n="aStatement"></a>
   </div>
 
+  <dialog class="help" id="nofile" aria-labelledby="nfTitle">
+    <div class="a11y-head"><h2 id="nfTitle" data-i18n="nfH"></h2><button class="a2hs-x" id="nfClose" type="button" data-i18n-aria="close">✕</button></div>
+    <p data-i18n="nfP"></p>
+    <ul class="nf">
+      <li><span class="ne" aria-hidden="true">🎬</span><span data-i18n="nf1"></span></li>
+      <li><span class="ne" aria-hidden="true">💬</span><span data-i18n="nf2"></span></li>
+      <li><span class="ne" aria-hidden="true">🎙️</span><span data-i18n="nf3"></span></li>
+      <li><span class="ne" aria-hidden="true">🛒</span><span data-i18n="nf4"></span></li>
+      <li><span class="ne" aria-hidden="true">☁️</span><span data-i18n="nf5"></span></li>
+    </ul>
+    <p class="note" data-i18n="nfNote"></p>
+    <button class="btn primary" id="nfGo" type="button" data-i18n="pick"></button>
+  </dialog>
+
   <dialog class="help demo" id="demo" aria-labelledby="demoTitle">
     <div class="a11y-head"><h2 id="demoTitle" data-i18n="demoH"></h2><button class="a2hs-x" id="demoClose" type="button" data-i18n-aria="close">✕</button></div>
     <video id="demoVid" playsinline muted loop controls preload="none" width="720" height="1280"></video>
@@ -349,7 +371,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <label class="btn primary file big"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 16V4m0 0l-5 5m5-5l5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg,.mp4,.mov,.m4v"></label>
     <ul class="trust"><li data-i18n="tr1"></li><li data-i18n="tr2"></li><li data-i18n="tr3"></li></ul>
     <p class="dropnote" data-i18n="pickNote"></p>
-    <div class="droplinks"><button class="watch" id="watchBtn" type="button" aria-haspopup="dialog"><span class="wi"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span data-i18n="watch"></span></button><button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button></div>
+    <div class="droplinks"><button class="watch" id="watchBtn" type="button" aria-haspopup="dialog"><span class="wi"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span data-i18n="watch"></span></button><button class="linkbtn" id="noFile" type="button" aria-haspopup="dialog" data-i18n="noFile"></button><button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button></div>
   </section>
 
   <ol class="steps" id="steps">
@@ -909,7 +931,7 @@ g3_A:'לוחצים <b>+</b> (או "הצלילים שלי" ← <b>+</b>), ובו�
 note_A:'באנדרואיד אין מגבלת אורך, אבל רינגטון קצר מ‑30 שניות מתאים לכל טלפון.',
 sReady_A:'הרינגטון מוכן.',
 invText_A:'הפכתי שיר לרינגטון בדקה, בלי אפליקציה 🎵 נסו:',guideLink_A:'המדריך לאנדרואיד',
-mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
+mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',noFile:'אין לכם קובץ שיר?',nfH:'מאיפה מביאים קובץ?',nfP:'שירים מספוטיפיי ומ‑Apple Music מוגנים ואי אפשר לחתוך אותם. אבל יש הרבה מקורות שכן עובדים:',nf1:'<b>סרטון מהגלריה</b>: הופעה, צחוק של הילד, כל סרטון שצילמתם. הקול שלו הופך לצלצול.',nf2:'<b>קובץ שחבר שלח בוואטסאפ</b>: שומרים אותו ל"קבצים" ובוחרים אותו כאן.',nf3:'<b>הקלטה שלכם</b>: הקליטו באפליקציית ההקלטות ושמרו ל"קבצים".',nf4:'<b>שיר שקניתם</b> ב‑iTunes Store, או MP3 שהורדתם מאתר שמוכר מוזיקה.',nf5:'<b>קובץ מ‑iCloud Drive או Google Drive</b>: כל MP3, M4A או WAV שיש לכם שם.',nfNote:'השתמשו רק בקבצים שיש לכם זכות להשתמש בהם.',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
 nextH:'מה עכשיו?',next1:'לחצו <b>הגדר כרינגטון</b> למטה.',next2:'בתפריט שנפתח <b>גללו למטה</b> ובחרו <b>שימוש כצלצול</b>.',useAs:'שימוש כצלצול',
 next1_A:'לחצו <b>הורד MP3</b> למטה.',next2_A:'<b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>רינגטון</b> ← <b>+</b>, ובחרו את הקובץ מההורדות.',
 mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
@@ -942,7 +964,7 @@ g3_A:'Tap <b>+</b> (or My sounds → <b>+</b>) and pick the file from Downloads.
 note_A:'Android has no length limit, but a ringtone under 30 seconds works on every phone.',
 sReady_A:'Your ringtone is ready.',
 invText_A:'I turned a song into a ringtone in a minute, no app needed 🎵 Try it:',guideLink_A:'Android guide',
-mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
+mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',noFile:'No song file?',nfH:'Where to get a file',nfP:'Songs from Spotify and Apple Music are protected and can\'t be trimmed. But plenty of sources do work:',nf1:'<b>A video from your gallery</b>: a concert, your kid laughing, anything you filmed. Its sound becomes the ringtone.',nf2:'<b>A file a friend sent on WhatsApp</b>: save it to Files and pick it here.',nf3:'<b>Your own recording</b>: record in Voice Memos and share it to Files.',nf4:'<b>A song you bought</b> on the iTunes Store, or an MP3 from a store that sells music.',nf5:'<b>A file in iCloud Drive or Google Drive</b>: any MP3, M4A or WAV you keep there.',nfNote:'Only use files you have the right to use.',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
 nextH:'What now?',next1:'Tap <b>Set as ringtone</b> below.',next2:'In the menu that opens, <b>scroll down</b> and choose <b>Use as Ringtone</b>.',useAs:'Use as Ringtone',
 next1_A:'Tap <b>Download MP3</b> below.',next2_A:'<b>Settings</b> → <b>Sound &amp; vibration</b> → <b>Ringtone</b> → <b>+</b>, and pick the file from Downloads.',
 mineSaved:'Also saved in "My ringtones" below.',mineEmpty:'No ringtones yet. Every ringtone you create is saved here automatically.'}};
@@ -994,6 +1016,18 @@ $('inviteBtn').addEventListener('click',async()=>{
 $('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('song_loaded',{source:'demo',lang})});
 $('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();track('language_switched',{to:lang});say(t('sReady0'))});
 $('name').addEventListener('input',()=>{$('name').dataset.touched='1'});
+/* "no file?" — where a legal audio file can come from */
+const nf=$('nofile');
+$('noFile').addEventListener('click',()=>{nf.showModal?nf.showModal():nf.setAttribute('open','');track('nofile_opened')});
+$('nfClose').addEventListener('click',()=>nf.close?nf.close():nf.removeAttribute('open'));
+nf.addEventListener('click',e=>{if(e.target===nf)$('nfClose').click()});
+$('nfGo').addEventListener('click',()=>{$('nfClose').click();track('nofile_cta');$('file').click()});
+/* did people open the file picker, and did they come back empty-handed? */
+$('file').addEventListener('click',()=>track('file_picker_opened',{editing:$('editor').hidden?'no':'yes'}));
+$('file').addEventListener('cancel',()=>track('file_picker_cancelled'));
+if(window.__meMsg){const d=document.createElement('div');d.className='toast';d.setAttribute('role','status');
+  d.textContent=lang==='he'?(window.__meMsg==='on'?'המדידה הופעלה מחדש במכשיר הזה':'המדידה כבויה במכשיר הזה (מצב בעלים)'):(window.__meMsg==='on'?'Analytics on for this device':'Analytics off for this device (owner mode)');document.body.appendChild(d);setTimeout(()=>d.remove(),4000);
+  try{history.replaceState(null,'',location.pathname)}catch(e){}}
 /* demo video: a 30-second walkthrough recorded from the real site */
 function openDemo(from){const d=$('demo'),v=$('demoVid'),src='media/how-'+lang+'.mp4';
   if(!v.src.endsWith(src)){v.src=src;v.poster='media/how-'+lang+'.jpg'}
