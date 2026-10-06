@@ -14,9 +14,14 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SnipRing">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#2546F0">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232546F0'/%3E%3Cpath d='M14 34h4m6-10v20m6-26v32m6-22v12m6-18v24m6-14v4' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%232546F0'/%3E%3Cpath d='M14 34h4m6-10v20m6-26v32m6-22v12m6-18v24m6-14v4' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karantina:wght@400;700&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
@@ -37,6 +42,7 @@
   --accent:#7088FF; --accent-ink:#0B0F1A; --accent-soft:rgba(112,136,255,.18); --wave:#46536F; color-scheme:dark}
 
 *{box-sizing:border-box}
+html body{padding-top:env(safe-area-inset-top,0px)}
 body{margin:0}
 [hidden]{display:none!important}
 a.btn{text-decoration:none;display:inline-block}
@@ -131,6 +137,10 @@ button:focus-visible,input:focus-visible,label.file:focus-within{outline:2px sol
 .export{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;position:sticky;bottom:0;z-index:5;background:var(--paper);margin-inline:-14px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);border-radius:0 0 14px 14px}
 .export .btn{flex:1 1 auto}
 .export .status{flex:1 1 100%;margin:0}
+.a2hs{display:flex;align-items:center;gap:12px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:12px 14px}
+.a2hs p{margin:0;flex:1;font-size:14px;line-height:1.45}
+.a2hs-icon{color:var(--accent);flex:none;display:grid}
+.a2hs-x{flex:none;font:inherit;font-size:16px;background:none;border:0;color:var(--muted);cursor:pointer;padding:6px}
 .steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:st}
 .steps li{counter-increment:st;display:grid;grid-template-columns:36px 1fr;column-gap:12px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .steps li::before{content:counter(st);grid-row:span 2;width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-family:var(--mono)}
@@ -156,6 +166,12 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <div class="hrow"><h1 dir="ltr"><a class="logo" href="./" aria-label="SnipRing">Snip<span class="ring">Ring</span></a></h1><button class="langbtn" id="lang" type="button">English</button></div>
     <p data-i18n="tagline"></p>
   </header>
+
+  <div class="a2hs" id="a2hs" hidden>
+    <span class="a2hs-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <p data-i18n="a2hs"></p>
+    <button class="a2hs-x" id="a2hsX" type="button" data-i18n-aria="close">✕</button>
+  </div>
 
   <ol class="steps" id="steps">
     <li><b data-i18n="step1"></b><span data-i18n="step1s"></span></li>
@@ -650,7 +666,7 @@ sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח
 sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
 sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'מוכן. לחצו "הגדר כרינגטון" ובחרו "שימוש כצלצול".',
 sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
-langBtn:'English',step1:'בוחרים שיר מהטלפון',step1s:'כל קובץ MP3, M4A או WAV',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות'},
+langBtn:'English',a2hs:'<b>הוסיפו את SnipRing למסך הבית:</b> לחצו על כפתור השיתוף בספארי ← <b>הוספה למסך הבית</b>. ככה הוא תמיד בהישג יד, כמו אפליקציה.',close:'סגירה',step1:'בוחרים שיר מהטלפון',step1s:'כל קובץ MP3, M4A או WAV',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
 pick:'Choose a song',pickNote:'MP3, M4A, WAV and more. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
@@ -668,7 +684,7 @@ sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:
 sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
 sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Ready. Tap "Set as ringtone" and choose "Use as Ringtone".',
 sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
-langBtn:'עברית',step1:'Pick a song from your phone',step1s:'Any MP3, M4A or WAV file',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings'}};
+langBtn:'עברית',a2hs:'<b>Add SnipRing to your Home Screen:</b> tap Share in Safari → <b>Add to Home Screen</b>. It opens like an app, one tap away.',close:'Close',step1:'Pick a song from your phone',step1s:'Any MP3, M4A or WAV file',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings'}};
 let lang=(()=>{try{const v=localStorage.getItem('snipring-lang');if(v==='he'||v==='en')return v}catch(e){}return /^he|^iw/i.test(navigator.language||'')?'he':'en'})();
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
 function applyLang(){
@@ -683,6 +699,14 @@ function applyLang(){
 function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;
   requestAnimationFrame(()=>{draw();if(was)ed.scrollIntoView({behavior:'smooth',block:'start'})})}
 $('dl').addEventListener('click',()=>track('mp3_downloaded'));
+/* home screen: hint for iPhone Safari users who haven't added it yet */
+(()=>{const standalone=window.navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
+  if(standalone){track('opened_from_home_screen');return}
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  let dismissed=false;try{dismissed=localStorage.getItem('snipring-a2hs')==='1'}catch(e){}
+  if(ios&&!dismissed){$('a2hs').hidden=false}
+  $('a2hsX').addEventListener('click',()=>{$('a2hs').hidden=true;try{localStorage.setItem('snipring-a2hs','1')}catch(e){}track('a2hs_hint_closed')});
+})();
 $('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('song_loaded',{source:'demo',lang})});
 $('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();track('language_switched',{to:lang});say(t('sReady0'))});
 $('name').addEventListener('input',()=>{$('name').dataset.touched='1'});
