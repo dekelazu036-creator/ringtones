@@ -55,18 +55,45 @@ header h1{text-align:start}
 header .logo{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
 header .logo:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:6px}
 header .ring{color:var(--accent)}
-header p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+header p{display:none}
 h2{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;margin:0}
 .lbl{font-size:11px;letter-spacing:.08em;color:var(--muted)}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
-.drop{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1.5px dashed var(--line);border-radius:14px;padding:14px;background:var(--paper)}
-.drop.over{border-color:var(--accent);background:var(--accent-soft)}
-.drop p{margin:0;color:var(--muted);flex:1 1 220px;min-width:0;font-size:13.5px}
+main{display:flex;flex-direction:column;gap:18px}
+main:focus{outline:none}
+/* hero: the upload card is the first and biggest thing on the page */
+.drop{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
+  padding:34px 22px 26px;border-radius:26px;border:1px solid var(--line);
+  background:radial-gradient(120% 90% at 50% 0%,var(--accent-soft),transparent 65%),var(--paper);
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 18px 40px -24px rgba(18,26,43,.35)}
+.drop::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;z-index:-1;pointer-events:none;
+  background:linear-gradient(135deg,var(--accent),transparent 40%,transparent 60%,var(--accent));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.55}
+.drop.over{background:var(--accent-soft)}
+.drop .viz{display:flex;align-items:center;gap:5px;height:54px;direction:ltr}
+.drop .viz i{display:block;width:6px;border-radius:3px;background:var(--accent);opacity:.35;height:18px;animation:eq 1.6s ease-in-out infinite}
+.drop .viz i:nth-child(n+5):nth-child(-n+9){opacity:1}
+.drop .viz i:nth-child(1){animation-delay:-.2s;height:14px}.drop .viz i:nth-child(2){animation-delay:-.9s;height:24px}.drop .viz i:nth-child(3){animation-delay:-.5s;height:20px}
+.drop .viz i:nth-child(4){animation-delay:-1.1s;height:30px}.drop .viz i:nth-child(5){animation-delay:-.3s;height:42px}.drop .viz i:nth-child(6){animation-delay:-1.3s;height:54px}
+.drop .viz i:nth-child(7){animation-delay:-.7s;height:46px}.drop .viz i:nth-child(8){animation-delay:-1.5s;height:52px}.drop .viz i:nth-child(9){animation-delay:-.1s;height:38px}
+.drop .viz i:nth-child(10){animation-delay:-.8s;height:28px}.drop .viz i:nth-child(11){animation-delay:-1.2s;height:22px}.drop .viz i:nth-child(12){animation-delay:-.4s;height:16px}.drop .viz i:nth-child(13){animation-delay:-1s;height:12px}
+@keyframes eq{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.45)}}
+.droph{font-size:clamp(40px,11vw,60px);line-height:.95;margin:2px 0 0;text-wrap:balance}
+.dropsub{margin:0;color:var(--muted);font-size:15.5px;max-width:34ch}
+.drop .file.big{width:100%;max-width:380px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:18px;padding:17px 24px;border-radius:16px;margin-top:6px;
+  box-shadow:0 12px 28px -12px var(--accent)}
+.trust{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px}
+.trust li{font-size:12.5px;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+.dropnote{margin:0;color:var(--muted);font-size:12.5px;max-width:42ch}
+/* once a song is open, the hero shrinks to a slim "choose another" bar */
+main.editing .drop{flex-direction:row;flex-wrap:wrap;justify-content:center;text-align:start;padding:12px 14px;gap:10px;border-radius:16px;box-shadow:none}
+main.editing .drop .viz,main.editing .drop .droph,main.editing .drop .dropsub,main.editing .drop .trust,main.editing .drop .dropnote{display:none}
+main.editing .drop .file.big{width:auto;margin:0;font-size:15px;padding:10px 18px;box-shadow:none;border-radius:12px}
 .file{position:relative;overflow:hidden}
 .file input{position:absolute;inset:0;opacity:0;cursor:pointer}
 
-.deck{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:14px}
+.deck{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:14px}
 .song{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .stitle{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px}
 .sname{font-family:var(--display);font-size:34px;line-height:1;overflow-wrap:anywhere}
@@ -172,22 +199,24 @@ html.a-readable h1,html.a-readable .sname{font-family:Arial,"Arial Hebrew",Helve
 .invite{flex:1 1 100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:12px}
 .invite p{margin:0;flex:1 1 200px;font-size:14px}
 .invite .btn{flex:0 0 auto}
-.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:st}
-.steps li{counter-increment:st;display:grid;grid-template-columns:36px 1fr;column-gap:12px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
-.steps li::before{content:counter(st);grid-row:span 2;width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-family:var(--mono)}
-.steps b{font-size:15px}
-.steps span{font-size:13px;color:var(--muted)}
+.steps{list-style:none;margin:4px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;counter-reset:st}
+.steps li{counter-increment:st;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:4px 2px;position:relative}
+.steps li::before{content:counter(st);width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);display:grid;place-items:center;font-weight:700;font-family:var(--mono);font-size:14px}
+.steps li+li::after{content:"";position:absolute;top:17px;inset-inline-end:calc(50% + 24px);width:calc(100% - 38px);height:1px;background:var(--line)}
+.steps b{font-size:13.5px;line-height:1.3}
+.steps span{display:none}
+.a2hs{border-radius:16px}
 .btn.big{font-size:17px;padding:14px 24px}
 .linkbtn{font:inherit;font-size:14px;background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;padding:4px 0}
 .adv .controls{margin-top:12px}
 .status{font-size:13.5px;color:var(--muted);margin:0;flex:1 1 220px;min-width:0}
 
 .guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
-.guide section{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
+.guide section{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:14px;min-width:0}
 .guide h3{margin:0 0 8px;font-size:16px}
 .guide ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px}
 .note{font-size:13px;color:var(--muted);margin:0}
-.mine{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+.mine{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:14px}
 .minehead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .minehead h2{margin:0;font-size:18px}
 .mine ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -262,11 +291,17 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
   </dialog>
 
 <main id="main" tabindex="-1">
-  <div class="a2hs" id="a2hs" hidden>
-    <span class="a2hs-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-    <p data-i18n="a2hs"></p>
-    <button class="a2hs-x" id="a2hsX" type="button" data-i18n-aria="close">✕</button>
-  </div>
+
+
+  <section class="drop" id="drop" aria-labelledby="dropH">
+    <div class="viz" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <h2 class="droph" id="dropH" data-i18n="dropH"></h2>
+    <p class="dropsub" data-i18n="dropSub"></p>
+    <label class="btn primary file big"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 16V4m0 0l-5 5m5-5l5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg,.mp4,.mov,.m4v"></label>
+    <ul class="trust"><li data-i18n="tr1"></li><li data-i18n="tr2"></li><li data-i18n="tr3"></li></ul>
+    <p class="dropnote" data-i18n="pickNote"></p>
+    <button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button>
+  </section>
 
   <ol class="steps" id="steps">
     <li><b data-i18n="step1"></b><span data-i18n="step1s"></span></li>
@@ -274,10 +309,10 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <li><b data-i18n="step3"></b><span data-i18n="step3s"></span></li>
   </ol>
 
-  <div class="drop" id="drop">
-    <label class="btn primary file big"><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg,.mp4,.mov,.m4v"></label>
-    <p data-i18n="pickNote"></p>
-    <button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button>
+  <div class="a2hs" id="a2hs" hidden>
+    <span class="a2hs-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <p data-i18n="a2hs"></p>
+    <button class="a2hs-x" id="a2hsX" type="button" data-i18n-aria="close">✕</button>
   </div>
 
   <div class="deck" id="editor" hidden>
@@ -788,7 +823,7 @@ $('share').addEventListener('click',async()=>{
 
 const T={
 he:{tagline:'גוזרים כל שיר לרינגטון לאייפון. בוחרים שיר, המערכת מוצאת את הפזמון, ובלחיצה אחת הוא הצלצול שלכם.',
-pick:'בחר שיר או סרטון',pickNote:'שיר (MP3, M4A, WAV) או סרטון מהגלריה, והקול שלו יהפוך לרינגטון. הקובץ נשאר במכשיר ולא נשלח לשום מקום. שירים מ‑Apple Music מוגנים ולא ייפתחו.',
+pick:'בחר שיר או סרטון',pickNote:'שירים מ‑Apple Music או מספוטיפיי מוגנים ולא ייפתחו. צריך קובץ שיש לכם, כמו MP3.',dropH:'השיר שלכם. הצלצול שלכם.',dropSub:'בוחרים שיר או סרטון מהטלפון, ותוך דקה הוא הרינגטון שלכם.',tr1:'🔒 לא עולה לשום שרת',tr2:'MP3 · M4A · WAV · וידאו',tr3:'חינם, בלי הרשמה',
 song:'השיר',sample:'שיר דוגמה',sampleBadge:'שיר דוגמה סינתטי',waveAria:'צורת הגל של השיר. נגעו כדי לבחור מאיפה הרינגטון מתחיל.',
 howStart:'<b>איך בוחרים מאיפה הרינגטון מתחיל:</b> נוגעים בצורת הגל בנקודה הרצויה, או מאזינים לשיר ולוחצים "התחל מכאן" ברגע הנכון. הידיות בקצוות משנות את האורך.',
 playSong:'השמע את השיר',stop:'עצור',startHere:'התחל את הרינגטון מכאן',typeTime:'או הקלידו מאיזו דקה ושנייה להתחיל',min:'דקות',secs:'שניות',goTime:'התחל מהזמן הזה',
@@ -821,7 +856,7 @@ nextH:'מה עכשיו?',next1:'לחצו <b>הגדר כרינגטון</b> למט
 next1_A:'לחצו <b>הורד MP3</b> למטה.',next2_A:'<b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>רינגטון</b> ← <b>+</b>, ובחרו את הקובץ מההורדות.',
 mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
-pick:'Choose a song or video',pickNote:'A song (MP3, M4A, WAV) or a video from your library, and its sound becomes your ringtone. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
+pick:'Choose a song or video',pickNote:'Songs from Apple Music or Spotify are protected and won\'t open. You need a file you own, like an MP3.',dropH:'Your song. Your ringtone.',dropSub:'Pick a song or video on your phone, and in a minute it rings.',tr1:'🔒 Never uploaded',tr2:'MP3 · M4A · WAV · video',tr3:'Free, no sign-up',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
 howStart:'<b>Choose where the ringtone starts:</b> tap the waveform at the spot you want, or listen and press "Start here" at the right moment. Drag the edge handles to change the length.',
 playSong:'Play song',stop:'Stop',startHere:'Start the ringtone here',typeTime:'Or type the minute and second to start from',min:'Minutes',secs:'Seconds',goTime:'Start at this time',
@@ -866,7 +901,7 @@ function applyLang(){
   $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
   if(cands.length)renderCands(),markCand();setIcon();syncAria();if(typeof renderMine==='function')renderMine();
 }
-function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;
+function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;$('main').classList.add('editing');$('a2hs').hidden=true;
   requestAnimationFrame(()=>{draw();if(was){const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');ed.scrollIntoView({behavior:calm?'auto':'smooth',block:'start'});$('main').focus({preventScroll:true})}})}
 $('dl').addEventListener('click',()=>{track('mp3_downloaded');setTimeout(showInvite,1500)});
 function showInvite(){let seen=false;try{seen=sessionStorage.getItem('snipring-inv')==='1'}catch(e){}
