@@ -249,6 +249,40 @@ dialog.help ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:co
 dialog.help .note{margin-top:12px}
 dialog.help .more{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:14px}
 dialog.help a{color:var(--accent)}
+.deck{border-radius:24px;padding:16px;gap:16px}
+.song{align-items:center}
+.sname{font-size:38px}
+.wavecard{display:flex;flex-direction:column;gap:6px}
+.wavebox{border-radius:18px;background:radial-gradient(120% 140% at 50% 0%,var(--accent-soft),transparent 60%),var(--well);box-shadow:inset 0 0 0 1px var(--line)}
+canvas{height:150px}
+.ruler{padding-inline:4px}
+.hero{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:20px;border:1px solid var(--accent);
+  background:linear-gradient(120deg,var(--accent-soft),transparent 70%),var(--paper)}
+.hero .play{width:58px;height:58px;box-shadow:0 10px 24px -10px var(--accent)}
+.hero .play svg{width:22px;height:22px}
+.hinfo{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hero .range{margin:0;font-size:24px;font-weight:600;display:flex;gap:8px;align-items:baseline;justify-content:flex-start}
+html[dir=rtl] .hero .range{justify-content:flex-end}
+.hero .dash{color:var(--muted)}
+.hlen{flex:none;display:flex;align-items:baseline;gap:3px;background:var(--accent);color:var(--accent-ink);border-radius:14px;padding:8px 12px}
+.hlen b{font-size:20px}.hlen span{font-size:12px;font-weight:600}
+.panel{overflow:hidden;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.panel h3{margin:0;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
+.pi{width:28px;height:28px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-14px;padding-inline:14px;padding-block:2px;scroll-snap-type:x proximity}
+.chips.scroll::-webkit-scrollbar{display:none}
+.chips.scroll .chip{flex:none;scroll-snap-align:start;padding:9px 16px;background:var(--paper)}
+.chips.scroll .chip.sel-on{background:var(--accent)}
+.seg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--well)}
+.seg .chip{justify-content:center;align-items:baseline;gap:2px;border:0;border-radius:10px;background:transparent;padding:10px 0;font-weight:600;font-family:var(--mono);font-size:15px}
+.seg .chip span{font-family:var(--body);font-size:11px;font-weight:500;opacity:.75}
+.seg .chip[data-len="29.5"]{font-family:var(--body);font-size:13.5px}
+.seg .chip.sel-on{background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 14px -8px var(--accent)}
+.panel .listen .btn,.panel .tinrow .btn{border-radius:14px}
+.fine{border-radius:16px;padding:10px 14px}
+.rtname input{border-radius:14px}
+.export .btn{border-radius:14px;padding:13px 18px}
+.export{border-radius:0 0 24px 24px;margin-inline:-16px;padding-inline:16px}
 code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 </style>
 
@@ -323,54 +357,57 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       <span class="badge num" id="songLen">0:00</span>
     </div>
 
-    <div>
+    <div class="wavecard">
       <div class="wavebox" id="wavebox" role="slider" tabindex="0" aria-valuemin="0" data-i18n-aria="waveAria"><canvas id="wave" aria-hidden="true"></canvas></div>
       <div class="ruler num" id="ruler"></div>
     </div>
 
-    <div class="field"><span class="lbl" data-i18n="cands"></span><div class="chips" id="cands"></div></div>
-
-    <p class="hint" data-i18n="howStart"></p>
-
-    <div class="listen">
-      <button class="btn" id="playFrom"><span id="playFromT"></span> <span class="num" id="cursorT">0:00</span></button>
-      <button class="btn primary" id="startHere" data-i18n="startHere"></button>
-    </div>
-    <div class="ttime">
-      <label class="lbl" for="tm" data-i18n="typeTime"></label>
-      <div class="tinrow">
-        <span class="tin" dir="ltr"><input id="tm" type="number" inputmode="numeric" min="0" placeholder="0" data-i18n-aria="min"><b>:</b><input id="ts" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" placeholder="00" data-i18n-aria="secs"></span>
-        <button class="btn" id="goTime" data-i18n="goTime"></button>
+    <div class="hero">
+      <button class="play" id="play"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+      <div class="hinfo">
+        <span class="lbl" data-i18n="playRt"></span>
+        <p class="range num" dir="ltr"><b id="sumA">0:00</b><span class="dash">–</span><b id="sumB">0:29</b></p>
       </div>
+      <div class="hlen"><b class="num" id="tLen">0.0</b><span data-i18n="sec"></span></div>
     </div>
 
-    <div class="lenbox">
-      <div class="lenhead"><label class="lbl" for="lenR" data-i18n="length"></label><span><b class="num" id="tLen">0.0</b> <span data-i18n="sec"></span></span></div>
-      <div class="chips" id="lens">
-        <button class="chip" data-len="10">10 <span data-i18n="sec"></span></button><button class="chip" data-len="15">15 <span data-i18n="sec"></span></button><button class="chip" data-len="20">20 <span data-i18n="sec"></span></button><button class="chip" data-len="25">25 <span data-i18n="sec"></span></button><button class="chip" data-len="29.5" data-i18n="max"></button>
+    <section class="panel">
+      <h3><span class="pi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n="secStart"></span></h3>
+      <div class="field"><span class="lbl" data-i18n="cands"></span><div class="chips scroll" id="cands"></div></div>
+      <p class="hint" data-i18n="howStart"></p>
+      <div class="listen">
+        <button class="btn" id="playFrom"><span id="playFromT"></span> <span class="num" id="cursorT">0:00</span></button>
+        <button class="btn primary" id="startHere" data-i18n="startHere"></button>
+      </div>
+      <div class="ttime">
+        <label class="lbl" for="tm" data-i18n="typeTime"></label>
+        <div class="tinrow">
+          <span class="tin" dir="ltr"><input id="tm" type="number" inputmode="numeric" min="0" placeholder="0" data-i18n-aria="min"><b>:</b><input id="ts" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" placeholder="00" data-i18n-aria="secs"></span>
+          <button class="btn" id="goTime" data-i18n="goTime"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3><span class="pi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 6v6l4 2M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><label for="lenR" data-i18n="length"></label></h3>
+      <div class="seg" id="lens">
+        <button class="chip" data-len="10">10<span data-i18n="sec"></span></button><button class="chip" data-len="15">15<span data-i18n="sec"></span></button><button class="chip" data-len="20">20<span data-i18n="sec"></span></button><button class="chip" data-len="25">25<span data-i18n="sec"></span></button><button class="chip" data-len="29.5" data-i18n="max"></button>
       </div>
       <input type="range" id="lenR" min="3" max="29.5" step="0.5" value="29" data-i18n-aria="lengthAria">
-    </div>
+    </section>
 
-    <div class="trim">
-      <p class="range"><span data-i18n="plays"></span> <b class="num" id="sumA">0:00</b> <span data-i18n="to"></span> <b class="num" id="sumB">0:29</b></p>
       <details class="fine">
         <summary data-i18n="fine"></summary>
         <p class="hint" data-i18n="fineHint"></p>
-      <div class="trow">
+    <div class="trow">
         <span class="tlabel" data-i18n="start"></span>
         <span class="tgroup"><button class="nudge" data-h="start" data-n="-1" data-i18n-aria="n_start_-1">−1</button><button class="nudge" data-h="start" data-n="-0.1" data-i18n-aria="n_start_-0.1">−0.1</button><span class="time num" id="tStart">0:00.0</span><button class="nudge" data-h="start" data-n="0.1" data-i18n-aria="n_start_0.1">+0.1</button><button class="nudge" data-h="start" data-n="1" data-i18n-aria="n_start_1">+1</button></span>
       </div>
-      <div class="trow">
+    <div class="trow">
         <span class="tlabel" data-i18n="end"></span>
         <span class="tgroup"><button class="nudge" data-h="end" data-n="-1" data-i18n-aria="n_end_-1">−1</button><button class="nudge" data-h="end" data-n="-0.1" data-i18n-aria="n_end_-0.1">−0.1</button><span class="time num" id="tEnd">0:00.0</span><button class="nudge" data-h="end" data-n="0.1" data-i18n-aria="n_end_0.1">+0.1</button><button class="nudge" data-h="end" data-n="1" data-i18n-aria="n_end_1">+1</button></span>
       </div>
       </details>
-      <div class="tfoot">
-        <button class="play" id="play"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
-        <span class="tinfo"><b data-i18n="playRt"></b></span>
-      </div>
-    </div>
 
     <details class="fine adv">
       <summary data-i18n="adv"></summary>
@@ -609,7 +646,7 @@ function setRange(a,b,mode){
   if(mode==='start'){ if(b-a>MAXLEN)b=Math.min(D,a+MAXLEN); if(b-a<MINLEN){b=Math.min(D,a+MINLEN);a=Math.max(0,b-MINLEN)} }
   else if(mode==='end'){ if(b-a>MAXLEN)a=Math.max(0,b-MAXLEN); if(b-a<MINLEN){a=Math.max(0,b-MINLEN);b=Math.min(D,a+MINLEN)} }
   S.start=r(a);S.len=Math.max(0,r(b)-r(a));
-  $('tStart').textContent=fmt(S.start);$('sumA').textContent=fmt(S.start);$('sumB').textContent=fmt(S.start+S.len);syncTime();$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);syncAria();$('lenR').value=S.len;[...$('lens').children].forEach(b=>b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05));
+  $('tStart').textContent=fmt(S.start);$('sumA').textContent=fmtShort(S.start);$('sumB').textContent=fmtShort(S.start+S.len);syncTime();$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);syncAria();$('lenR').value=S.len;[...$('lens').children].forEach(b=>b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05));
   draw();
 }
 function syncTime(){const a=document.activeElement;if(a&&(a.id==='tm'||a.id==='ts'))return;
@@ -628,16 +665,22 @@ function draw(playT){
   const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
   if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
   const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
-  const D=song.duration,x0=S.start/D*w,x1=(S.start+S.len)/D*w;
-  g.fillStyle=css('--accent-soft');g.fillRect(x0,0,x1-x0,h);
-  const wave=css('--wave'),acc=css('--accent'),ink=css('--ink');
-  for(let x=0;x<w;x+=2){const p=peaks[Math.floor(x/w*peaks.length)]||0,bh=Math.max(1,p*(h-16));
-    g.fillStyle=(x>=x0&&x<=x1)?acc:wave;g.fillRect(x,(h-bh)/2,1.4,bh)}
-  for(const x of [x0,x1]){g.fillStyle=acc;g.fillRect(x-1.5,0,3,h);
-    g.beginPath();g.roundRect?g.roundRect(x-7,h/2-18,14,36,7):g.rect(x-7,h/2-18,14,36);g.fill();
-    g.fillStyle=css('--accent-ink');g.fillRect(x-2.5,h/2-8,1.5,16);g.fillRect(x+1,h/2-8,1.5,16)}
+  const D=song.duration,x0=S.start/D*w,x1=(S.start+S.len)/D*w,acc=css('--accent'),wave=css('--wave'),ink=css('--ink');
+  const rr=(x,y,ww,hh,r)=>{g.beginPath();g.roundRect?g.roundRect(x,y,ww,hh,r):g.rect(x,y,ww,hh)};
+  // selected window: soft fill and a glowing outline
+  g.fillStyle=css('--accent-soft');rr(x0,6,x1-x0,h-12,12);g.fill();
+  g.save();g.shadowColor=acc;g.shadowBlur=14;g.strokeStyle=acc;g.lineWidth=2;rr(x0+1,7,x1-x0-2,h-14,12);g.stroke();g.restore();
+  // rounded bars; inside the window they light up, and fill in as the ringtone plays
+  const ph=playT!=null?playT/D*w:-1,step=5,bw=3,mid=h/2;
+  for(let x=2;x<w-1;x+=step){const p=peaks[Math.floor(x/w*peaks.length)]||0,bh=Math.max(3,p*(h-34));
+    const inside=x>=x0&&x<=x1;
+    g.globalAlpha=inside?(ph>=0&&x>ph?.55:1):.55;g.fillStyle=inside?acc:wave;rr(x,mid-bh/2,bw,bh,1.5);g.fill()}
+  g.globalAlpha=1;
+  // handles: pills on the window edges
+  for(const x of [x0,x1]){g.fillStyle=acc;rr(x-6,mid-22,12,44,6);g.fill();
+    g.fillStyle=css('--accent-ink');g.fillRect(x-2,mid-9,1.5,18);g.fillRect(x+0.5,mid-9,1.5,18)}
   const ct=playT!=null?playT:S.cursor;
-  if(ct!=null){const px=ct/D*w;g.fillStyle=ink;g.fillRect(px-1,0,2,h);g.beginPath();g.moveTo(px-5,0);g.lineTo(px+5,0);g.lineTo(px,7);g.fill()}
+  if(ct!=null){const px=ct/D*w;g.fillStyle=ink;g.fillRect(px-1,4,2,h-8);g.beginPath();g.arc(px,6,4.5,0,7);g.fill()}
 }
 function ruler(){const D=song.duration,r=$('ruler');r.innerHTML='';for(let i=0;i<=4;i++){const s=document.createElement('span');s.textContent=fmtShort(D*i/4);r.appendChild(s)}}
 new ResizeObserver(()=>draw()).observe(cv);
@@ -827,7 +870,7 @@ pick:'בחר שיר או סרטון',pickNote:'שירים מ‑Apple Music או 
 song:'השיר',sample:'שיר דוגמה',sampleBadge:'שיר דוגמה סינתטי',waveAria:'צורת הגל של השיר. נגעו כדי לבחור מאיפה הרינגטון מתחיל.',
 howStart:'<b>איך בוחרים מאיפה הרינגטון מתחיל:</b> נוגעים בצורת הגל בנקודה הרצויה, או מאזינים לשיר ולוחצים "התחל מכאן" ברגע הנכון. הידיות בקצוות משנות את האורך.',
 playSong:'השמע את השיר',stop:'עצור',startHere:'התחל את הרינגטון מכאן',typeTime:'או הקלידו מאיזו דקה ושנייה להתחיל',min:'דקות',secs:'שניות',goTime:'התחל מהזמן הזה',
-length:'אורך הרינגטון',sec:'שנ׳',max:'מקסימום',lengthAria:'אורך הרינגטון בשניות',plays:'הרינגטון ינגן מ‑',to:'עד',
+length:'אורך הרינגטון',sec:'שנ׳',max:'מקסימום',lengthAria:'אורך הרינגטון בשניות',plays:'הרינגטון ינגן מ‑',secStart:'מאיפה הרינגטון מתחיל',to:'עד',
 fine:'כוונון מדויק',fineHint:'מזיזים את ההתחלה או את הסוף בעשיריות שנייה, למשל כדי לא לחתוך מילה באמצע.',start:'התחלה',end:'סוף',
 playRt:'השמע את הרינגטון',cands:'הקטעים החזקים בשיר (זיהוי אוטומטי)',chorus:'הפזמון (הצעה מובילה)',part:'קטע',
 fadeIn:'כניסה הדרגתית',fadeOut:'יציאה הדרגתית',norm:'השוואת עוצמה',rtName:'איך הרינגטון ייקרא בטלפון',
@@ -860,7 +903,7 @@ pick:'Choose a song or video',pickNote:'Songs from Apple Music or Spotify are pr
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
 howStart:'<b>Choose where the ringtone starts:</b> tap the waveform at the spot you want, or listen and press "Start here" at the right moment. Drag the edge handles to change the length.',
 playSong:'Play song',stop:'Stop',startHere:'Start the ringtone here',typeTime:'Or type the minute and second to start from',min:'Minutes',secs:'Seconds',goTime:'Start at this time',
-length:'Ringtone length',sec:'s',max:'Max',lengthAria:'Ringtone length in seconds',plays:'Your ringtone plays from',to:'to',
+length:'Ringtone length',sec:'s',max:'Max',lengthAria:'Ringtone length in seconds',plays:'Your ringtone plays from',secStart:'Where it starts',to:'to',
 fine:'Fine-tune',fineHint:'Move the start or end by tenths of a second, for example to avoid cutting a word in half.',start:'Start',end:'End',
 playRt:'Play ringtone',cands:'Strongest parts of the song (auto-detected)',chorus:'Chorus (top pick)',part:'Part',
 fadeIn:'Fade in',fadeOut:'Fade out',norm:'Even out volume',rtName:'Ringtone name on your phone',
