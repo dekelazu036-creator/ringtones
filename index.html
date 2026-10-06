@@ -198,6 +198,28 @@ html.a-readable h1,html.a-readable .sname{font-family:Arial,"Arial Hebrew",Helve
 .mine .mb{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer;text-decoration:none;min-height:36px;display:inline-flex;align-items:center}
 .mine .mb.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .mine .mb.del{color:var(--muted)}
+/* "what now" card shown right after a ringtone is created */
+.next{display:flex;gap:16px;align-items:center;background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:14px}
+.next h3{margin:0 0 6px;font-size:16px}
+.next ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px;font-size:14.5px}
+.next .txt{flex:1 1 auto;min-width:0}
+.sheet{flex:none;width:118px;border-radius:14px 14px 6px 6px;background:var(--paper);border:1px solid var(--line);padding:8px 8px 6px;display:flex;flex-direction:column;gap:5px;position:relative}
+.sheet .icons{display:flex;gap:5px;justify-content:center;margin-bottom:2px}
+.sheet .icons i{width:18px;height:18px;border-radius:5px;background:var(--line)}
+.sheet .row{height:15px;border-radius:4px;background:var(--well,var(--bg));border:1px solid var(--line)}
+.sheet .row.hit{height:auto;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:10.5px;font-weight:700;padding:3px 5px;display:flex;align-items:center;gap:4px;line-height:1.2}
+.sheet .scroll{position:absolute;inset-inline-end:-14px;top:34px;bottom:30px;width:3px;border-radius:2px;background:var(--accent)}
+.sheet .scroll::after{content:"";position:absolute;bottom:-6px;left:-4px;border:5.5px solid transparent;border-top:7px solid var(--accent)}
+html.android .sheet{display:none}
+#helpBtn{min-width:34px;font-weight:800}
+dialog.help{border:1px solid var(--line);border-radius:16px;background:var(--paper);color:var(--ink);padding:18px;max-width:min(520px,calc(100vw - 32px));width:100%;max-height:calc(100dvh - 40px);overflow:auto}
+dialog.help::backdrop{background:rgba(5,8,15,.55)}
+dialog.help h2{margin:0;font-size:19px}
+dialog.help h3{font-size:15px;margin:14px 0 6px}
+dialog.help ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px}
+dialog.help .note{margin-top:12px}
+dialog.help .more{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:14px}
+dialog.help a{color:var(--accent)}
 code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 </style>
 
@@ -206,7 +228,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 <a class="skip" href="#main" data-i18n="skip"></a>
 <div class="wrap" dir="rtl">
   <header>
-    <div class="hrow"><h1 dir="ltr"><a class="logo" href="./" aria-label="SnipRing">Snip<span class="ring">Ring</span></a></h1><span class="hbtns"><button class="langbtn" id="a11yBtn" type="button" aria-haspopup="dialog" aria-controls="a11yPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="4.5" r="2" fill="currentColor"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0l-3.5 6M12 15l3.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-i18n="a11y"></span></button><button class="langbtn" id="lang" type="button" lang="en">English</button></span></div>
+    <div class="hrow"><h1 dir="ltr"><a class="logo" href="./" aria-label="SnipRing">Snip<span class="ring">Ring</span></a></h1><span class="hbtns"><button class="langbtn" id="helpBtn" type="button" aria-haspopup="dialog" data-i18n-aria="help">?</button><button class="langbtn" id="a11yBtn" type="button" aria-haspopup="dialog" aria-controls="a11yPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="4.5" r="2" fill="currentColor"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0l-3.5 6M12 15l3.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-i18n="a11y"></span></button><button class="langbtn" id="lang" type="button" lang="en">English</button></span></div>
     <p data-i18n="tagline"></p>
   </header>
 
@@ -222,6 +244,22 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     </div>
     <a href="accessibility.html" data-i18n="aStatement"></a>
   </div>
+
+  <dialog class="help" id="help" aria-labelledby="helpTitle">
+    <div class="a11y-head"><h2 id="helpTitle" data-i18n="help"></h2><button class="a2hs-x" id="helpClose" type="button" data-i18n-aria="close">✕</button></div>
+    <ol class="steps-h">
+      <li data-i18n="h1"></li>
+      <li data-i18n="h2"></li>
+    </ol>
+    <h3 data-i18n="guideSub"></h3>
+    <ol>
+      <li data-i18n="g1"></li>
+      <li data-i18n="g2"></li>
+      <li data-i18n="g3"></li>
+    </ol>
+    <p class="note" data-i18n="note"></p>
+    <p class="more"><a id="helpGuide" href="ringtone-iphone.html" data-i18n="guideLink"></a><a id="helpOther" href="ringtone-android.html" data-i18n="otherOs"></a><a id="helpVideo" href="ringtone-video.html" data-i18n="vidGuide"></a></p>
+  </dialog>
 
 <main id="main" tabindex="-1">
   <div class="a2hs" id="a2hs" hidden>
@@ -311,6 +349,14 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     </details>
 
     <label class="rtname"><span class="lbl" data-i18n="rtName"></span><input id="name" maxlength="40" value="" autocomplete="off"></label>
+
+    <div class="next" id="next" hidden>
+      <div class="txt">
+        <h3 data-i18n="nextH"></h3>
+        <ol><li data-i18n="next1"></li><li data-i18n="next2"></li></ol>
+      </div>
+      <div class="sheet" aria-hidden="true"><div class="icons"><i></i><i></i><i></i><i></i></div><div class="row"></div><div class="row"></div><div class="row"></div><div class="row hit"><svg width="10" height="10" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 0 0-5.5-6.8V3.5a1.5 1.5 0 0 0-3 0v.7A7 7 0 0 0 5 11v5l-2 2v1h18v-1z" fill="currentColor"/></svg><span data-i18n="useAs"></span></div><span class="scroll"></span></div>
+    </div>
 
     <div class="export">
       <button class="btn primary" id="export" data-i18n="create"></button>
@@ -703,7 +749,7 @@ function id3(title){
 }
 /* ---------- export: build the MP3, then hand it to the iOS share sheet ---------- */
 let ready=null,dlUrl=null,diag='';
-function invalidate(){ready=null;$('share').hidden=true;$('dl').hidden=true;$('export').hidden=false}
+function invalidate(){ready=null;$('next').hidden=true;$('share').hidden=true;$('dl').hidden=true;$('export').hidden=false}
 ['fin','fout','norm','name'].forEach(id=>$(id).addEventListener('input',invalidate));
 ['pointerdown'].forEach(ev=>cv.addEventListener(ev,invalidate));
 document.querySelectorAll('.nudge,#startHere').forEach(b=>b.addEventListener('click',invalidate));
@@ -728,6 +774,9 @@ $('export').addEventListener('click',async()=>{
     $('share').hidden=!viaShare;$('export').hidden=true;a.classList.toggle('primary',!viaShare);
     say(viaShare?t('sReady'):ANDROID?t('sReady'):t('sNoShare'));
     saveMine(ready,S.len);
+    $('next').hidden=false;
+    {const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');
+     requestAnimationFrame(()=>$('next').scrollIntoView({behavior:calm?'auto':'smooth',block:'center'}))}
   }finally{$('export').disabled=false}
 });
 $('share').addEventListener('click',async()=>{
@@ -753,7 +802,7 @@ g3:'אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים ל
 note:'באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29.5 שניות.',
 sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח את ',sFinding:'מחפש את הפזמון…',sLoaded:'השיר נטען. הקטע המסומן הוא ההצעה לפזמון.',
 sVideoFail:'לא הצלחנו לחלץ קול מהסרטון. נסו סרטון אחר, או קובץ MP3.',sTooBig:'הקובץ גדול מדי (מעל 400MB). נסו סרטון קצר יותר.',sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
-sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'מוכן. לחצו "הגדר כרינגטון" ובחרו "שימוש כצלצול".',
+sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'הרינגטון מוכן.',
 sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
 langBtn:'English',invH:'יצא טוב? 🎉',invP:'שלחו את SnipRing לחבר שגם רוצה רינגטון משלו.',invBtn:'שלח לחבר',invText:'הפכתי שיר לרינגטון באייפון בדקה, בלי אפליקציה 🎵 נסו:',invCopied:'הקישור הועתק. הדביקו אותו בוואטסאפ.',guideLink:'המדריך המלא',skip:'דלג לתוכן הראשי',editorH:'עורך הרינגטון',a11y:'נגישות',aBig:'הגדלת טקסט',aContrast:'ניגודיות גבוהה',aLinks:'הדגשת קישורים',aStill:'עצירת אנימציות',aFont:'גופן קריא',aReset:'איפוס',aStatement:'הצהרת נגישות',
 waveVal:'הרינגטון מתחיל ב‑{a} ומסתיים ב‑{b}. חיצים מזיזים בשנייה, Shift עם חץ בחמש שניות.',
@@ -765,9 +814,12 @@ g1_A:'לוחצים <b>צור רינגטון</b>, ואז <b>הורד MP3</b>. ה�
 g2_A:'פותחים <b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>רינגטון</b>.',
 g3_A:'לוחצים <b>+</b> (או "הצלילים שלי" ← <b>+</b>), ובוחרים את הקובץ מההורדות. זהו.',
 note_A:'באנדרואיד אין מגבלת אורך, אבל רינגטון קצר מ‑30 שניות מתאים לכל טלפון.',
-sReady_A:'מוכן. לחצו "הורד MP3", ואז בהגדרות ← צלילים ← רינגטון ← + בחרו את הקובץ.',
+sReady_A:'הרינגטון מוכן.',
 invText_A:'הפכתי שיר לרינגטון בדקה, בלי אפליקציה 🎵 נסו:',guideLink_A:'המדריך לאנדרואיד',
-mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
+mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
+nextH:'מה עכשיו?',next1:'לחצו <b>הגדר כרינגטון</b> למטה.',next2:'בתפריט שנפתח <b>גללו למטה</b> ובחרו <b>שימוש כצלצול</b>.',useAs:'שימוש כצלצול',
+next1_A:'לחצו <b>הורד MP3</b> למטה.',next2_A:'<b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>רינגטון</b> ← <b>+</b>, ובחרו את הקובץ מההורדות.',
+mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
 pick:'Choose a song or video',pickNote:'A song (MP3, M4A, WAV) or a video from your library, and its sound becomes your ringtone. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
@@ -783,7 +835,7 @@ g3:'If the share sheet doesn\'t open: <b>Download MP3</b>, then in Files long-pr
 note:'iPhone ringtones must be shorter than 30 seconds, so the maximum here is 29.5 seconds.',
 sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:'Finding the chorus…',sLoaded:'Song loaded. The highlighted part is our chorus pick.',
 sVideoFail:'Couldn\'t get the sound from this video. Try another video, or an MP3 file.',sTooBig:'This file is too large (over 400MB). Try a shorter video.',sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
-sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Ready. Tap "Set as ringtone" and choose "Use as Ringtone".',
+sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Your ringtone is ready.',
 sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
 langBtn:'עברית',invH:'Turned out great? 🎉',invP:'Send SnipRing to a friend who wants their own ringtone too.',invBtn:'Send to a friend',invText:'I turned a song into an iPhone ringtone in a minute, no app needed 🎵 Try it:',invCopied:'Link copied. Paste it in WhatsApp.',guideLink:'Full guide',skip:'Skip to main content',editorH:'Ringtone editor',a11y:'Accessibility',aBig:'Bigger text',aContrast:'High contrast',aLinks:'Highlight links',aStill:'Stop animations',aFont:'Readable font',aReset:'Reset',aStatement:'Accessibility statement',
 waveVal:'Ringtone starts at {a} and ends at {b}. Arrow keys move it by 1 second, Shift plus arrow by 5 seconds.',
@@ -795,9 +847,12 @@ g1_A:'Tap <b>Create ringtone</b>, then <b>Download MP3</b>. It saves to your Dow
 g2_A:'Open <b>Settings</b> → <b>Sound &amp; vibration</b> → <b>Ringtone</b>.',
 g3_A:'Tap <b>+</b> (or My sounds → <b>+</b>) and pick the file from Downloads. Done.',
 note_A:'Android has no length limit, but a ringtone under 30 seconds works on every phone.',
-sReady_A:'Ready. Tap "Download MP3", then Settings → Sound → Ringtone → + and pick the file.',
+sReady_A:'Your ringtone is ready.',
 invText_A:'I turned a song into a ringtone in a minute, no app needed 🎵 Try it:',guideLink_A:'Android guide',
-mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',mineSaved:'Also saved in "My ringtones" below.',mineEmpty:'No ringtones yet. Every ringtone you create is saved here automatically.'}};
+mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
+nextH:'What now?',next1:'Tap <b>Set as ringtone</b> below.',next2:'In the menu that opens, <b>scroll down</b> and choose <b>Use as Ringtone</b>.',useAs:'Use as Ringtone',
+next1_A:'Tap <b>Download MP3</b> below.',next2_A:'<b>Settings</b> → <b>Sound &amp; vibration</b> → <b>Ringtone</b> → <b>+</b>, and pick the file from Downloads.',
+mineSaved:'Also saved in "My ringtones" below.',mineEmpty:'No ringtones yet. Every ringtone you create is saved here automatically.'}};
 let lang=(()=>{try{const v=localStorage.getItem('snipring-lang');if(v==='he'||v==='en')return v}catch(e){}return /^he|^iw/i.test(navigator.language||'')?'he':'en'})();
 /* Android gets its own wording wherever a key has an "_A" twin */
 const t=k=>(ANDROID&&T[lang]&&T[lang][k+'_A'])||(T[lang]&&T[lang][k])||T.en[k]||k;
@@ -805,7 +860,8 @@ function applyLang(){
   const html=document.documentElement,rtl=lang==='he';html.lang=lang;html.dir=rtl?'rtl':'ltr';document.querySelector('.wrap').dir=rtl?'rtl':'ltr';
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=t(el.dataset.i18n)});
   document.querySelectorAll('[data-i18n-aria]').forEach(el=>el.setAttribute('aria-label',t(el.dataset.i18nAria)));
-  $('lang').textContent=t('langBtn');$('guideLink').href=ANDROID?(lang==='he'?'ringtone-android.html':'android-ringtone.html'):(lang==='he'?'ringtone-iphone.html':'iphone-ringtone.html');
+  $('lang').textContent=t('langBtn');{const he=lang==='he',ios=he?'ringtone-iphone.html':'iphone-ringtone.html',and=he?'ringtone-android.html':'android-ringtone.html';
+    $('helpGuide').href=ANDROID?and:ios;$('helpOther').href=ANDROID?ios:and;$('helpVideo').href=he?'ringtone-video.html':'video-ringtone.html'}$('guideLink').href=ANDROID?(lang==='he'?'ringtone-android.html':'android-ringtone.html'):(lang==='he'?'ringtone-iphone.html':'iphone-ringtone.html');
   if(song&&song._demo){$('songTitle').textContent=t('sample');$('badge').textContent=t('sampleBadge');if(!$('name').dataset.touched)$('name').value=t('sample')}
   $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
   if(cands.length)renderCands(),markCand();setIcon();syncAria();if(typeof renderMine==='function')renderMine();
@@ -845,6 +901,11 @@ $('inviteBtn').addEventListener('click',async()=>{
 $('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('song_loaded',{source:'demo',lang})});
 $('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();track('language_switched',{to:lang});say(t('sReady0'))});
 $('name').addEventListener('input',()=>{$('name').dataset.touched='1'});
+/* help: the full how-to in a popup, reachable from anywhere */
+$('helpBtn').addEventListener('click',()=>{const d=$('help');
+  if(d.showModal){d.showModal()}else{d.setAttribute('open','')}track('help_opened',{editor:$('editor').hidden?'no':'yes'})});
+$('helpClose').addEventListener('click',()=>{const d=$('help');d.close?d.close():d.removeAttribute('open');$('helpBtn').focus()});
+$('help').addEventListener('click',e=>{if(e.target===$('help'))$('helpClose').click()});
 /* ---------- my ringtones: kept in IndexedDB on this device only ---------- */
 let mine=[],mineAudio=null,mineUrl=null,minePlaying=null;
 function db(){return new Promise((res,rej)=>{if(!window.indexedDB)return rej();const r=indexedDB.open('snipring',1);
