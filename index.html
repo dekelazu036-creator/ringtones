@@ -43,6 +43,11 @@ h2{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;margi
 
 .deck{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:14px}
 .song{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.stitle{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sname{font-family:var(--display);font-size:34px;line-height:1;overflow-wrap:anywhere}
+.rtname{display:flex;flex-direction:column;gap:4px;flex:1 1 100%}
+.rtname input{font:inherit;font-size:17px;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.rtname input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .song label{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px}
 .song input{font-family:var(--display);font-size:34px;line-height:1;background:transparent;border:0;border-bottom:1px dashed var(--line);color:var(--ink);padding:2px 0;width:100%}
 .song input:focus{outline:none;border-bottom-color:var(--accent)}
@@ -113,7 +118,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 
   <div class="deck">
     <div class="song">
-      <label><span class="lbl">שם הרינגטון</span><input id="name" maxlength="60" value="שיר דוגמה"></label>
+      <div class="stitle"><span class="lbl">השיר</span><span class="sname" id="songTitle">שיר דוגמה</span></div>
       <span class="badge" id="badge">שיר דוגמה סינתטי</span>
       <span class="badge num" id="songLen">0:00</span>
     </div>
@@ -154,6 +159,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     </div>
 
     <div class="export">
+      <label class="rtname"><span class="lbl">איך הרינגטון ייקרא בטלפון</span><input id="name" maxlength="40" value="שיר דוגמה" autocomplete="off"></label>
       <button class="btn primary" id="export">צור רינגטון</button>
       <button class="btn primary" id="share" hidden>הגדר כרינגטון</button>
       <a class="btn" id="dl" hidden>הורד MP3</a>
@@ -360,7 +366,7 @@ async function loadFile(f){
     const ab=await f.arrayBuffer();const c=ensureCtx();
     song=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
     let fname=f.name;try{fname=decodeURIComponent(fname)}catch(e){}
-    $('name').value=fname.replace(/\.[^.]+$/,'').slice(0,60);$('badge').textContent=fname;
+    const nm=fname.replace(/\.[^.]+$/,'');$('songTitle').textContent=nm;$('name').value=nm.slice(0,40);$('badge').textContent=fname;
     $('songLen').textContent=fmtShort(song.duration);
     S.cursor=0;$('cursorT').textContent='0:00';
     analyse();ruler();say('השיר נטען. הקטע המסומן הוא ההצעה לפזמון. אפשר להזיז כל ידית בנפרד.');
@@ -394,6 +400,16 @@ function toMp3(clip){
   }catch(e){return null}
 }
 
+/* ID3v2.3 title tag (UTF-16) so the ringtone keeps the chosen name */
+function id3(title){
+  const u=[];for(const ch of title){const c=ch.codePointAt(0);if(c>0xffff){const v=c-0x10000;u.push(0xd800+(v>>10),0xdc00+(v&0x3ff))}else u.push(c)}
+  const body=new Uint8Array(1+2+u.length*2+2);body[0]=1;body[1]=0xff;body[2]=0xfe;
+  u.forEach((c,i)=>{body[3+i*2]=c&255;body[4+i*2]=c>>8});
+  const frame=new Uint8Array(10+body.length);frame.set([84,73,84,50],0);
+  const n=body.length;frame.set([(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255],4);frame.set(body,10);
+  const size=frame.length,tag=new Uint8Array(10+size);tag.set([73,68,51,3,0,0],0);
+  tag.set([(size>>21)&127,(size>>14)&127,(size>>7)&127,size&127],6);tag.set(frame,10);return tag;
+}
 /* ---------- export: build the MP3, then hand it to the iOS share sheet ---------- */
 let ready=null,dlUrl=null,diag='';
 function invalidate(){ready=null;$('share').hidden=true;$('dl').hidden=true;$('export').hidden=false}
@@ -409,7 +425,7 @@ $('export').addEventListener('click',async()=>{
     const mp3=toMp3(renderClip());
     if(!mp3){say('הקידוד נכשל. רעננו את הדף ונסו שוב.');return}
     const base=($('name').value.trim()||'Ringtone').replace(/[\\/:*?"<>|%]/g,'').trim()||'Ringtone';
-    ready=new File([mp3],base+' - ringtone.mp3',{type:'audio/mpeg'});
+    ready=new File([id3(base),mp3],base+'.mp3',{type:'audio/mpeg'});
     if(dlUrl)URL.revokeObjectURL(dlUrl);dlUrl=URL.createObjectURL(ready);
     const a=$('dl');a.href=dlUrl;a.download=ready.name;a.hidden=false;
     const hasShare=!!navigator.share;
