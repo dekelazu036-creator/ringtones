@@ -141,6 +141,8 @@ button:focus-visible,input:focus-visible,label.file:focus-within{outline:2px sol
 .a2hs p{margin:0;flex:1;font-size:14px;line-height:1.45}
 .a2hs-icon{color:var(--accent);flex:none;display:grid}
 .a2hs-x{flex:none;font:inherit;font-size:16px;background:none;border:0;color:var(--muted);cursor:pointer;padding:6px}
+.sitefoot{text-align:center;font-size:13px;color:var(--muted);padding-block:8px 24px}
+.sitefoot a{color:var(--muted)}
 .steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:st}
 .steps li{counter-increment:st;display:grid;grid-template-columns:36px 1fr;column-gap:12px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .steps li::before{content:counter(st);grid-row:span 2;width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-family:var(--mono)}
@@ -274,6 +276,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     </section>
   </div>
   <p class="note" data-i18n="note"></p>
+  <footer class="sitefoot"><a href="terms.html" data-i18n="terms"></a> · <a href="privacy.html" data-i18n="privacy"></a> · <span dir="ltr">hello@snipring.com</span></footer>
 </div>
 
 <script>
@@ -666,7 +669,7 @@ sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח
 sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
 sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'מוכן. לחצו "הגדר כרינגטון" ובחרו "שימוש כצלצול".',
 sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
-langBtn:'English',a2hs:'<b>הוסיפו את SnipRing למסך הבית:</b> לחצו על כפתור השיתוף בספארי ← <b>הוספה למסך הבית</b>. ככה הוא תמיד בהישג יד, כמו אפליקציה.',close:'סגירה',step1:'בוחרים שיר מהטלפון',step1s:'כל קובץ MP3, M4A או WAV',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות'},
+langBtn:'English',terms:'תנאי שימוש',privacy:'מדיניות פרטיות',a2hs:'<b>הוסיפו את SnipRing למסך הבית:</b> לחצו על כפתור השיתוף בספארי ← <b>הוספה למסך הבית</b>. ככה הוא תמיד בהישג יד, כמו אפליקציה.',close:'סגירה',step1:'בוחרים שיר מהטלפון',step1s:'כל קובץ MP3, M4A או WAV',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
 pick:'Choose a song',pickNote:'MP3, M4A, WAV and more. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
@@ -684,7 +687,7 @@ sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:
 sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
 sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Ready. Tap "Set as ringtone" and choose "Use as Ringtone".',
 sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
-langBtn:'עברית',a2hs:'<b>Add SnipRing to your Home Screen:</b> tap Share in Safari → <b>Add to Home Screen</b>. It opens like an app, one tap away.',close:'Close',step1:'Pick a song from your phone',step1s:'Any MP3, M4A or WAV file',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings'}};
+langBtn:'עברית',terms:'Terms of Use',privacy:'Privacy Policy',a2hs:'<b>Add SnipRing to your Home Screen:</b> tap Share in Safari → <b>Add to Home Screen</b>. It opens like an app, one tap away.',close:'Close',step1:'Pick a song from your phone',step1s:'Any MP3, M4A or WAV file',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings'}};
 let lang=(()=>{try{const v=localStorage.getItem('snipring-lang');if(v==='he'||v==='en')return v}catch(e){}return /^he|^iw/i.test(navigator.language||'')?'he':'en'})();
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
 function applyLang(){
