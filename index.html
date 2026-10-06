@@ -119,7 +119,17 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .btn.primary{background:var(--accent);color:var(--accent-ink)}
 .btn:disabled{opacity:.5;cursor:default}
 button:focus-visible,input:focus-visible,label.file:focus-within{outline:2px solid var(--accent);outline-offset:2px}
-.export{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.export{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;position:sticky;bottom:0;z-index:5;background:var(--paper);margin-inline:-14px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);border-radius:0 0 14px 14px}
+.export .btn{flex:1 1 auto}
+.export .status{flex:1 1 100%;margin:0}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:st}
+.steps li{counter-increment:st;display:grid;grid-template-columns:36px 1fr;column-gap:12px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.steps li::before{content:counter(st);grid-row:span 2;width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-family:var(--mono)}
+.steps b{font-size:15px}
+.steps span{font-size:13px;color:var(--muted)}
+.btn.big{font-size:17px;padding:14px 24px}
+.linkbtn{font:inherit;font-size:14px;background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;padding:4px 0}
+.adv .controls{margin-top:12px}
 .status{font-size:13.5px;color:var(--muted);margin:0;flex:1 1 220px;min-width:0}
 
 .guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
@@ -138,12 +148,19 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <p data-i18n="tagline"></p>
   </header>
 
+  <ol class="steps" id="steps">
+    <li><b data-i18n="step1"></b><span data-i18n="step1s"></span></li>
+    <li><b data-i18n="step2"></b><span data-i18n="step2s"></span></li>
+    <li><b data-i18n="step3"></b><span data-i18n="step3s"></span></li>
+  </ol>
+
   <div class="drop" id="drop">
-    <label class="btn primary file"><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg"></label>
+    <label class="btn primary file big"><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg"></label>
     <p data-i18n="pickNote"></p>
+    <button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button>
   </div>
 
-  <div class="deck">
+  <div class="deck" id="editor" hidden>
     <div class="song">
       <div class="stitle"><span class="lbl" data-i18n="song"></span><span class="sname" id="songTitle"></span></div>
       <span class="badge" id="badge"></span>
@@ -154,6 +171,8 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       <div class="wavebox" id="wavebox"><canvas id="wave" data-i18n-aria="waveAria"></canvas></div>
       <div class="ruler num" id="ruler"></div>
     </div>
+
+    <div class="field"><span class="lbl" data-i18n="cands"></span><div class="chips" id="cands"></div></div>
 
     <p class="hint" data-i18n="howStart"></p>
 
@@ -197,8 +216,8 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       </div>
     </div>
 
-    <div class="field"><span class="lbl" data-i18n="cands"></span><div class="chips" id="cands"></div></div>
-
+    <details class="fine adv">
+      <summary data-i18n="adv"></summary>
     <div class="controls">
       <div class="field"><div class="row"><label class="lbl" for="fin" data-i18n="fadeIn"></label><span class="num" id="finV">0.5</span></div>
         <input type="range" id="fin" min="0" max="3" step="0.1" value="0.5"></div>
@@ -206,9 +225,11 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
         <input type="range" id="fout" min="0" max="5" step="0.1" value="2"></div>
       <label class="switch"><input type="checkbox" id="norm" checked> <span data-i18n="norm"></span></label>
     </div>
+    </details>
+
+    <label class="rtname"><span class="lbl" data-i18n="rtName"></span><input id="name" maxlength="40" value="" autocomplete="off"></label>
 
     <div class="export">
-      <label class="rtname"><span class="lbl" data-i18n="rtName"></span><input id="name" maxlength="40" value="" autocomplete="off"></label>
       <button class="btn primary" id="export" data-i18n="create"></button>
       <button class="btn primary" id="share" hidden data-i18n="setRt"></button>
       <a class="btn" id="dl" hidden data-i18n="dl"></a>
@@ -525,7 +546,7 @@ async function loadFile(f){
     $('songLen').textContent=fmtShort(song.duration);
     S.cursor=0;$('cursorT').textContent='0:00';
     say(t('sFinding'));await new Promise(r=>setTimeout(r,30));
-    analyse();ruler();say(t('sLoaded'));
+    analyse();ruler();openEditor();say(t('sLoaded'));
   }catch(e){say(t('sOpenFail'))}
 }
 $('file').addEventListener('change',e=>loadFile(e.target.files[0]));
@@ -615,7 +636,7 @@ sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח
 sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
 sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'מוכן. לחצו "הגדר כרינגטון" ובחרו "שימוש כצלצול".',
 sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
-langBtn:'English'},
+langBtn:'English',step1:'בוחרים שיר מהטלפון',step1s:'כל קובץ MP3, M4A או WAV',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
 pick:'Choose a song',pickNote:'MP3, M4A, WAV and more. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
@@ -633,7 +654,7 @@ sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:
 sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
 sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Ready. Tap "Set as ringtone" and choose "Use as Ringtone".',
 sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
-langBtn:'עברית'}};
+langBtn:'עברית',step1:'Pick a song from your phone',step1s:'Any MP3, M4A or WAV file',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings'}};
 let lang=(()=>{try{const v=localStorage.getItem('snipring-lang');if(v==='he'||v==='en')return v}catch(e){}return /^he|^iw/i.test(navigator.language||'')?'he':'en'})();
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
 function applyLang(){
@@ -645,6 +666,9 @@ function applyLang(){
   $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
   if(cands.length)renderCands(),markCand();setIcon();
 }
+function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;
+  requestAnimationFrame(()=>{draw();if(was)ed.scrollIntoView({behavior:'smooth',block:'start'})})}
+$('tryDemo').addEventListener('click',()=>{openEditor();previewSel()});
 $('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();say(t('sReady0'))});
 $('name').addEventListener('input',()=>{$('name').dataset.touched='1'});
 /* ---------- start with the demo ---------- */
