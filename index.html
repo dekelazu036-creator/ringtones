@@ -259,6 +259,28 @@ ul.nf .ne{font-size:20px;line-height:1.2;flex:none}
 #nofile .btn{width:100%;margin-top:12px;padding:13px;border-radius:14px}
 #nofile p{margin:6px 0 0}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);max-width:calc(100vw - 32px)}
+.alt{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px}
+.altor{font-size:13px;color:var(--muted)}
+.altbtn{font:inherit;font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent);background:var(--paper);color:var(--accent);border-radius:999px;padding:8px 14px;cursor:pointer}
+.altbtn:hover{background:var(--accent-soft)}
+main.editing .drop .alt .altor{display:none}
+main.editing .drop .altbtn{padding:8px 12px;font-size:13.5px}
+.nfalt{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.recbox{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:12px;padding:16px;border-radius:18px;background:var(--well)}
+#recMeter{width:100%;height:70px;cursor:default}
+.rect{font-size:30px;font-weight:600}
+.recgo{width:76px;height:76px;border-radius:50%;border:4px solid var(--ink);background:transparent;display:grid;place-items:center;cursor:pointer;padding:0}
+.recgo .dot{width:54px;height:54px;border-radius:50%;background:#E5484D;transition:all .2s}
+.recgo[aria-pressed="true"] .dot{width:28px;height:28px;border-radius:7px}
+.recbox .status{text-align:center;margin:0;flex:none;min-height:1.5em}
+.styles{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin:6px 0 12px}
+.styles .chip{flex-direction:column;align-items:center;gap:2px;border-radius:14px;padding:10px 6px;font-size:13.5px;justify-content:center}
+.styles .chip b{font-size:22px}
+.styles .chip.sel-on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.gtempo{display:flex;justify-content:space-between;align-items:baseline}
+.genrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 8px}
+.genrow .btn,#genUse{border-radius:14px;padding:12px}
+#genUse{width:100%}
 dialog.help::backdrop{background:rgba(5,8,15,.55)}
 dialog.help h2{margin:0;font-size:19px}
 dialog.help h3{font-size:15px;margin:14px 0 6px}
@@ -269,7 +291,18 @@ dialog.help a{color:var(--accent)}
 .deck{border-radius:24px;padding:16px;gap:16px}
 .song{align-items:center}
 .sname{font-size:38px}
-.wavecard{display:flex;flex-direction:column;gap:6px}
+.wavecard{display:flex;flex-direction:column;gap:6px;position:relative}
+.zoom{align-self:flex-end;display:flex;align-items:center;gap:2px;background:color-mix(in srgb,var(--paper) 88%,transparent);border:1px solid var(--line);border-radius:999px;padding:2px;backdrop-filter:blur(6px)}
+.zoom button{font:inherit;font-size:18px;font-weight:700;width:32px;height:32px;border-radius:50%;border:0;background:transparent;color:var(--ink);cursor:pointer;line-height:1}
+.zoom button:disabled{opacity:.35;cursor:default}
+.zoom span{font-size:12px;min-width:2.6em;text-align:center;color:var(--muted)}
+.seg.modes{grid-template-columns:repeat(3,1fr)}
+.modes .chip{font-family:var(--body);font-size:13.5px;gap:5px;padding:11px 2px;align-items:center;white-space:nowrap}
+.modes .chip span{font-size:inherit;opacity:1}
+.seg.s4{grid-template-columns:repeat(4,1fr)}
+.fx .fxrow{display:flex;flex-direction:column;gap:6px}
+.fx .seg .chip{font-family:var(--body);font-size:13px}
+.fx .hint b{color:var(--ink)}
 .wavebox{border-radius:18px;background:radial-gradient(120% 140% at 50% 0%,var(--accent-soft),transparent 60%),var(--well);box-shadow:inset 0 0 0 1px var(--line)}
 canvas{height:150px}
 .ruler{padding-inline:4px}
@@ -325,9 +358,38 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <a href="accessibility.html" data-i18n="aStatement"></a>
   </div>
 
+  <dialog class="help" id="rec" aria-labelledby="recTitle">
+    <div class="a11y-head"><h2 id="recTitle" data-i18n="recH"></h2><button class="a2hs-x" id="recClose" type="button" data-i18n-aria="close">✕</button></div>
+    <p class="note" data-i18n="recP"></p>
+    <div class="recbox">
+      <canvas id="recMeter" aria-hidden="true"></canvas>
+      <span class="num rect" id="recT">0:00</span>
+      <button class="recgo" id="recGo" type="button" aria-pressed="false" data-i18n-aria="recStart"><span class="dot"></span></button>
+      <p class="status" id="recSt" role="status"></p>
+    </div>
+  </dialog>
+
+  <dialog class="help" id="gen" aria-labelledby="genTitle">
+    <div class="a11y-head"><h2 id="genTitle" data-i18n="genH"></h2><button class="a2hs-x" id="genClose" type="button" data-i18n-aria="close">✕</button></div>
+    <p class="note" data-i18n="genP"></p>
+    <span class="lbl" data-i18n="genStyle"></span>
+    <div class="styles" id="genStyles">
+      <button class="chip" type="button" data-style="marimba"><b aria-hidden="true">🪵</b><span data-i18n="stMarimba"></span></button>
+      <button class="chip" type="button" data-style="pop"><b aria-hidden="true">✨</b><span data-i18n="stPop"></span></button>
+      <button class="chip" type="button" data-style="retro"><b aria-hidden="true">👾</b><span data-i18n="stRetro"></span></button>
+      <button class="chip" type="button" data-style="chill"><b aria-hidden="true">🌙</b><span data-i18n="stChill"></span></button>
+      <button class="chip" type="button" data-style="bells"><b aria-hidden="true">🔔</b><span data-i18n="stBells"></span></button>
+    </div>
+    <div class="row gtempo"><label class="lbl" for="genTempo" data-i18n="genTempo"></label><span class="num" id="genTempoV">120</span></div>
+    <input type="range" id="genTempo" min="70" max="170" step="5" value="120">
+    <div class="genrow"><button class="btn" id="genPlay" type="button"></button><button class="btn" id="genNew" type="button" data-i18n="genNew"></button></div>
+    <button class="btn primary" id="genUse" type="button" data-i18n="genUse"></button>
+  </dialog>
+
   <dialog class="help" id="nofile" aria-labelledby="nfTitle">
     <div class="a11y-head"><h2 id="nfTitle" data-i18n="nfH"></h2><button class="a2hs-x" id="nfClose" type="button" data-i18n-aria="close">✕</button></div>
     <p data-i18n="nfP"></p>
+    <div class="nfalt"><button class="altbtn" id="nfRec" type="button"><span aria-hidden="true">🎙️</span><span data-i18n="recBtn"></span></button><button class="altbtn" id="nfGen" type="button"><span aria-hidden="true">🎹</span><span data-i18n="genBtn"></span></button></div>
     <ul class="nf">
       <li><span class="ne" aria-hidden="true">🎬</span><span data-i18n="nf1"></span></li>
       <li><span class="ne" aria-hidden="true">💬</span><span data-i18n="nf2"></span></li>
@@ -370,6 +432,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <h2 class="droph" id="dropH" data-i18n="dropH"></h2>
     <p class="dropsub" data-i18n="dropSub"></p>
     <label class="btn primary file big"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 16V4m0 0l-5 5m5-5l5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg,.mp4,.mov,.m4v"></label>
+    <div class="alt" role="group"><span class="altor" data-i18n="altOr"></span><button class="altbtn" id="recBtn" type="button" aria-haspopup="dialog"><span aria-hidden="true">🎙️</span><span data-i18n="recBtn"></span></button><button class="altbtn" id="genBtn" type="button" aria-haspopup="dialog"><span aria-hidden="true">🎹</span><span data-i18n="genBtn"></span></button></div>
     <ul class="trust"><li data-i18n="tr1"></li><li data-i18n="tr2"></li><li data-i18n="tr3"></li></ul>
     <button class="linkbtn nofile" id="noFile" type="button" aria-haspopup="dialog" data-i18n="noFile"></button>
     <div class="droplinks"><button class="watch" id="watchBtn" type="button" aria-haspopup="dialog"><span class="wi"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span data-i18n="watch"></span></button><button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button></div>
@@ -395,7 +458,12 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       <span class="badge num" id="songLen">0:00</span>
     </div>
 
+    <div class="seg modes" id="modes" role="group" data-i18n-aria="modeAria">
+      <button class="chip" type="button" data-mode="ring"><span aria-hidden="true">🔔</span><span data-i18n="mRing"></span></button><button class="chip" type="button" data-mode="text"><span aria-hidden="true">💬</span><span data-i18n="mText"></span></button><button class="chip" type="button" data-mode="alarm"><span aria-hidden="true">⏰</span><span data-i18n="mAlarm"></span></button>
+    </div>
+
     <div class="wavecard">
+      <div class="zoom" dir="ltr"><button type="button" id="zOut" data-i18n-aria="zoomOut">−</button><span class="num" id="zLbl">1×</span><button type="button" id="zIn" data-i18n-aria="zoomIn">+</button></div>
       <div class="wavebox" id="wavebox" role="slider" tabindex="0" aria-valuemin="0" data-i18n-aria="waveAria"><canvas id="wave" aria-hidden="true"></canvas></div>
       <div class="ruler num" id="ruler"></div>
     </div>
@@ -428,10 +496,16 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 
     <section class="panel">
       <h3><span class="pi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 6v6l4 2M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><label for="lenR" data-i18n="length"></label></h3>
-      <div class="seg" id="lens">
-        <button class="chip" data-len="10">10<span data-i18n="sec"></span></button><button class="chip" data-len="15">15<span data-i18n="sec"></span></button><button class="chip" data-len="20">20<span data-i18n="sec"></span></button><button class="chip" data-len="25">25<span data-i18n="sec"></span></button><button class="chip" data-len="29.5" data-i18n="max"></button>
-      </div>
+      <div class="seg" id="lens"></div>
       <input type="range" id="lenR" min="3" max="29.5" step="0.5" value="29" data-i18n-aria="lengthAria">
+    </section>
+
+    <section class="panel fx">
+      <h3><span class="pi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n="fxH"></span></h3>
+      <div class="fxrow"><span class="lbl" data-i18n="fxVol"></span><div class="seg s4" id="fxGain"><button class="chip" data-v="0" data-i18n="vol0"></button><button class="chip" data-v="3" data-i18n="vol1"></button><button class="chip" data-v="6" data-i18n="vol2"></button><button class="chip" data-v="9" data-i18n="vol3"></button></div></div>
+      <div class="fxrow"><span class="lbl" data-i18n="fxSpeed"></span><div class="seg" id="fxSpeed"><button class="chip" data-v="0.8">🐢</button><button class="chip" data-v="0.9" dir="ltr">0.9×</button><button class="chip" data-v="1" data-i18n="spd1"></button><button class="chip" data-v="1.12" dir="ltr">1.1×</button><button class="chip" data-v="1.25">🐇</button></div></div>
+      <div class="fxrow"><span class="lbl" data-i18n="fxLoop"></span><div class="seg s4" id="fxLoop"><button class="chip" data-v="1" data-i18n="loop1"></button><button class="chip" data-v="2" dir="ltr">2×</button><button class="chip" data-v="3" dir="ltr">3×</button><button class="chip" data-v="4" dir="ltr">4×</button></div></div>
+      <p class="hint" id="fxOut"></p>
     </section>
 
       <details class="fine">
@@ -463,7 +537,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <div class="next" id="next" hidden>
       <div class="txt">
         <h3 data-i18n="nextH"></h3>
-        <ol><li data-i18n="next1"></li><li data-i18n="next2"></li></ol>
+        <ol><li id="nx1"></li><li id="nx2"></li><li id="nx3" hidden></li></ol>
       </div>
       <div class="sheet" aria-hidden="true"><div class="icons"><i></i><i></i><i></i><i></i></div><div class="row"></div><div class="row"></div><div class="row"></div><div class="row hit"><svg width="10" height="10" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 0 0-5.5-6.8V3.5a1.5 1.5 0 0 0-3 0v.7A7 7 0 0 0 5 11v5l-2 2v1h18v-1z" fill="currentColor"/></svg><span data-i18n="useAs"></span></div><span class="scroll"></span></div>
     </div>
@@ -508,7 +582,13 @@ const $=id=>document.getElementById(id);
 const ANDROID=/Android/i.test(navigator.userAgent);
 if(ANDROID)document.documentElement.classList.add('android');
 let ctx=null, song=null, peaks=null, energy=null, FR=10; // energy frames per second
-const S={cursor:0,start:0,len:29,fin:.5,fout:2,norm:true,cand:0};
+const S={cursor:0,start:0,len:29,fin:.5,fout:2,norm:true,cand:0,mode:'ring',gain:0,speed:1,loop:1};
+/* what we're making: ringtone, text tone, or alarm — each with its own lengths and fades */
+const MODES={ring:{lens:[10,15,20,25,29.5],def:29,min:3,max:29.5,step:.5,fin:.5,fout:2},
+  text:{lens:[1,2,3,5,8],def:3,min:.5,max:10,step:.1,fin:.02,fout:.4},
+  alarm:{lens:[15,20,25,29.5],def:29.5,min:3,max:29.5,step:.5,fin:3,fout:2}};
+const M=()=>MODES[S.mode];
+let Z=1,V0=0; // waveform zoom: Z× magnification, view starts at V0 seconds
 let cands=[];
 
 function ensureCtx(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
@@ -549,14 +629,14 @@ function demoSong(){
 function analyse(){
   const ch=song.numberOfChannels,n=song.length,sr=song.sampleRate;
   const a=song.getChannelData(0),b=ch>1?song.getChannelData(1):a;
-  const P=1200;peaks=new Float32Array(P);
+  const P=4000;peaks=new Float32Array(P);Z=1;V0=0;$('zLbl').textContent='1×';$('zOut').disabled=true;$('zIn').disabled=song.duration<6;
   const bs=Math.max(1,Math.floor(n/P));
   for(let p=0;p<P;p++){let m=0;const e=Math.min(n,(p+1)*bs);for(let i=p*bs;i<e;i+=4){const v=Math.abs(a[i])+Math.abs(b[i]);if(v>m)m=v}peaks[p]=m/2}
   const hop=Math.floor(sr/FR),F=Math.floor(n/hop);energy=new Float32Array(F);
   for(let f=0;f<F;f++){let s=0;const o=f*hop;for(let i=0;i<hop;i+=2){const v=(a[o+i]+b[o+i])/2;s+=v*v}energy[f]=Math.sqrt(s/(hop/2))}
   findCandidates();
 }
-const MAXLEN=29.5,MINLEN=3,DEFLEN=29;
+const MAXLEN=29.5;
 /* Chorus finder: chroma self-similarity + loudness.
    A chorus is the loud part of a song that repeats, so we look for the window
    whose harmony recurs elsewhere in the song most strongly. */
@@ -648,7 +728,7 @@ function chorusCandidates(song, winSec) {
 }
 
 function energyCandidates(){
-  const F=energy.length,W=Math.min(F,Math.round(Math.min(DEFLEN,song.duration)*FR));
+  const F=energy.length,W=Math.min(F,Math.round(Math.min(M().def,song.duration)*FR));
   const pre=new Float64Array(F+1);for(let i=0;i<F;i++)pre[i+1]=pre[i]+energy[i];
   const mean=(s,w)=>(pre[Math.min(F,s+w)]-pre[Math.max(0,s)])/Math.max(1,Math.min(F,s+w)-Math.max(0,s));
   const scores=[];for(let s=0;s+W<=F;s+=5)scores.push([mean(s,W),s]);
@@ -666,7 +746,7 @@ function findCandidates(){
   if(!cands.length)cands=[{t:0,score:0}];
   renderCands();pickCand(0);
 }
-function pickCand(i){S.cand=i;const t=cands[i].t,room=song.duration-t,L=Math.min(DEFLEN,MAXLEN);
+function pickCand(i){S.cand=i;const t=cands[i].t,room=song.duration-t,L=Math.min(M().def,MAXLEN);
   if(room>=Math.min(L,12))setRange(t,t+Math.min(L,room),'start');else setRange(t,t+L,'move');markCand()}
 function renderCands(){
   const box=$('cands');box.innerHTML='';
@@ -681,11 +761,13 @@ function setRange(a,b,mode){
   const D=song.duration,r=v=>Math.round(v*10)/10;
   if(mode==='move'){const len=Math.min(b-a,MAXLEN,D);a=Math.max(0,Math.min(D-len,a));b=a+len}
   a=Math.max(0,Math.min(D,a));b=Math.max(0,Math.min(D,b));
-  if(mode==='start'){ if(b-a>MAXLEN)b=Math.min(D,a+MAXLEN); if(b-a<MINLEN){b=Math.min(D,a+MINLEN);a=Math.max(0,b-MINLEN)} }
-  else if(mode==='end'){ if(b-a>MAXLEN)a=Math.max(0,b-MAXLEN); if(b-a<MINLEN){a=Math.max(0,b-MINLEN);b=Math.min(D,a+MINLEN)} }
+  const MX=Math.min(MAXLEN,M().max),MN=Math.min(M().min,D);
+  if(mode==='move'&&b-a>MX)b=a+MX;
+  if(mode==='start'){ if(b-a>MX)b=Math.min(D,a+MX); if(b-a<MN){b=Math.min(D,a+MN);a=Math.max(0,b-MN)} }
+  else if(mode==='end'){ if(b-a>MX)a=Math.max(0,b-MX); if(b-a<MN){a=Math.max(0,b-MN);b=Math.min(D,a+MN)} }
   S.start=r(a);S.len=Math.max(0,r(b)-r(a));
-  $('tStart').textContent=fmt(S.start);$('sumA').textContent=fmtShort(S.start);$('sumB').textContent=fmtShort(S.start+S.len);syncTime();$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);syncAria();$('lenR').value=S.len;[...$('lens').children].forEach(b=>b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05));
-  draw();
+  $('tStart').textContent=fmt(S.start);$('sumA').textContent=fmtShort(S.start);$('sumB').textContent=fmtShort(S.start+S.len);syncTime();$('tEnd').textContent=fmt(S.start+S.len);syncAria();$('lenR').value=S.len;[...$('lens').children].forEach(b=>b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05));
+  refreshOut();follow();draw();
 }
 function syncTime(){const a=document.activeElement;if(a&&(a.id==='tm'||a.id==='ts'))return;
   const m=Math.floor(S.start/60),sec=Math.round((S.start-m*60)*10)/10;$('tm').value=m;$('ts').value=sec<10?'0'+sec:sec}
@@ -703,14 +785,15 @@ function draw(playT){
   const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
   if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
   const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
-  const D=song.duration,x0=S.start/D*w,x1=(S.start+S.len)/D*w,acc=css('--accent'),wave=css('--wave'),ink=css('--ink');
+  const D=song.duration,VD=D/Z,X=t=>(t-V0)/VD*w,x0=X(S.start),x1=X(S.start+S.len),acc=css('--accent'),wave=css('--wave'),ink=css('--ink');
   const rr=(x,y,ww,hh,r)=>{g.beginPath();g.roundRect?g.roundRect(x,y,ww,hh,r):g.rect(x,y,ww,hh)};
   // selected window: soft fill and a glowing outline
   g.fillStyle=css('--accent-soft');rr(x0,6,x1-x0,h-12,12);g.fill();
   g.save();g.shadowColor=acc;g.shadowBlur=14;g.strokeStyle=acc;g.lineWidth=2;rr(x0+1,7,x1-x0-2,h-14,12);g.stroke();g.restore();
   // rounded bars; inside the window they light up, and fill in as the ringtone plays
-  const ph=playT!=null?playT/D*w:-1,step=5,bw=3,mid=h/2;
-  for(let x=2;x<w-1;x+=step){const p=peaks[Math.floor(x/w*peaks.length)]||0,bh=Math.max(3,p*(h-34));
+  const ph=playT!=null?X(playT):-1,step=5,bw=3,mid=h/2;
+  for(let x=2;x<w-1;x+=step){const tt=V0+x/w*VD,i0=Math.floor(tt/D*peaks.length),i1=Math.max(i0+1,Math.floor((tt+step/w*VD)/D*peaks.length));
+    let p=0;for(let i=i0;i<i1&&i<peaks.length;i++)if(peaks[i]>p)p=peaks[i];const bh=Math.max(3,p*(h-34));
     const inside=x>=x0&&x<=x1;
     g.globalAlpha=inside?(ph>=0&&x>ph?.55:1):.55;g.fillStyle=inside?acc:wave;rr(x,mid-bh/2,bw,bh,1.5);g.fill()}
   g.globalAlpha=1;
@@ -718,19 +801,28 @@ function draw(playT){
   for(const x of [x0,x1]){g.fillStyle=acc;rr(x-6,mid-22,12,44,6);g.fill();
     g.fillStyle=css('--accent-ink');g.fillRect(x-2,mid-9,1.5,18);g.fillRect(x+0.5,mid-9,1.5,18)}
   const ct=playT!=null?playT:S.cursor;
-  if(ct!=null){const px=ct/D*w;g.fillStyle=ink;g.fillRect(px-1,4,2,h-8);g.beginPath();g.arc(px,6,4.5,0,7);g.fill()}
+  if(ct!=null){const px=X(ct);g.fillStyle=ink;g.fillRect(px-1,4,2,h-8);g.beginPath();g.arc(px,6,4.5,0,7);g.fill()}
 }
-function ruler(){const D=song.duration,r=$('ruler');r.innerHTML='';for(let i=0;i<=4;i++){const s=document.createElement('span');s.textContent=fmtShort(D*i/4);r.appendChild(s)}}
+function ruler(){const D=song.duration,VD=D/Z,r=$('ruler');r.innerHTML='';for(let i=0;i<=4;i++){const s=document.createElement('span');s.textContent=Z>1&&VD<20?fmt(V0+VD*i/4):fmtShort(V0+VD*i/4);r.appendChild(s)}}
+/* zoom: keep the selection in view; × buttons step 2× up to a ~3 s window */
+function follow(){if(Z<=1||!song)return;const VD=song.duration/Z,D=song.duration;let v=V0;
+  if(S.start<V0||S.start+S.len>V0+VD)v=S.len<VD?S.start-(VD-S.len)/2:S.start;
+  v=Math.max(0,Math.min(D-VD,v));if(v!==V0){V0=v;ruler()}}
+function setZoom(z){if(!song)return;const D=song.duration,zmax=Math.max(1,Math.floor(D/3));Z=Math.max(1,Math.min(zmax,z));
+  const VD=D/Z,c=S.start+S.len/2;V0=Math.max(0,Math.min(D-VD,c-VD/2));
+  $('zLbl').textContent=(Z<10?Z.toFixed(Z%1?1:0):Math.round(Z))+'×';$('zOut').disabled=Z<=1;$('zIn').disabled=Z>=zmax;ruler();draw();track('zoom',{z:Math.round(Z)})}
+$('zIn').addEventListener('click',()=>setZoom(Z*2));
+$('zOut').addEventListener('click',()=>setZoom(Z/2));
 new ResizeObserver(()=>draw()).observe(cv);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>draw());
 new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
 let drag=null;
-const tAt=e=>{const r=cv.getBoundingClientRect();return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*song.duration};
+const tAt=e=>{const r=cv.getBoundingClientRect();return V0+Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*song.duration/Z};
 cv.addEventListener('pointerdown',e=>{
   if(!song)return;
   const r=cv.getBoundingClientRect(),x=e.clientX-r.left,w=r.width,D=song.duration;
-  const xs=S.start/D*w,xe=(S.start+S.len)/D*w,ds=Math.abs(x-xs),de=Math.abs(x-xe),t=tAt(e);
+  const VD=D/Z,xs=(S.start-V0)/VD*w,xe=(S.start+S.len-V0)/VD*w,ds=Math.abs(x-xs),de=Math.abs(x-xe),t=tAt(e);
   if(Math.min(ds,de)<=24)drag={mode:ds<=de?'start':'end'};
   else drag={mode:(t>S.start&&t<S.start+S.len)?'move':'tap',off:t-S.start,x0:e.clientX,moved:false,t};
   cv.setPointerCapture(e.pointerId);S.cand=-1;markCand();
@@ -761,7 +853,25 @@ function goTyped(){const m=parseFloat($('tm').value)||0,sec=parseFloat($('ts').v
   S.cand=-1;markCand();document.activeElement&&document.activeElement.blur();startAt(t);syncTime();invalidate()}
 $('goTime').addEventListener('click',goTyped);
 function setLen(L){S.cand=-1;markCand();setRange(S.start,S.start+L,'move');invalidate()}
-$('lens').addEventListener('click',e=>{const b=e.target.closest('[data-len]');if(b){setLen(+b.dataset.len);previewSel()}});
+function renderLens(){const m=M(),box=$('lens');box.innerHTML='';box.style.gridTemplateColumns='repeat('+m.lens.length+',1fr)';
+  m.lens.forEach(L=>{const b=document.createElement('button');b.className='chip';b.type='button';b.dataset.len=L;
+    if(L===29.5)b.textContent=t('max');else{b.textContent=L;const u=document.createElement('span');u.textContent=t('sec');b.appendChild(u)}box.appendChild(b)});
+  const r=$('lenR');r.min=m.min;r.max=m.max;r.step=m.step;
+  [...box.children].forEach(b=>{b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05);b.setAttribute('aria-pressed',String(b.classList.contains('sel-on')))})}
+function setMode(m,user){if(!MODES[m])return;S.mode=m;const c=M();
+  [...$('modes').children].forEach(b=>{const on=b.dataset.mode===m;b.classList.toggle('sel-on',on);b.setAttribute('aria-pressed',String(on))});
+  S.fin=c.fin;S.fout=c.fout;$('fin').value=S.fin;$('fout').value=S.fout;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
+  renderLens();if(song){setRange(S.start,S.start+c.def,'move');}renderNext();invalidate();
+  if(user){track('mode_changed',{mode:m});if(song)previewSel()}}
+$('modes').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setMode(b.dataset.mode,true)});
+/* effects: volume boost, speed (pitch and tempo together), and repeat */
+function outLen(){return Math.min(MAXLEN,S.len/S.speed*S.loop)}
+function refreshOut(){const L=outLen();$('tLen').textContent=L.toFixed(1);
+  const fx=S.gain||S.speed!==1||S.loop>1;$('fxOut').innerHTML=fx?t('fxOut').replace('{n}','<b class="num">'+L.toFixed(1)+'</b>'):t('fxNone');
+  [['fxGain','gain'],['fxSpeed','speed'],['fxLoop','loop']].forEach(([id,k])=>[...$(id).children].forEach(b=>{const on=Math.abs(+b.dataset.v-S[k])<.001;b.classList.toggle('sel-on',on);b.setAttribute('aria-pressed',String(on))}))}
+[['fxGain','gain'],['fxSpeed','speed'],['fxLoop','loop']].forEach(([id,k])=>$(id).addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(!b)return;
+  S[k]=+b.dataset.v;refreshOut();invalidate();track('fx',{k,v:S[k]});previewSel()}));
+$('lens').addEventListener('click',e=>{const b=e.target.closest('[data-len]');if(b){setLen(Math.min(+b.dataset.len,M().max));previewSel()}});
 $('lenR').addEventListener('input',e=>setLen(+e.target.value));
 $('lenR').addEventListener('change',()=>previewSel());
 ['tm','ts'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();goTyped()}}));
@@ -797,8 +907,13 @@ function startPlayback(at,len,fades){
   const me=src;src.onended=()=>{if(playing&&src===me){playing=false;if(mode==='full'){S.cursor=Math.min(song.duration,from+len)}setIcon();cancelAnimationFrame(raf);draw()}};
   const loop=()=>{if(!playing)return;const p=pos();if(mode==='full'){$('cursorT').textContent=fmtShort(p)}draw(p);raf=requestAnimationFrame(loop)};loop();
 }
-function previewSel(tail){mode='sel';const len=Math.min(S.len,song.duration-S.start);
-  if(tail&&len>4)startPlayback(S.start+len-4,4,false);else startPlayback(S.start,len,true)}
+function previewSel(tail){
+  if(playing)stopPreview();mode='sel';
+  const c=ensureCtx(),clip=processClip(),b=c.createBuffer(2,clip.n,clip.sr);b.copyToChannel(clip.chans[0],0);b.copyToChannel(clip.chans[1],1);
+  const dur=clip.n/clip.sr,off=tail&&dur>4?dur-4:0,seg=clip.seg/clip.sr;
+  src=c.createBufferSource();src.buffer=b;src.connect(c.destination);t0=c.currentTime+.05;from=0;src.start(t0,off);playing=true;setIcon();
+  const me=src;src.onended=()=>{if(playing&&src===me){playing=false;setIcon();cancelAnimationFrame(raf);draw()}};
+  const loop=()=>{if(!playing||mode!=='sel')return;const e=off+Math.max(0,c.currentTime-t0);draw(S.start+(e%seg)*S.speed);raf=requestAnimationFrame(loop)};loop()}
 function playFull(at){mode='full';startPlayback(at,song.duration-at,false)}
 function preview(){previewSel()}
 function stopPreview(){if(playing&&mode==='full')S.cursor=Math.round(pos()*10)/10;playing=false;try{src&&src.stop()}catch(e){}cancelAnimationFrame(raf);setIcon();$('cursorT').textContent=fmtShort(S.cursor||0);draw()}
@@ -817,28 +932,141 @@ async function loadFile(f){
     const ab=await f.arrayBuffer();const c=ensureCtx();
     song=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
     let fname=f.name;try{fname=decodeURIComponent(fname)}catch(e){}
-    const nm=fname.replace(/\.[^.]+$/,'');$('songTitle').textContent=nm;$('name').value=nm.slice(0,40);$('badge').textContent=fname;
-    $('songLen').textContent=fmtShort(song.duration);
-    S.cursor=0;$('cursorT').textContent='0:00';
-    say(t('sFinding'));await new Promise(r=>setTimeout(r,30));
-    analyse();ruler();openEditor();say(t('sLoaded'));
-    track('song_loaded',{source:isVideo?'video':'file',minutes:Math.round(song.duration/60),lang});
+    const nm=fname.replace(/\.[^.]+$/,'');await useSong(song,nm,isVideo?'video':'file',fname);
   }catch(e){say(isVideo?t('sVideoFail'):t('sOpenFail'));track('song_open_failed',{ext:(f.name.split('.').pop()||'').toLowerCase()})}
 }
 $('file').addEventListener('change',e=>loadFile(e.target.files[0]));
+/* any decoded/generated audio → editor (recordings and original ringtones use this too) */
+async function useSong(buf,name,source,badge){
+  stopPreview();song=buf;invalidate();
+  $('songTitle').textContent=name;$('name').value=name.slice(0,40);delete $('name').dataset.touched;$('badge').textContent=badge||'';
+  $('songLen').textContent=fmtShort(song.duration);S.cursor=0;$('cursorT').textContent='0:00';
+  say(t('sFinding'));await new Promise(r=>setTimeout(r,30));
+  analyse();ruler();openEditor();say(t('sLoaded'));previewSel();
+  track('song_loaded',{source,seconds:Math.round(song.duration),lang});
+}
+const closeDlg=d=>{d.close?d.close():d.removeAttribute('open')},openDlg=d=>{d.showModal?d.showModal():d.setAttribute('open','')};
+[['rec','recClose'],['gen','genClose']].forEach(([d,c])=>{$(c).addEventListener('click',()=>closeDlg($(d)));$(d).addEventListener('click',e=>{if(e.target===$(d))closeDlg($(d))})});
+
+/* ---------- record from the microphone (stays on the device) ---------- */
+let rec=null;
+function recUI(on){$('recGo').setAttribute('aria-pressed',String(on));$('recGo').setAttribute('aria-label',on?t('recStop'):t('recStart'))}
+function openRec(from){stopPreview();$('recT').textContent='0:00';$('recSt').textContent=t('recReady');recUI(false);drawMeter(null);openDlg($('rec'));track('rec_opened',{from})}
+function drawMeter(lv){const c=$('recMeter'),dpr=window.devicePixelRatio||1,w=c.clientWidth||300,h=c.clientHeight||70;
+  if(c.width!==Math.round(w*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr)}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);g.fillStyle=css('--accent');
+  const hist=(rec&&rec.hist)||[];for(let i=0;i<Math.floor(w/5);i++){const v=hist[hist.length-Math.floor(w/5)+i]||0,bh=Math.max(3,v*h*.95);
+    g.beginPath();g.roundRect?g.roundRect(i*5,(h-bh)/2,3,bh,1.5):g.rect(i*5,(h-bh)/2,3,bh);g.fill()}}
+async function startRec(){
+  if(!navigator.mediaDevices||!window.MediaRecorder){$('recSt').textContent=t('recNo');track('rec_failed',{why:'unsupported'});return}
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){$('recSt').textContent=t('recDenied');track('rec_failed',{why:e&&e.name||'error'});return}
+  const c=ensureCtx(),an=c.createAnalyser();an.fftSize=1024;const srcN=c.createMediaStreamSource(stream);srcN.connect(an);
+  const mr=new MediaRecorder(stream),chunks=[];mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  rec={mr,stream,an,srcN,chunks,t0:performance.now(),hist:[],buf:new Float32Array(1024)};
+  mr.onstop=()=>finishRec();mr.start(250);recUI(true);$('recSt').textContent=t('recOn');track('rec_started');
+  const tick=()=>{if(!rec||rec.mr.state!=='recording')return;const el=(performance.now()-rec.t0)/1000;$('recT').textContent=fmtShort(el);
+    rec.an.getFloatTimeDomainData(rec.buf);let pk=0;for(const v of rec.buf)pk=Math.max(pk,Math.abs(v));rec.hist.push(Math.min(1,pk*1.6));drawMeter();
+    if(el>=60){stopRec();return}requestAnimationFrame(tick)};tick();
+}
+function stopRec(){if(rec&&rec.mr.state==='recording')rec.mr.stop()}
+async function finishRec(){const r=rec;rec=null;recUI(false);r.stream.getTracks().forEach(tr=>tr.stop());try{r.srcN.disconnect()}catch(e){}
+  $('recSt').textContent=t('sFinding');
+  try{const blob=new Blob(r.chunks,{type:r.mr.mimeType||'audio/mp4'}),ab=await blob.arrayBuffer(),c=ensureCtx();
+    const buf=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
+    if(buf.duration<.3)throw new Error('short');
+    closeDlg($('rec'));const d=new Date(),nm=t('recName')+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+    track('rec_done',{seconds:Math.round(buf.duration)});useSong(buf,nm,'record',t('recBadge'));
+  }catch(e){$('recSt').textContent=t('recFail');track('rec_failed',{why:'decode'})}}
+$('recGo').addEventListener('click',()=>rec?stopRec():startRec());
+$('rec').addEventListener('close',()=>{if(rec){rec.mr.onstop=null;try{rec.mr.stop()}catch(e){}rec.stream.getTracks().forEach(tr=>tr.stop());rec=null;recUI(false)}});
+$('recBtn').addEventListener('click',()=>openRec('hero'));
+$('nfRec').addEventListener('click',()=>{closeDlg($('nofile'));openRec('nofile')});
+
+/* ---------- original ringtones: SnipRing composes a new melody (no copyright involved) ---------- */
+const G={style:'marimba',seed:1+Math.floor(Math.random()*9999),bpm:120,song:null,src:null};
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function compose(style,seed,bpm){
+  const R=rng(seed*7919+style.length*31),pick=a=>a[Math.floor(R()*a.length)];
+  const sr=44100,beat=60/bpm,bar=4*beat,bars=12,dur=bars*bar+2,n=Math.ceil(dur*sr),L=new Float32Array(n),Rt=new Float32Array(n);
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  const minor=style==='chill',scale=minor?[0,3,5,7,10]:[0,2,4,7,9];
+  const root=pick([60,62,63,65,67])-(style==='bells'?0:0);
+  const progs=minor?[[0,-4,-2,-5],[0,5,-2,3],[0,-2,-4,-5]]:[[0,7,9,5],[0,5,7,0],[9,5,0,7],[0,9,5,7]];
+  const prog=pick(progs);
+  // wavetables
+  const TN=2048,table=amps=>{const tb=new Float32Array(TN);for(let k=0;k<amps.length;k++)if(amps[k])for(let i=0;i<TN;i++)tb[i]+=amps[k]*Math.sin(2*Math.PI*(k+1)*i/TN);let m=0;for(const v of tb)m=Math.max(m,Math.abs(v));for(let i=0;i<TN;i++)tb[i]/=m;return tb};
+  const SAW=table(Array.from({length:14},(_,k)=>1/(k+1))),SQR=table(Array.from({length:15},(_,k)=>(k%2?0:1/(k+1)))),SOFT=table([1,.35,.12,.05]);
+  const put=(i,v,pan)=>{if(i>=0&&i<n){L[i]+=v*(1-pan*.6);Rt[i]+=v*(1+pan*.6)}};
+  const note=(t,m,len,vel,pan=0)=>{const f=hz(m),s0=Math.floor(t*sr);
+    if(style==='marimba'){const N=Math.floor(sr*1.2);for(let i=0;i<N;i++){const x=i/sr;put(s0+i,vel*(Math.sin(6.2832*f*x)+.35*Math.sin(6.2832*4*f*x)*Math.exp(-x/.05)+.08*Math.sin(6.2832*9.9*f*x)*Math.exp(-x/.015))*Math.exp(-x/.32)*Math.min(1,x/.0015),pan)}}
+    else if(style==='bells'){const P=[[1,1,1.8],[2.76,.45,.9],[5.4,.22,.45],[8.93,.1,.25]],N=Math.floor(sr*2);for(let i=0;i<N;i++){const x=i/sr;let v=0;for(const [r,a,d] of P)v+=a*Math.sin(6.2832*f*r*x)*Math.exp(-x/d);put(s0+i,vel*.7*v*Math.min(1,x/.002),pan)}}
+    else if(style==='retro'){const N=Math.floor(sr*len*.92);for(let i=0;i<N;i++){const x=i/sr,ph=(f*x)%1;put(s0+i,vel*.55*(ph<.25?1:-1)*(1-.4*x/len)*Math.min(1,x/.002)*Math.min(1,(N-i)/200),pan)}}
+    else if(style==='pop'){const N=Math.floor(sr*(len+.12));let ph1=0,ph2=0,lp=0;for(let i=0;i<N;i++){const x=i/sr;ph1=(ph1+f*1.003/sr)%1;ph2=(ph2+f*.997/sr)%1;
+        const raw=.5*(SAW[(ph1*TN)|0]+SAW[(ph2*TN)|0]),cut=.08+.5*Math.exp(-x/.15);lp+=cut*(raw-lp);
+        const env=Math.min(1,x/.008)*(x<len?(.65+.35*Math.exp(-x/.12)):.65*Math.exp(-(x-len)/.05));put(s0+i,vel*.5*lp*env,pan)}}
+    else {const N=Math.floor(sr*1.8);for(let i=0;i<N;i++){const x=i/sr;put(s0+i,vel*.8*(Math.sin(6.2832*f*x)+.25*Math.sin(6.2832*2*f*x)*Math.exp(-x/.3))*Math.exp(-x/.9)*Math.min(1,x/.004),pan)}}};
+  const pad=(t,ms,len,vel)=>{const s0=Math.floor(t*sr),N=Math.floor(sr*(len+.4));ms.forEach((m,k)=>{const f=hz(m);let ph=R();for(let i=0;i<N;i++){const x=i/sr;ph=(ph+f/sr)%1;
+    const env=Math.min(1,x/.35)*(x<len?1:Math.exp(-(x-len)/.15));put(s0+i,vel*SOFT[(ph*TN)|0]*env,(k-1)*.5)}})};
+  const bassN=(t,m,len,vel)=>{const f=hz(m),s0=Math.floor(t*sr),N=Math.floor(sr*len);let ph=0;for(let i=0;i<N;i++){const x=i/sr;ph=(ph+f/sr)%1;
+    const v=style==='retro'?(ph<.5?4*ph-1:3-4*ph):SOFT[(ph*TN)|0];put(s0+i,vel*v*Math.min(1,x/.005)*Math.min(1,(N-i)/300)*(style==='pop'?Math.exp(-x/.4):1),0)}};
+  const kick=(t,v)=>{const s0=Math.floor(t*sr);let ph=0;for(let i=0;i<sr*.25;i++){const x=i/sr;ph+=6.2832*(48+110*Math.exp(-x/.03))/sr;put(s0+i,v*Math.sin(ph)*Math.exp(-x/.09),0)}};
+  const noise=(t,v,dec,pan=0)=>{const s0=Math.floor(t*sr);let lp=0;for(let i=0;i<sr*dec*5;i++){const w=R()*2-1;lp=w-lp*.5;put(s0+i,v*(style==='retro'?Math.sign(w)*.6:lp*.5)*Math.exp(-i/sr/dec),pan)}};
+  // melody: a 2‑bar motif, answered, then a higher B section, then A again ending on the root
+  const deg=d=>{const o=Math.floor(d/5),k=((d%5)+5)%5;return scale[k]+12*o};
+  const motif=(start,len,hi)=>{const out=[];let d=start;for(let s=0;s<len*8;s++){const strong=s%4===0;if(R()<(strong?.85:.45)){
+      d+=pick([-2,-1,-1,0,1,1,2]);d=Math.max(hi?3:0,Math.min(hi?11:8,d));out.push([s,d,R()<.25?2:1])}}return out};
+  const A=motif(2+Math.floor(R()*3),2,false),B=motif(5+Math.floor(R()*3),2,true),oct=style==='bells'?12:style==='retro'?12:style==='pop'?0:12;
+  const play=(mot,barOff,vary)=>{for(const [s,d,l] of mot){let dd=d;if(vary&&s>=12&&R()<.5)dd+=pick([-1,1]);note(barOff*bar+s*beat/2,root+oct+deg(dd),l*beat/2,.32,.15)}};
+  const sec=['A','A2','B','B2','A','END'];
+  sec.forEach((k,i)=>{const b0=i*2;if(k==='A')play(A,b0,false);else if(k==='A2')play(A,b0,true);else if(k==='B')play(B,b0,false);else if(k==='B2')play(B,b0,true);
+    else{play(A.filter(x=>x[0]<8),b0,false);note(b0*bar+4*beat,root+oct+12*(style==='chill'?0:0),2*beat,.34,0)}});
+  for(let b=0;b<bars;b++){const t=b*bar,ch=prog[b%4],r=root+ch;
+    if(style==='chill')pad(t,[r-12,r-12+(minor?3:4),r-12+7],bar,.07);
+    if(style!=='bells'||b>=4){if(style==='pop'||style==='retro'){for(let q=0;q<8;q++)bassN(t+q*beat/2,r-24,beat/2*.9,.22)}else bassN(t,r-24,bar*.95,style==='marimba'?.2:.16)}
+    if(style==='pop'||style==='retro'){for(let q=0;q<4;q++){if(q%2===0)kick(t+q*beat,.6);else noise(t+q*beat,.35,.06)}for(let q=0;q<8;q++)noise(t+q*beat/2,.08,.012,.4)}
+    if(style==='chill'){kick(t,.35);noise(t+2*beat,.12,.04);for(let q=0;q<8;q++)if(q%2)noise(t+q*beat/2,.04,.01,.3)}
+    if(style==='marimba'&&b>=2)for(let q=0;q<8;q++)noise(t+q*beat/2,.025,.008,.4)}
+  let pk=0;for(let i=0;i<n;i++)pk=Math.max(pk,Math.abs(L[i]),Math.abs(Rt[i]));const k=.9/(pk||1);for(let i=0;i<n;i++){L[i]*=k;Rt[i]*=k}
+  return {sampleRate:sr,length:n,duration:n/sr,numberOfChannels:2,getChannelData:c=>c?Rt:L};
+}
+function genName(){return t('st'+G.style[0].toUpperCase()+G.style.slice(1))+' #'+String(G.seed%10000).padStart(4,'0')}
+function genStop(){if(G.src){try{G.src.stop()}catch(e){}G.src=null}$('genPlay').textContent='▶ '+t('genPlayL')}
+function genPlay(){genStop();if(!G.song)G.song=compose(G.style,G.seed,G.bpm);const c=ensureCtx(),s=G.song,b=c.createBuffer(2,s.length,s.sampleRate);
+  b.copyToChannel(s.getChannelData(0),0);b.copyToChannel(s.getChannelData(1),1);G.src=c.createBufferSource();G.src.buffer=b;G.src.connect(c.destination);G.src.start();
+  const me=G.src;G.src.onended=()=>{if(G.src===me)genStop()};$('genPlay').textContent='■ '+t('stop')}
+function genMark(){[...$('genStyles').children].forEach(b=>{const on=b.dataset.style===G.style;b.classList.toggle('sel-on',on);b.setAttribute('aria-pressed',String(on))});$('genTempoV').textContent=G.bpm}
+function genChanged(){G.song=null;genMark();genPlay()}
+$('genStyles').addEventListener('click',e=>{const b=e.target.closest('[data-style]');if(!b)return;G.style=b.dataset.style;track('gen_style',{style:G.style});genChanged()});
+$('genTempo').addEventListener('input',e=>{G.bpm=+e.target.value;$('genTempoV').textContent=G.bpm});
+$('genTempo').addEventListener('change',()=>genChanged());
+$('genNew').addEventListener('click',()=>{G.seed=1+Math.floor(Math.random()*99999);track('gen_shuffle');genChanged()});
+$('genPlay').addEventListener('click',()=>G.src?genStop():genPlay());
+$('genUse').addEventListener('click',()=>{genStop();if(!G.song)G.song=compose(G.style,G.seed,G.bpm);closeDlg($('gen'));track('gen_used',{style:G.style,bpm:G.bpm});useSong(G.song,genName(),'generated',t('genBadge'))});
+$('gen').addEventListener('close',genStop);
+function openGen(from){stopPreview();openDlg($('gen'));genMark();$('genTempo').value=G.bpm;genStop();track('gen_opened',{from})}
+$('genBtn').addEventListener('click',()=>openGen('hero'));
+$('nfGen').addEventListener('click',()=>{closeDlg($('nofile'));openGen('nofile')});
 const drop=$('drop');
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
 drop.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
 
 /* ---------- render + encode ---------- */
-function renderClip(){
-  const sr=song.sampleRate,a=Math.floor(S.start*sr),n=Math.min(song.length-a,Math.floor(S.len*sr)),k=selGain();
-  const fi=Math.floor(S.fin*sr),fo=Math.floor(S.fout*sr),chans=[];
+/* selection → speed → repeat → volume → fades, capped under 30 s. Used for both preview and export. */
+function processClip(){
+  const sr=song.sampleRate,a=Math.floor(S.start*sr),n0=Math.max(1,Math.min(song.length-a,Math.floor(S.len*sr)));
+  const sp=S.speed,seg=Math.max(1,Math.floor(n0/sp)),n=Math.min(Math.floor(MAXLEN*sr),seg*S.loop);
+  const k=selGain()*Math.pow(10,S.gain/20),fi=Math.floor(Math.min(S.fin,n/sr/2)*sr),fo=Math.floor(Math.min(S.fout,n/sr/2)*sr),xf=Math.floor(.012*sr),chans=[];
+  const soft=v=>{const x=Math.abs(v);return x<=.8?v:Math.sign(v)*(.8+.2*Math.tanh((x-.8)/.2))};
   for(let c=0;c<2;c++){const src=song.getChannelData(Math.min(c,song.numberOfChannels-1)),out=new Float32Array(n);
-    for(let i=0;i<n;i++){let env=k;if(i<fi)env*=i/fi;if(i>n-fo)env*=(n-i)/fo;out[i]=src[a+i]*env}chans.push(out)}
-  return {sr,n,chans};
+    for(let i=0;i<n;i++){const j=i%seg,p=a+j*sp,i0=Math.floor(p),f=p-i0,s1=src[Math.min(i0+1,song.length-1)];
+      let v=(src[i0]||0)*(1-f)+(s1||0)*f,env=k;
+      if(S.loop>1){if(j<xf&&i>=seg)env*=j/xf;if(seg-j<xf&&i+xf<n)env*=(seg-j)/xf}
+      if(i<fi)env*=i/fi;if(i>n-fo)env*=(n-i)/fo;
+      out[i]=soft(v*env)}chans.push(out)}
+  return {sr,n,chans,seg};
 }
+function renderClip(){return processClip()}
 /* ---------- mp3 (what iOS 26 "Use as Ringtone" accepts) ---------- */
 function toMp3(clip){
   if(!window.lamejs||!lamejs.Mp3Encoder)return null;
@@ -879,7 +1107,7 @@ $('export').addEventListener('click',async()=>{
     if(!mp3){say(t('sEncFail'));return}
     const base=($('name').value.trim()||'Ringtone').replace(/[\\/:*?"<>|%]/g,'').trim()||'Ringtone';
     ready=new File([id3(base),mp3],base+'.mp3',{type:'audio/mpeg'});
-    track('ringtone_created',{seconds:Math.round(S.len),picked:S.cand>=0?'auto':'manual',renamed:$('name').dataset.touched?'yes':'no',lang});
+    track('ringtone_created',{mode:S.mode,fx:[S.gain?'vol':'',S.speed!==1?'speed':'',S.loop>1?'loop':''].filter(Boolean).join('+')||'none',seconds:Math.round(outLen()),picked:S.cand>=0?'auto':'manual',renamed:$('name').dataset.touched?'yes':'no',lang});
     if(dlUrl)URL.revokeObjectURL(dlUrl);dlUrl=URL.createObjectURL(ready);
     const a=$('dl');a.href=dlUrl;a.download=ready.name;a.hidden=false;
     const hasShare=!!navigator.share;if(!hasShare)track('share_unsupported');
@@ -932,7 +1160,7 @@ g3_A:'לוחצים <b>+</b> (או "הצלילים שלי" ← <b>+</b>), ובו�
 note_A:'באנדרואיד אין מגבלת אורך, אבל רינגטון קצר מ‑30 שניות מתאים לכל טלפון.',
 sReady_A:'הרינגטון מוכן.',
 invText_A:'הפכתי שיר לרינגטון בדקה, בלי אפליקציה 🎵 נסו:',guideLink_A:'המדריך לאנדרואיד',
-mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',noFile:'אין לכם קובץ שיר?',nfH:'מאיפה מביאים קובץ?',nfP:'שירים מספוטיפיי ומ‑Apple Music מוגנים ואי אפשר לחתוך אותם. אבל יש הרבה מקורות שכן עובדים:',nf1:'<b>סרטון מהגלריה</b>: הופעה, צחוק של הילד, כל סרטון שצילמתם. הקול שלו הופך לצלצול.',nf2:'<b>קובץ שחבר שלח בוואטסאפ</b>: שומרים אותו ל"קבצים" ובוחרים אותו כאן.',nf3:'<b>הקלטה שלכם</b>: הקליטו באפליקציית ההקלטות ושמרו ל"קבצים".',nf4:'<b>שיר שקניתם</b> ב‑iTunes Store, או MP3 שהורדתם מאתר שמוכר מוזיקה.',nf5:'<b>קובץ מ‑iCloud Drive או Google Drive</b>: כל MP3, M4A או WAV שיש לכם שם.',nfNote:'השתמשו רק בקבצים שיש לכם זכות להשתמש בהם.',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
+mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',altOr:'או',recBtn:'הקליטו',genBtn:'צלצול מקורי',recH:'הקלטה',recP:'הקליטו קול, שירה, משפט או את הצחוק של הילד. עד דקה אחת. ההקלטה נשארת בטלפון ולא נשלחת לשום מקום.',recStart:'התחלת הקלטה',recStop:'עצירת הקלטה',recReady:'לחצו על הכפתור האדום כדי להתחיל.',recOn:'מקליט… לחצו שוב כדי לעצור.',recDenied:'אין גישה למיקרופון. אפשרו גישה בהגדרות הדפדפן ונסו שוב.',recNo:'הדפדפן הזה לא תומך בהקלטה. נסו בספארי או בכרום.',recFail:'ההקלטה לא הצליחה. נסו שוב.',recName:'הקלטה',recBadge:'הקלטה',genH:'צלצול מקורי',genP:'SnipRing מלחין בשבילכם מנגינה חדשה. היא שלכם, בלי זכויות יוצרים ובלי קובץ.',genStyle:'סגנון',stMarimba:'מרימבה',stPop:'פופ',stRetro:'8‑ביט',stChill:'צ׳יל',stBells:'פעמונים',genTempo:'קצב (BPM)',genNew:'🎲 מנגינה אחרת',genPlayL:'השמעה',genUse:'השתמשו בצלצול הזה',genBadge:'צלצול מקורי',modeAria:'סוג הצליל',mRing:'רינגטון',mText:'צליל הודעה',mAlarm:'שעון מעורר',zoomIn:'הגדלת צורת הגל',zoomOut:'הקטנת צורת הגל',fxH:'אפקטים',fxVol:'עוצמה',vol0:'רגיל',vol1:'חזק',vol2:'חזק מאוד',vol3:'מקסימום',fxSpeed:'מהירות וגובה צליל',spd1:'רגיל',fxLoop:'חזרה על הקטע',loop1:'בלי',fxOut:'אורך הצלצול הסופי: {n} שנ׳',fxNone:'בלי אפקטים. אפשר להגביר, להאיץ או לחזור על קטע קצר.',next3_text:'אחר כך: <b>הגדרות</b> ← <b>צלילים</b> ← <b>צליל הודעה</b>, ובחרו את הצליל החדש.',next3_text_A:'בהגדרות בחרו <b>צליל התראה</b> (במקום רינגטון) ← <b>+</b>.',next3_alarm:'אחר כך: אפליקציית <b>שעון</b> ← <b>שעון מעורר</b> ← עריכה ← <b>צליל</b>, ובחרו את הצליל מרשימת הרינגטונים.',next3_alarm_A:'באפליקציית <b>שעון</b> ← המעורר ← <b>צליל</b> ← <b>+</b>, ובחרו את הקובץ.',noFile:'אין לכם קובץ שיר?',nfH:'מאיפה מביאים קובץ?',nfP:'שירים מספוטיפיי ומ‑Apple Music מוגנים ואי אפשר לחתוך אותם. אבל יש הרבה מקורות שכן עובדים:',nf1:'<b>סרטון מהגלריה</b>: הופעה, צחוק של הילד, כל סרטון שצילמתם. הקול שלו הופך לצלצול.',nf2:'<b>קובץ שחבר שלח בוואטסאפ</b>: שומרים אותו ל"קבצים" ובוחרים אותו כאן.',nf3:'<b>הקלטה שלכם</b>: הקליטו באפליקציית ההקלטות ושמרו ל"קבצים".',nf4:'<b>שיר שקניתם</b> ב‑iTunes Store, או MP3 שהורדתם מאתר שמוכר מוזיקה.',nf5:'<b>קובץ מ‑iCloud Drive או Google Drive</b>: כל MP3, M4A או WAV שיש לכם שם.',nfNote:'השתמשו רק בקבצים שיש לכם זכות להשתמש בהם.',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
 nextH:'מה עכשיו?',next1:'לחצו <b>הגדר כרינגטון</b> למטה.',next2:'בתפריט שנפתח <b>גללו למטה</b> ובחרו <b>שימוש כצלצול</b>.',useAs:'שימוש כצלצול',
 next1_A:'לחצו <b>הורד MP3</b> למטה.',next2_A:'<b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>רינגטון</b> ← <b>+</b>, ובחרו את הקובץ מההורדות.',
 mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
@@ -965,7 +1193,7 @@ g3_A:'Tap <b>+</b> (or My sounds → <b>+</b>) and pick the file from Downloads.
 note_A:'Android has no length limit, but a ringtone under 30 seconds works on every phone.',
 sReady_A:'Your ringtone is ready.',
 invText_A:'I turned a song into a ringtone in a minute, no app needed 🎵 Try it:',guideLink_A:'Android guide',
-mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',noFile:'No song file?',nfH:'Where to get a file',nfP:'Songs from Spotify and Apple Music are protected and can\'t be trimmed. But plenty of sources do work:',nf1:'<b>A video from your gallery</b>: a concert, your kid laughing, anything you filmed. Its sound becomes the ringtone.',nf2:'<b>A file a friend sent on WhatsApp</b>: save it to Files and pick it here.',nf3:'<b>Your own recording</b>: record in Voice Memos and share it to Files.',nf4:'<b>A song you bought</b> on the iTunes Store, or an MP3 from a store that sells music.',nf5:'<b>A file in iCloud Drive or Google Drive</b>: any MP3, M4A or WAV you keep there.',nfNote:'Only use files you have the right to use.',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
+mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',altOr:'or',recBtn:'Record',genBtn:'Original tune',recH:'Record',recP:'Record a voice, a song, a line, or your kid laughing. Up to one minute. The recording stays on your phone and is never uploaded.',recStart:'Start recording',recStop:'Stop recording',recReady:'Tap the red button to start.',recOn:'Recording… tap again to stop.',recDenied:'No microphone access. Allow it in your browser settings and try again.',recNo:'This browser can\'t record. Try Safari or Chrome.',recFail:'The recording didn\'t work. Try again.',recName:'Recording',recBadge:'Recording',genH:'Original ringtone',genP:'SnipRing composes a brand-new melody for you. It\'s yours: no copyright, no file needed.',genStyle:'Style',stMarimba:'Marimba',stPop:'Pop',stRetro:'8-bit',stChill:'Chill',stBells:'Bells',genTempo:'Tempo (BPM)',genNew:'🎲 Another melody',genPlayL:'Play',genUse:'Use this ringtone',genBadge:'Original tune',modeAria:'Sound type',mRing:'Ringtone',mText:'Text tone',mAlarm:'Alarm',zoomIn:'Zoom in on the waveform',zoomOut:'Zoom out',fxH:'Effects',fxVol:'Volume',vol0:'Normal',vol1:'Loud',vol2:'Louder',vol3:'Max',fxSpeed:'Speed and pitch',spd1:'Normal',fxLoop:'Repeat the part',loop1:'Off',fxOut:'Final length: {n} s',fxNone:'No effects. Boost it, speed it up, or repeat a short part.',next3_text:'Then: <b>Settings</b> → <b>Sounds &amp; Haptics</b> → <b>Text Tone</b>, and pick the new sound.',next3_text_A:'In Settings choose <b>Notification sound</b> (instead of Ringtone) → <b>+</b>.',next3_alarm:'Then: <b>Clock</b> app → <b>Alarms</b> → Edit → <b>Sound</b>, and pick it from the Ringtones list.',next3_alarm_A:'In the <b>Clock</b> app → your alarm → <b>Sound</b> → <b>+</b>, and pick the file.',noFile:'No song file?',nfH:'Where to get a file',nfP:'Songs from Spotify and Apple Music are protected and can\'t be trimmed. But plenty of sources do work:',nf1:'<b>A video from your gallery</b>: a concert, your kid laughing, anything you filmed. Its sound becomes the ringtone.',nf2:'<b>A file a friend sent on WhatsApp</b>: save it to Files and pick it here.',nf3:'<b>Your own recording</b>: record in Voice Memos and share it to Files.',nf4:'<b>A song you bought</b> on the iTunes Store, or an MP3 from a store that sells music.',nf5:'<b>A file in iCloud Drive or Google Drive</b>: any MP3, M4A or WAV you keep there.',nfNote:'Only use files you have the right to use.',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
 nextH:'What now?',next1:'Tap <b>Set as ringtone</b> below.',next2:'In the menu that opens, <b>scroll down</b> and choose <b>Use as Ringtone</b>.',useAs:'Use as Ringtone',
 next1_A:'Tap <b>Download MP3</b> below.',next2_A:'<b>Settings</b> → <b>Sound &amp; vibration</b> → <b>Ringtone</b> → <b>+</b>, and pick the file from Downloads.',
 mineSaved:'Also saved in "My ringtones" below.',mineEmpty:'No ringtones yet. Every ringtone you create is saved here automatically.'}};
@@ -980,8 +1208,10 @@ function applyLang(){
     $('helpGuide').href=ANDROID?and:ios;$('helpOther').href=ANDROID?ios:and;$('helpVideo').href=he?'ringtone-video.html':'video-ringtone.html'}$('guideLink').href=ANDROID?(lang==='he'?'ringtone-android.html':'android-ringtone.html'):(lang==='he'?'ringtone-iphone.html':'iphone-ringtone.html');
   if(song&&song._demo){$('songTitle').textContent=t('sample');$('badge').textContent=t('sampleBadge');if(!$('name').dataset.touched)$('name').value=t('sample')}
   $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
-  if(cands.length)renderCands(),markCand();setIcon();syncAria();if(typeof renderMine==='function')renderMine();
+  if(cands.length)renderCands(),markCand();setIcon();syncAria();renderLens();renderNext();refreshOut();if(typeof renderMine==='function')renderMine();
 }
+function renderNext(){$('nx1').innerHTML=t('next1');$('nx2').innerHTML=t('next2');
+  const x=S.mode==='ring'?'':t('next3_'+S.mode);$('nx3').innerHTML=x;$('nx3').hidden=!x}
 function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;$('main').classList.add('editing');$('a2hs').hidden=true;
   requestAnimationFrame(()=>{draw();if(was){const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');ed.scrollIntoView({behavior:calm?'auto':'smooth',block:'start'});$('main').focus({preventScroll:true})}})}
 $('dl').addEventListener('click',()=>{track('mp3_downloaded');setTimeout(showInvite,1500)});
@@ -1086,7 +1316,7 @@ function renderMine(){
 }
 loadMine();
 /* ---------- start with the demo ---------- */
-song=demoSong();song._demo=true;$('songLen').textContent=fmtShort(song.duration);analyse();ruler();applyLang();say(t('sReady0'));
+song=demoSong();song._demo=true;$('songLen').textContent=fmtShort(song.duration);analyse();ruler();applyLang();setMode('ring');say(t('sReady0'));
 })();
 </script>
 
