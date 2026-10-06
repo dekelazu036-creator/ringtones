@@ -262,6 +262,8 @@ function ensureCtx(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioCon
 const fmt=t=>{t=Math.max(0,t);const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(1)};
 const fmtShort=t=>{const m=Math.floor(t/60),s=Math.floor(t-m*60);return m+':'+(s<10?'0':'')+s};
 function say(t){$('status').textContent=t}
+/* analytics: anonymous funnel events, no cookies; no-op until the Umami script is present */
+function track(name,data){try{window.umami&&window.umami.track(name,data)}catch(e){}}
 
 /* ---------- demo song (synthetic, so the page works before a file is chosen) ---------- */
 function demoSong(){
@@ -547,7 +549,8 @@ async function loadFile(f){
     S.cursor=0;$('cursorT').textContent='0:00';
     say(t('sFinding'));await new Promise(r=>setTimeout(r,30));
     analyse();ruler();openEditor();say(t('sLoaded'));
-  }catch(e){say(t('sOpenFail'))}
+    track('song_loaded',{source:'file',minutes:Math.round(song.duration/60),lang});
+  }catch(e){say(t('sOpenFail'));track('song_open_failed',{ext:(f.name.split('.').pop()||'').toLowerCase()})}
 }
 $('file').addEventListener('change',e=>loadFile(e.target.files[0]));
 const drop=$('drop');
@@ -603,9 +606,10 @@ $('export').addEventListener('click',async()=>{
     if(!mp3){say(t('sEncFail'));return}
     const base=($('name').value.trim()||'Ringtone').replace(/[\\/:*?"<>|%]/g,'').trim()||'Ringtone';
     ready=new File([id3(base),mp3],base+'.mp3',{type:'audio/mpeg'});
+    track('ringtone_created',{seconds:Math.round(S.len),picked:S.cand>=0?'auto':'manual',renamed:$('name').dataset.touched?'yes':'no',lang});
     if(dlUrl)URL.revokeObjectURL(dlUrl);dlUrl=URL.createObjectURL(ready);
     const a=$('dl');a.href=dlUrl;a.download=ready.name;a.hidden=false;
-    const hasShare=!!navigator.share;
+    const hasShare=!!navigator.share;if(!hasShare)track('share_unsupported');
     let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[ready]}))}catch(e){}
     diag='share='+(hasShare?'yes':'no')+' canShare='+(canShare?'yes':'no');
     $('share').hidden=!hasShare;$('export').hidden=hasShare;
@@ -614,8 +618,9 @@ $('export').addEventListener('click',async()=>{
 });
 $('share').addEventListener('click',async()=>{
   if(!ready)return;
-  try{await navigator.share({files:[ready]});say(t('sShared'))}
-  catch(e){say(e&&e.name==='AbortError'?t('sCancel'):t('sShareFail'))}
+  track('set_ringtone_tapped');
+  try{await navigator.share({files:[ready]});say(t('sShared'));track('share_completed')}
+  catch(e){say(e&&e.name==='AbortError'?t('sCancel'):t('sShareFail'));track(e&&e.name==='AbortError'?'share_cancelled':'share_failed')}
 });
 
 const T={
@@ -668,8 +673,9 @@ function applyLang(){
 }
 function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;
   requestAnimationFrame(()=>{draw();if(was)ed.scrollIntoView({behavior:'smooth',block:'start'})})}
-$('tryDemo').addEventListener('click',()=>{openEditor();previewSel()});
-$('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();say(t('sReady0'))});
+$('dl').addEventListener('click',()=>track('mp3_downloaded'));
+$('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('song_loaded',{source:'demo',lang})});
+$('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();track('language_switched',{to:lang});say(t('sReady0'))});
 $('name').addEventListener('input',()=>{$('name').dataset.touched='1'});
 /* ---------- start with the demo ---------- */
 song=demoSong();song._demo=true;$('songLen').textContent=fmtShort(song.duration);analyse();ruler();applyLang();say(t('sReady0'));
