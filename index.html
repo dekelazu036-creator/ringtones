@@ -271,7 +271,97 @@ function analyse(){
   findCandidates();
 }
 const MAXLEN=29.5,MINLEN=3,DEFLEN=29;
-function findCandidates(){
+/* Chorus finder: chroma self-similarity + loudness.
+   A chorus is the loud part of a song that repeats, so we look for the window
+   whose harmony recurs elsewhere in the song most strongly. */
+function fftMag(re, im) { // in-place radix-2, returns nothing
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const a = i + k, b = a + len / 2;
+        const xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
+        re[b] = re[a] - xr; im[b] = im[a] - xi; re[a] += xr; im[a] += xi;
+        const ncr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = ncr;
+      }
+    }
+  }
+}
+
+function songFeatures(song, hopSec) {
+  const sr0 = song.sampleRate, a = song.getChannelData(0), b = song.numberOfChannels > 1 ? song.getChannelData(1) : a;
+  const dec = Math.max(1, Math.round(sr0 / 11025)), sr = sr0 / dec;
+  const n = Math.floor(song.length / dec), x = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let s = 0; const o = i * dec; for (let k = 0; k < dec; k++) s += a[o + k] + b[o + k]; x[i] = s / (2 * dec); }
+  const N = 4096, hop = Math.round(sr * hopSec), F = Math.max(1, Math.floor((n - N) / hop) + 1);
+  const win = new Float32Array(N); for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+  const pc = new Int8Array(N / 2).fill(-1);
+  for (let k = 1; k < N / 2; k++) { const f = k * sr / N; if (f >= 80 && f <= 4000) pc[k] = ((Math.round(12 * Math.log2(f / 440)) + 69) % 12 + 12) % 12; }
+  const chroma = new Float32Array(F * 12), rms = new Float32Array(F), re = new Float32Array(N), im = new Float32Array(N);
+  for (let f = 0; f < F; f++) {
+    const o = f * hop; let e = 0;
+    for (let i = 0; i < N; i++) { const v = x[o + i] || 0; e += v * v; re[i] = v * win[i]; im[i] = 0; }
+    rms[f] = Math.sqrt(e / N);
+    fftMag(re, im);
+    const c = chroma.subarray(f * 12, f * 12 + 12);
+    for (let k = 1; k < N / 2; k++) if (pc[k] >= 0) c[pc[k]] += Math.hypot(re[k], im[k]);
+    let mx = 0; for (let i = 0; i < 12; i++) { c[i] = Math.sqrt(c[i]); mx += c[i] / 12; }
+    for (let i = 0; i < 12; i++) c[i] -= mx;              // centre: keep only which notes stand out
+    let nn = 0; for (let i = 0; i < 12; i++) nn += c[i] * c[i]; nn = Math.sqrt(nn) || 1;
+    for (let i = 0; i < 12; i++) c[i] /= nn;
+  }
+  return { chroma, rms, F, hopSec };
+}
+
+/* returns up to 3 candidate starts (seconds), best first */
+function chorusCandidates(song, winSec) {
+  const hopSec = 0.5, { chroma, rms, F } = songFeatures(song, hopSec);
+  const W = Math.max(4, Math.min(F - 1, Math.round(winSec / hopSec)));
+  if (F < W * 2 + 2) return [{ t: 0, score: 0 }];
+  // similarity matrix (cosine of unit chroma vectors), contrast-stretched
+  const S = new Float32Array(F * F);
+  for (let i = 0; i < F; i++) for (let j = i; j < F; j++) {
+    let d = 0; for (let k = 0; k < 12; k++) d += chroma[i * 12 + k] * chroma[j * 12 + k];
+    d = Math.max(0, d); S[i * F + j] = S[j * F + i] = d;
+  }
+  // loudness, normalised 0..1
+  let rmax = 0; for (let i = 0; i < F; i++) rmax = Math.max(rmax, rms[i]);
+  const loud = new Float32Array(F + 1); for (let i = 0; i < F; i++) loud[i + 1] = loud[i] + rms[i] / (rmax || 1);
+  const minLag = Math.round(W * 0.8), score = new Float32Array(F - W + 1);
+  const sims = new Float32Array(F);
+  for (let i = 0; i + W <= F; i++) {
+    sims.fill(-1);
+    for (let j = 0; j + W <= F; j++) {
+      if (Math.abs(i - j) < minLag) continue;
+      let v = 0; for (let k = 0; k < W; k++) v += S[(i + k) * F + j + k];
+      sims[j] = v / W;
+    }
+    // the two strongest repeats at clearly different places (a chorus comes back 2-3 times)
+    let j1 = -1; for (let j = 0; j < F; j++) if (sims[j] > (j1 < 0 ? -1 : sims[j1])) j1 = j;
+    let j2 = -1; for (let j = 0; j < F; j++) if (Math.abs(j - j1) >= minLag && sims[j] > (j2 < 0 ? -1 : sims[j2])) j2 = j;
+    const best = Math.max(0, j1 < 0 ? 0 : sims[j1]), second = Math.max(0, j2 < 0 ? 0 : sims[j2]);
+    const L = (loud[i + W] - loud[i]) / W;
+    score[i] = (best + second) * (0.6 + 0.4 * L);
+  }
+  const order = [...score.keys()].sort((p, q) => score[q] - score[p]), picked = [];
+  for (const i of order) { if (picked.length >= 3) break; if (picked.every(p => Math.abs(p - i) >= W * 0.75)) picked.push(i); }
+  return picked.map(i => {
+    // snap to the strongest loudness rise within ±3 s (section boundary)
+    let bi = i, bd = -1;
+    for (let k = Math.max(2, i - 6); k <= Math.min(F - W, i + 6); k++) { const d = (rms[k] + (rms[k + 1] || 0)) - (rms[k - 1] + rms[k - 2]); if (d > bd) { bd = d; bi = k; } }
+    return { t: bi * hopSec, score: score[i] };
+  });
+}
+
+function energyCandidates(){
   const F=energy.length,W=Math.min(F,Math.round(Math.min(DEFLEN,song.duration)*FR));
   const pre=new Float64Array(F+1);for(let i=0;i<F;i++)pre[i+1]=pre[i]+energy[i];
   const mean=(s,w)=>(pre[Math.min(F,s+w)]-pre[Math.max(0,s)])/Math.max(1,Math.min(F,s+w)-Math.max(0,s));
@@ -282,6 +372,11 @@ function findCandidates(){
   cands=picked.map(p=>{let best=p.s,bd=-1;
     for(let s=Math.max(0,p.s-50);s<=Math.min(F-W,p.s+50);s++){const d=mean(s,10)-mean(s-10,10);if(d>bd){bd=d;best=s}}
     return {t:best/FR,score:p.sc}});
+  return cands;
+}
+function findCandidates(){
+  try{cands=chorusCandidates(song,15)}catch(e){cands=[]}
+  if(!cands.length||!cands[0].score)energyCandidates();
   if(!cands.length)cands=[{t:0,score:0}];
   renderCands();pickCand(0);
 }
@@ -418,6 +513,7 @@ async function loadFile(f){
     const nm=fname.replace(/\.[^.]+$/,'');$('songTitle').textContent=nm;$('name').value=nm.slice(0,40);$('badge').textContent=fname;
     $('songLen').textContent=fmtShort(song.duration);
     S.cursor=0;$('cursorT').textContent='0:00';
+    say('מחפש את הפזמון…');await new Promise(r=>setTimeout(r,30));
     analyse();ruler();say('השיר נטען. הקטע המסומן הוא ההצעה לפזמון. אפשר להזיז כל ידית בנפרד.');
   }catch(e){say('לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.')}
 }
