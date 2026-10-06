@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SnipRing</title>
-<meta name="description" content="SnipRing גוזר כל שיר לרינגטון לאייפון: בוחרים שיר, המערכת מוצאת את הפזמון, ובלחיצה אחת הוא הצלצול שלכם.">
+<meta name="description" content="SnipRing turns any song into an iPhone ringtone. Pick a song, it finds the chorus, and one tap makes it your ringtone.">
 <meta property="og:title" content="SnipRing">
-<meta property="og:description" content="גוזרים כל שיר לרינגטון לאייפון, בלי אפליקציה ובלי מחשב.">
+<meta property="og:description" content="Turn any song into an iPhone ringtone. No app, no computer.">
 <meta name="theme-color" content="#2546F0">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232546F0'/%3E%3Cpath d='M14 34h4m6-10v20m6-26v32m6-22v12m6-18v24m6-14v4' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%232546F0'/%3E%3Cpath d='M14 34h4m6-10v20m6-26v32m6-22v12m6-18v24m6-14v4' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -36,7 +36,9 @@ a.btn{text-decoration:none;display:inline-block}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding:0 16px}
 .wrap{max-width:900px;margin:0 auto;padding-block:20px 48px;display:flex;flex-direction:column;gap:18px}
 h1{font-family:var(--display);font-weight:700;font-size:clamp(46px,9vw,72px);line-height:.9;margin:0;text-wrap:balance}
-header h1{text-align:right}
+header h1{text-align:start}
+.hrow{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.langbtn{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;flex:none}
 header .ring{color:var(--accent)}
 header p{margin:6px 0 0;color:var(--muted);max-width:60ch}
 h2{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;margin:0}
@@ -98,7 +100,7 @@ canvas{display:block;width:100%;height:132px;cursor:grab}
 .fine summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:14px}
 .fine[open]{display:flex;flex-direction:column;gap:10px}
 .fine[open] summary{margin-bottom:2px}
-.tfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.tfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .tinfo{font-size:14px;line-height:1.3}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
@@ -132,100 +134,100 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 <body>
 <div class="wrap" dir="rtl">
   <header>
-    <h1 dir="ltr">Snip<span class="ring">Ring</span></h1>
-    <p>גוזרים כל שיר לרינגטון לאייפון. בוחרים שיר, המערכת מוצאת את הפזמון, ובלחיצה אחת הוא הצלצול שלכם.</p>
+    <div class="hrow"><h1 dir="ltr">Snip<span class="ring">Ring</span></h1><button class="langbtn" id="lang" type="button">English</button></div>
+    <p data-i18n="tagline"></p>
   </header>
 
   <div class="drop" id="drop">
-    <label class="btn primary file">בחר שיר<input type="file" id="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg"></label>
-    <p>MP3, M4A, WAV ועוד. הקובץ נשאר במכשיר ולא נשלח לשום מקום. שירים מ‑Apple Music מוגנים ולא ייפתחו.</p>
+    <label class="btn primary file"><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg"></label>
+    <p data-i18n="pickNote"></p>
   </div>
 
   <div class="deck">
     <div class="song">
-      <div class="stitle"><span class="lbl">השיר</span><span class="sname" id="songTitle">שיר דוגמה</span></div>
-      <span class="badge" id="badge">שיר דוגמה סינתטי</span>
+      <div class="stitle"><span class="lbl" data-i18n="song"></span><span class="sname" id="songTitle"></span></div>
+      <span class="badge" id="badge"></span>
       <span class="badge num" id="songLen">0:00</span>
     </div>
 
     <div>
-      <div class="wavebox" id="wavebox"><canvas id="wave" aria-label="צורת הגל של השיר. גררו את החלון המסומן כדי לבחור קטע."></canvas></div>
+      <div class="wavebox" id="wavebox"><canvas id="wave" data-i18n-aria="waveAria"></canvas></div>
       <div class="ruler num" id="ruler"></div>
     </div>
 
-    <p class="hint"><b>איך בוחרים מאיפה הרינגטון מתחיל:</b> נוגעים בצורת הגל בנקודה הרצויה, או מאזינים לשיר ולוחצים "התחל מכאן" ברגע הנכון. הידיות בקצוות משנות את האורך.</p>
+    <p class="hint" data-i18n="howStart"></p>
 
     <div class="listen">
-      <button class="btn" id="playFrom">השמע את השיר <span class="num" id="cursorT">0:00</span></button>
-      <button class="btn primary" id="startHere">התחל את הרינגטון מכאן</button>
+      <button class="btn" id="playFrom"><span id="playFromT"></span> <span class="num" id="cursorT">0:00</span></button>
+      <button class="btn primary" id="startHere" data-i18n="startHere"></button>
     </div>
     <div class="ttime">
-      <label class="lbl" for="tm">או הקלידו מאיזו דקה ושנייה להתחיל</label>
+      <label class="lbl" for="tm" data-i18n="typeTime"></label>
       <div class="tinrow">
-        <span class="tin" dir="ltr"><input id="tm" type="number" inputmode="numeric" min="0" placeholder="0" aria-label="דקות"><b>:</b><input id="ts" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" placeholder="00" aria-label="שניות"></span>
-        <button class="btn" id="goTime">התחל מהזמן הזה</button>
+        <span class="tin" dir="ltr"><input id="tm" type="number" inputmode="numeric" min="0" placeholder="0" data-i18n-aria="min"><b>:</b><input id="ts" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" placeholder="00" data-i18n-aria="secs"></span>
+        <button class="btn" id="goTime" data-i18n="goTime"></button>
       </div>
     </div>
 
     <div class="lenbox">
-      <div class="lenhead"><label class="lbl" for="lenR">אורך הרינגטון</label><span><b class="num" id="tLen">0.0</b> שנ׳</span></div>
+      <div class="lenhead"><label class="lbl" for="lenR" data-i18n="length"></label><span><b class="num" id="tLen">0.0</b> <span data-i18n="sec"></span></span></div>
       <div class="chips" id="lens">
-        <button class="chip" data-len="10">10 שנ׳</button><button class="chip" data-len="15">15 שנ׳</button><button class="chip" data-len="20">20 שנ׳</button><button class="chip" data-len="25">25 שנ׳</button><button class="chip" data-len="29.5">מקסימום</button>
+        <button class="chip" data-len="10">10 <span data-i18n="sec"></span></button><button class="chip" data-len="15">15 <span data-i18n="sec"></span></button><button class="chip" data-len="20">20 <span data-i18n="sec"></span></button><button class="chip" data-len="25">25 <span data-i18n="sec"></span></button><button class="chip" data-len="29.5" data-i18n="max"></button>
       </div>
-      <input type="range" id="lenR" min="3" max="29.5" step="0.5" value="29" aria-label="אורך הרינגטון בשניות">
+      <input type="range" id="lenR" min="3" max="29.5" step="0.5" value="29" data-i18n-aria="lengthAria">
     </div>
 
     <div class="trim">
-      <p class="range">הרינגטון ינגן מ‑<b class="num" id="sumA">0:00</b> עד <b class="num" id="sumB">0:29</b></p>
+      <p class="range"><span data-i18n="plays"></span> <b class="num" id="sumA">0:00</b> <span data-i18n="to"></span> <b class="num" id="sumB">0:29</b></p>
       <details class="fine">
-        <summary>כוונון מדויק</summary>
-        <p class="hint">מזיזים את ההתחלה או את הסוף בעשיריות שנייה, למשל כדי לא לחתוך מילה באמצע.</p>
+        <summary data-i18n="fine"></summary>
+        <p class="hint" data-i18n="fineHint"></p>
       <div class="trow">
-        <span class="tlabel">התחלה</span>
+        <span class="tlabel" data-i18n="start"></span>
         <span class="tgroup"><button class="nudge" data-h="start" data-n="-1">−1</button><button class="nudge" data-h="start" data-n="-0.1">−0.1</button><span class="time num" id="tStart">0:00.0</span><button class="nudge" data-h="start" data-n="0.1">+0.1</button><button class="nudge" data-h="start" data-n="1">+1</button></span>
       </div>
       <div class="trow">
-        <span class="tlabel">סוף</span>
+        <span class="tlabel" data-i18n="end"></span>
         <span class="tgroup"><button class="nudge" data-h="end" data-n="-1">−1</button><button class="nudge" data-h="end" data-n="-0.1">−0.1</button><span class="time num" id="tEnd">0:00.0</span><button class="nudge" data-h="end" data-n="0.1">+0.1</button><button class="nudge" data-h="end" data-n="1">+1</button></span>
       </div>
       </details>
       <div class="tfoot">
-        <button class="play" id="play" aria-label="השמע את הרינגטון"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
-        <span class="tinfo"><b>השמע את הרינגטון</b></span>
+        <button class="play" id="play"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+        <span class="tinfo"><b data-i18n="playRt"></b></span>
       </div>
     </div>
 
-    <div class="field"><span class="lbl">הקטעים החזקים בשיר (זיהוי אוטומטי)</span><div class="chips" id="cands"></div></div>
+    <div class="field"><span class="lbl" data-i18n="cands"></span><div class="chips" id="cands"></div></div>
 
     <div class="controls">
-      <div class="field"><div class="row"><label class="lbl" for="fin">כניסה הדרגתית</label><span class="num" id="finV">0.5 שנ׳</span></div>
+      <div class="field"><div class="row"><label class="lbl" for="fin" data-i18n="fadeIn"></label><span class="num" id="finV">0.5</span></div>
         <input type="range" id="fin" min="0" max="3" step="0.1" value="0.5"></div>
-      <div class="field"><div class="row"><label class="lbl" for="fout">יציאה הדרגתית</label><span class="num" id="foutV">2.0 שנ׳</span></div>
+      <div class="field"><div class="row"><label class="lbl" for="fout" data-i18n="fadeOut"></label><span class="num" id="foutV">2.0</span></div>
         <input type="range" id="fout" min="0" max="5" step="0.1" value="2"></div>
-      <label class="switch"><input type="checkbox" id="norm" checked> השוואת עוצמה</label>
+      <label class="switch"><input type="checkbox" id="norm" checked> <span data-i18n="norm"></span></label>
     </div>
 
     <div class="export">
-      <label class="rtname"><span class="lbl">איך הרינגטון ייקרא בטלפון</span><input id="name" maxlength="40" value="שיר דוגמה" autocomplete="off"></label>
-      <button class="btn primary" id="export">צור רינגטון</button>
-      <button class="btn primary" id="share" hidden>הגדר כרינגטון</button>
-      <a class="btn" id="dl" hidden>הורד MP3</a>
-      <p class="status" id="status" role="status">בחרו קטע ולחצו "צור רינגטון".</p>
+      <label class="rtname"><span class="lbl" data-i18n="rtName"></span><input id="name" maxlength="40" value="" autocomplete="off"></label>
+      <button class="btn primary" id="export" data-i18n="create"></button>
+      <button class="btn primary" id="share" hidden data-i18n="setRt"></button>
+      <a class="btn" id="dl" hidden data-i18n="dl"></a>
+      <p class="status" id="status" role="status"></p>
     </div>
   </div>
 
-  <h2>מהקובץ לצלצול</h2>
+  <h2 data-i18n="guideH"></h2>
   <div class="guide">
     <section>
-      <h3>אייפון עם iOS 26 ומעלה</h3>
+      <h3 data-i18n="guideSub"></h3>
       <ol>
-        <li>לוחצים <b>צור רינגטון</b>, ואז <b>הגדר כרינגטון</b>.</li>
-        <li>בתפריט השיתוף גוללים למטה ובוחרים <b>שימוש כצלצול</b>. זהו.</li>
-        <li>אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים לחיצה ארוכה ← שתף ← שימוש כצלצול.</li>
+        <li data-i18n="g1"></li>
+        <li data-i18n="g2"></li>
+        <li data-i18n="g3"></li>
       </ol>
     </section>
   </div>
-  <p class="note">באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29.5 שניות.</p>
+  <p class="note" data-i18n="note"></p>
 </div>
 
 <script>
@@ -388,11 +390,12 @@ function findCandidates(){
   if(!cands.length)cands=[{t:0,score:0}];
   renderCands();pickCand(0);
 }
-function pickCand(i){S.cand=i;const t=cands[i].t;setRange(t,t+Math.min(DEFLEN,MAXLEN),'move');markCand()}
+function pickCand(i){S.cand=i;const t=cands[i].t,room=song.duration-t,L=Math.min(DEFLEN,MAXLEN);
+  if(room>=Math.min(L,12))setRange(t,t+Math.min(L,room),'start');else setRange(t,t+L,'move');markCand()}
 function renderCands(){
   const box=$('cands');box.innerHTML='';
   cands.forEach((c,i)=>{const b=document.createElement('button');b.className='chip';
-    b.innerHTML=(i===0?'הפזמון (הצעה מובילה)':'קטע '+(i+1))+' <span class="num">'+fmtShort(c.t)+'</span>';
+    b.innerHTML=(i===0?t('chorus'):t('part')+' '+(i+1))+' <span class="num">'+fmtShort(c.t)+'</span>';
     b.addEventListener('click',()=>{pickCand(i);previewSel()});box.appendChild(b)});
 }
 function markCand(){[...$('cands').children].forEach((b,i)=>b.classList.toggle('sel-on',i===S.cand))}
@@ -472,8 +475,8 @@ $('lenR').addEventListener('change',()=>previewSel());
 $('startHere').addEventListener('click',()=>{S.cand=-1;markCand();startAt(playing&&mode==='full'?pos():(S.cursor||0))});
 
 /* ---------- controls ---------- */
-$('fin').addEventListener('input',e=>{S.fin=+e.target.value;$('finV').textContent=S.fin.toFixed(1)+' שנ׳'});
-$('fout').addEventListener('input',e=>{S.fout=+e.target.value;$('foutV').textContent=S.fout.toFixed(1)+' שנ׳'});
+$('fin').addEventListener('input',e=>{S.fin=+e.target.value;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec')});
+$('fout').addEventListener('input',e=>{S.fout=+e.target.value;$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec')});
 $('norm').addEventListener('change',e=>{S.norm=e.target.checked});
 
 function selGain(){
@@ -506,14 +509,14 @@ function previewSel(tail){mode='sel';const len=Math.min(S.len,song.duration-S.st
 function playFull(at){mode='full';startPlayback(at,song.duration-at,false)}
 function preview(){previewSel()}
 function stopPreview(){if(playing&&mode==='full')S.cursor=Math.round(pos()*10)/10;playing=false;try{src&&src.stop()}catch(e){}cancelAnimationFrame(raf);setIcon();$('cursorT').textContent=fmtShort(S.cursor||0);draw()}
-function setIcon(){const on=playing&&mode==='sel';$('playIcon').innerHTML=on?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',on?'עצור':'השמע את הקטע');
-  $('playFrom').firstChild.textContent=(playing&&mode==='full')?'עצור ':'השמע את השיר '}
+function setIcon(){const on=playing&&mode==='sel';$('playIcon').innerHTML=on?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',on?t('stop'):t('playRt'));
+  $('playFromT').textContent=(playing&&mode==='full')?t('stop'):t('playSong')}
 $('play').addEventListener('click',()=>(playing&&mode==='sel')?stopPreview():previewSel());
 $('playFrom').addEventListener('click',()=>(playing&&mode==='full')?stopPreview():playFull(S.cursor||0));
 
 /* ---------- load a file ---------- */
 async function loadFile(f){
-  if(!f)return;stopPreview();say('פותח את '+f.name+'…');
+  if(!f)return;stopPreview();say(t('sOpening')+f.name+'…');
   try{
     const ab=await f.arrayBuffer();const c=ensureCtx();
     song=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
@@ -521,9 +524,9 @@ async function loadFile(f){
     const nm=fname.replace(/\.[^.]+$/,'');$('songTitle').textContent=nm;$('name').value=nm.slice(0,40);$('badge').textContent=fname;
     $('songLen').textContent=fmtShort(song.duration);
     S.cursor=0;$('cursorT').textContent='0:00';
-    say('מחפש את הפזמון…');await new Promise(r=>setTimeout(r,30));
-    analyse();ruler();say('השיר נטען. הקטע המסומן הוא ההצעה לפזמון. אפשר להזיז כל ידית בנפרד.');
-  }catch(e){say('לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.')}
+    say(t('sFinding'));await new Promise(r=>setTimeout(r,30));
+    analyse();ruler();say(t('sLoaded'));
+  }catch(e){say(t('sOpenFail'))}
 }
 $('file').addEventListener('change',e=>loadFile(e.target.files[0]));
 const drop=$('drop');
@@ -572,11 +575,11 @@ document.querySelectorAll('.nudge,#startHere').forEach(b=>b.addEventListener('cl
 $('cands').addEventListener('click',invalidate);
 $('file').addEventListener('change',invalidate);
 $('export').addEventListener('click',async()=>{
-  if(!song)return;stopPreview();$('export').disabled=true;say('מקודד MP3…');
+  if(!song)return;stopPreview();$('export').disabled=true;say(t('sEncoding'));
   await new Promise(r=>setTimeout(r,30));
   try{
     const mp3=toMp3(renderClip());
-    if(!mp3){say('הקידוד נכשל. רעננו את הדף ונסו שוב.');return}
+    if(!mp3){say(t('sEncFail'));return}
     const base=($('name').value.trim()||'Ringtone').replace(/[\\/:*?"<>|%]/g,'').trim()||'Ringtone';
     ready=new File([id3(base),mp3],base+'.mp3',{type:'audio/mpeg'});
     if(dlUrl)URL.revokeObjectURL(dlUrl);dlUrl=URL.createObjectURL(ready);
@@ -585,17 +588,67 @@ $('export').addEventListener('click',async()=>{
     let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[ready]}))}catch(e){}
     diag='share='+(hasShare?'yes':'no')+' canShare='+(canShare?'yes':'no');
     $('share').hidden=!hasShare;$('export').hidden=hasShare;
-    say((hasShare?'מוכן. לחצו "הגדר כרינגטון" ובחרו "שימוש כצלצול".':'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".')+' ['+diag+']');
+    say(hasShare?t('sReady'):t('sNoShare'));
   }finally{$('export').disabled=false}
 });
 $('share').addEventListener('click',async()=>{
   if(!ready)return;
-  try{await navigator.share({files:[ready]});say('נשלח לתפריט השיתוף. ['+diag+']')}
-  catch(e){say((e&&e.name==='AbortError'?'השיתוף בוטל או נחסם. אפשר ללחוץ שוב.':'השיתוף לא עבד. נסו "הורד MP3".')+' ['+diag+' err='+(e&&e.name)+']')}
+  try{await navigator.share({files:[ready]});say(t('sShared'))}
+  catch(e){say(e&&e.name==='AbortError'?t('sCancel'):t('sShareFail'))}
 });
 
+const T={
+he:{tagline:'גוזרים כל שיר לרינגטון לאייפון. בוחרים שיר, המערכת מוצאת את הפזמון, ובלחיצה אחת הוא הצלצול שלכם.',
+pick:'בחר שיר',pickNote:'MP3, M4A, WAV ועוד. הקובץ נשאר במכשיר ולא נשלח לשום מקום. שירים מ‑Apple Music מוגנים ולא ייפתחו.',
+song:'השיר',sample:'שיר דוגמה',sampleBadge:'שיר דוגמה סינתטי',waveAria:'צורת הגל של השיר. נגעו כדי לבחור מאיפה הרינגטון מתחיל.',
+howStart:'<b>איך בוחרים מאיפה הרינגטון מתחיל:</b> נוגעים בצורת הגל בנקודה הרצויה, או מאזינים לשיר ולוחצים "התחל מכאן" ברגע הנכון. הידיות בקצוות משנות את האורך.',
+playSong:'השמע את השיר',stop:'עצור',startHere:'התחל את הרינגטון מכאן',typeTime:'או הקלידו מאיזו דקה ושנייה להתחיל',min:'דקות',secs:'שניות',goTime:'התחל מהזמן הזה',
+length:'אורך הרינגטון',sec:'שנ׳',max:'מקסימום',lengthAria:'אורך הרינגטון בשניות',plays:'הרינגטון ינגן מ‑',to:'עד',
+fine:'כוונון מדויק',fineHint:'מזיזים את ההתחלה או את הסוף בעשיריות שנייה, למשל כדי לא לחתוך מילה באמצע.',start:'התחלה',end:'סוף',
+playRt:'השמע את הרינגטון',cands:'הקטעים החזקים בשיר (זיהוי אוטומטי)',chorus:'הפזמון (הצעה מובילה)',part:'קטע',
+fadeIn:'כניסה הדרגתית',fadeOut:'יציאה הדרגתית',norm:'השוואת עוצמה',rtName:'איך הרינגטון ייקרא בטלפון',
+create:'צור רינגטון',setRt:'הגדר כרינגטון',dl:'הורד MP3',guideH:'מהקובץ לצלצול',guideSub:'אייפון עם iOS 26 ומעלה',
+g1:'לוחצים <b>צור רינגטון</b>, ואז <b>הגדר כרינגטון</b>.',g2:'בתפריט השיתוף גוללים למטה ובוחרים <b>שימוש כצלצול</b>. זהו.',
+g3:'אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים לחיצה ארוכה ← שתף ← שימוש כצלצול.',
+note:'באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29.5 שניות.',
+sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח את ',sFinding:'מחפש את הפזמון…',sLoaded:'השיר נטען. הקטע המסומן הוא ההצעה לפזמון.',
+sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
+sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'מוכן. לחצו "הגדר כרינגטון" ובחרו "שימוש כצלצול".',
+sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
+langBtn:'English'},
+en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
+pick:'Choose a song',pickNote:'MP3, M4A, WAV and more. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
+song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
+howStart:'<b>Choose where the ringtone starts:</b> tap the waveform at the spot you want, or listen and press "Start here" at the right moment. Drag the edge handles to change the length.',
+playSong:'Play song',stop:'Stop',startHere:'Start the ringtone here',typeTime:'Or type the minute and second to start from',min:'Minutes',secs:'Seconds',goTime:'Start at this time',
+length:'Ringtone length',sec:'s',max:'Max',lengthAria:'Ringtone length in seconds',plays:'Your ringtone plays from',to:'to',
+fine:'Fine-tune',fineHint:'Move the start or end by tenths of a second, for example to avoid cutting a word in half.',start:'Start',end:'End',
+playRt:'Play ringtone',cands:'Strongest parts of the song (auto-detected)',chorus:'Chorus (top pick)',part:'Part',
+fadeIn:'Fade in',fadeOut:'Fade out',norm:'Even out volume',rtName:'Ringtone name on your phone',
+create:'Create ringtone',setRt:'Set as ringtone',dl:'Download MP3',guideH:'From song to ringtone',guideSub:'iPhone with iOS 26 or later',
+g1:'Tap <b>Create ringtone</b>, then <b>Set as ringtone</b>.',g2:'In the share sheet, scroll down and choose <b>Use as Ringtone</b>. Done.',
+g3:'If the share sheet doesn\'t open: <b>Download MP3</b>, then in Files long-press it → Share → Use as Ringtone.',
+note:'iPhone ringtones must be shorter than 30 seconds, so the maximum here is 29.5 seconds.',
+sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:'Finding the chorus…',sLoaded:'Song loaded. The highlighted part is our chorus pick.',
+sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
+sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Ready. Tap "Set as ringtone" and choose "Use as Ringtone".',
+sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
+langBtn:'עברית'}};
+let lang=(()=>{try{const v=localStorage.getItem('snipring-lang');if(v==='he'||v==='en')return v}catch(e){}return /^he|^iw/i.test(navigator.language||'')?'he':'en'})();
+const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
+function applyLang(){
+  const html=document.documentElement,rtl=lang==='he';html.lang=lang;html.dir=rtl?'rtl':'ltr';document.querySelector('.wrap').dir=rtl?'rtl':'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=t(el.dataset.i18n)});
+  document.querySelectorAll('[data-i18n-aria]').forEach(el=>el.setAttribute('aria-label',t(el.dataset.i18nAria)));
+  $('lang').textContent=t('langBtn');
+  if(song&&song._demo){$('songTitle').textContent=t('sample');$('badge').textContent=t('sampleBadge');if(!$('name').dataset.touched)$('name').value=t('sample')}
+  $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
+  if(cands.length)renderCands(),markCand();setIcon();
+}
+$('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();say(t('sReady0'))});
+$('name').addEventListener('input',()=>{$('name').dataset.touched='1'});
 /* ---------- start with the demo ---------- */
-song=demoSong();$('songLen').textContent=fmtShort(song.duration);analyse();ruler();
+song=demoSong();song._demo=true;$('songLen').textContent=fmtShort(song.duration);analyse();ruler();applyLang();say(t('sReady0'));
 })();
 </script>
 
