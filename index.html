@@ -326,6 +326,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 
   <section class="mine" id="mine" hidden aria-labelledby="mineH">
     <div class="minehead"><h2 id="mineH" data-i18n="mineH"></h2><span class="note" data-i18n="mineSub"></span></div>
+    <p class="note" id="mineEmpty" data-i18n="mineEmpty"></p>
     <ul id="mineList"></ul>
   </section>
 
@@ -766,7 +767,7 @@ g3_A:'לוחצים <b>+</b> (או "הצלילים שלי" ← <b>+</b>), ובו�
 note_A:'באנדרואיד אין מגבלת אורך, אבל רינגטון קצר מ‑30 שניות מתאים לכל טלפון.',
 sReady_A:'מוכן. לחצו "הורד MP3", ואז בהגדרות ← צלילים ← רינגטון ← + בחרו את הקובץ.',
 invText_A:'הפכתי שיר לרינגטון בדקה, בלי אפליקציה 🎵 נסו:',guideLink_A:'המדריך לאנדרואיד',
-mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',mineSaved:'נשמר גם ב"הרינגטונים שלי".'},
+mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
 pick:'Choose a song or video',pickNote:'A song (MP3, M4A, WAV) or a video from your library, and its sound becomes your ringtone. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
@@ -796,7 +797,7 @@ g3_A:'Tap <b>+</b> (or My sounds → <b>+</b>) and pick the file from Downloads.
 note_A:'Android has no length limit, but a ringtone under 30 seconds works on every phone.',
 sReady_A:'Ready. Tap "Download MP3", then Settings → Sound → Ringtone → + and pick the file.',
 invText_A:'I turned a song into a ringtone in a minute, no app needed 🎵 Try it:',guideLink_A:'Android guide',
-mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',mineSaved:'Also saved in "My ringtones".'}};
+mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',mineSaved:'Also saved in "My ringtones" below.',mineEmpty:'No ringtones yet. Every ringtone you create is saved here automatically.'}};
 let lang=(()=>{try{const v=localStorage.getItem('snipring-lang');if(v==='he'||v==='en')return v}catch(e){}return /^he|^iw/i.test(navigator.language||'')?'he':'en'})();
 /* Android gets its own wording wherever a key has an "_A" twin */
 const t=k=>(ANDROID&&T[lang]&&T[lang][k+'_A'])||(T[lang]&&T[lang][k])||T.en[k]||k;
@@ -807,7 +808,7 @@ function applyLang(){
   $('lang').textContent=t('langBtn');$('guideLink').href=ANDROID?(lang==='he'?'ringtone-android.html':'android-ringtone.html'):(lang==='he'?'ringtone-iphone.html':'iphone-ringtone.html');
   if(song&&song._demo){$('songTitle').textContent=t('sample');$('badge').textContent=t('sampleBadge');if(!$('name').dataset.touched)$('name').value=t('sample')}
   $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
-  if(cands.length)renderCands(),markCand();setIcon();syncAria();if(typeof renderMine==='function'&&mine.length)renderMine();
+  if(cands.length)renderCands(),markCand();setIcon();syncAria();if(typeof renderMine==='function')renderMine();
 }
 function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;
   requestAnimationFrame(()=>{draw();if(was){const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');ed.scrollIntoView({behavior:calm?'auto':'smooth',block:'start'});$('main').focus({preventScroll:true})}})}
@@ -852,18 +853,20 @@ async function dbDo(mode,fn){const d=await db();return new Promise((res,rej)=>{c
   tx.oncomplete=()=>res(out&&out.result);tx.onerror=()=>rej(tx.error)})}
 async function loadMine(){try{const all=await dbDo('readonly',st=>st.getAll());mine=(all||[]).sort((a,b)=>b.id-a.id)}catch(e){mine=[]}renderMine()}
 async function saveMine(file,secs){
-  try{const blob=new Blob([await file.arrayBuffer()],{type:'audio/mpeg'});
-    const rec={id:Date.now(),name:file.name.replace(/\.mp3$/i,''),secs:Math.round(secs*10)/10,blob};
-    if(mine[0]&&mine[0].name===rec.name&&mine[0].blob.size===blob.size)return;
+  try{// stored as a plain ArrayBuffer: Safari has been unreliable with Blobs inside IndexedDB
+    const data=await file.arrayBuffer();
+    const rec={id:Date.now(),name:file.name.replace(/\.mp3$/i,''),secs:Math.round(secs*10)/10,data};
+    if(mine[0]&&mine[0].name===rec.name&&mine[0].data.byteLength===data.byteLength){say($('status').textContent+' '+t('mineSaved'));return}
     await dbDo('readwrite',st=>st.put(rec));mine.unshift(rec);
     while(mine.length>20){const old=mine.pop();await dbDo('readwrite',st=>st.delete(old.id))}
-    renderMine();
-  }catch(e){}
+    renderMine();say($('status').textContent+' '+t('mineSaved'));
+  }catch(e){track('mine_save_failed',{err:String(e&&e.name||e)})}
 }
-function mineFile(r){return new File([r.blob],r.name+'.mp3',{type:'audio/mpeg'})}
+const mineBlob=r=>r.blob||new Blob([r.data],{type:'audio/mpeg'});
+function mineFile(r){return new File([mineBlob(r)],r.name+'.mp3',{type:'audio/mpeg'})}
 function stopMine(){if(mineAudio){mineAudio.pause();mineAudio=null}if(mineUrl){URL.revokeObjectURL(mineUrl);mineUrl=null}minePlaying=null}
 function renderMine(){
-  const ul=$('mineList');ul.textContent='';$('mine').hidden=!mine.length;
+  const ul=$('mineList');ul.textContent='';$('mine').hidden=false;$('mineEmpty').hidden=!!mine.length;
   const btn=(txt,cls,fn,aria)=>{const b=document.createElement('button');b.type='button';b.className='mb'+(cls?' '+cls:'');b.textContent=txt;if(aria)b.setAttribute('aria-label',aria);b.addEventListener('click',fn);return b};
   mine.forEach(r=>{
     const li=document.createElement('li'),nm=document.createElement('span');nm.className='mname';nm.textContent=r.name;
@@ -871,10 +874,10 @@ function renderMine(){
     const playing=minePlaying===r.id;
     li.appendChild(btn(playing?t('mineStop'):t('minePlay'),'',()=>{
       const was=minePlaying===r.id;stopMine();stopPreview();
-      if(!was){mineUrl=URL.createObjectURL(r.blob);mineAudio=new Audio(mineUrl);minePlaying=r.id;mineAudio.onended=()=>{stopMine();renderMine()};mineAudio.play().catch(()=>{});track('mine_played')}
+      if(!was){mineUrl=URL.createObjectURL(mineBlob(r));mineAudio=new Audio(mineUrl);minePlaying=r.id;mineAudio.onended=()=>{stopMine();renderMine()};mineAudio.play().catch(()=>{});track('mine_played')}
       renderMine()},(playing?t('mineStop'):t('minePlay'))+': '+r.name));
     if(navigator.share&&!ANDROID)li.appendChild(btn(t('mineSet'),'pri',async()=>{track('mine_set_tapped');try{await navigator.share({files:[mineFile(r)]});track('share_completed',{from:'mine'})}catch(e){}},t('setRt')+': '+r.name));
-    li.appendChild(btn(t('mineDl'),ANDROID||!navigator.share?'pri':'',()=>{const u=URL.createObjectURL(r.blob),a=document.createElement('a');a.href=u;a.download=r.name+'.mp3';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);track('mp3_downloaded',{from:'mine'})},t('mineDl')+': '+r.name));
+    li.appendChild(btn(t('mineDl'),ANDROID||!navigator.share?'pri':'',()=>{const u=URL.createObjectURL(mineBlob(r)),a=document.createElement('a');a.href=u;a.download=r.name+'.mp3';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);track('mp3_downloaded',{from:'mine'})},t('mineDl')+': '+r.name));
     li.appendChild(btn(t('mineDel'),'del',async()=>{if(!confirm(t('mineDelQ').replace('{n}',r.name)))return;if(minePlaying===r.id)stopMine();
       try{await dbDo('readwrite',st=>st.delete(r.id))}catch(e){}mine=mine.filter(x=>x.id!==r.id);renderMine();track('mine_deleted')},t('mineDel')+': '+r.name));
     ul.appendChild(li);
