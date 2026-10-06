@@ -72,9 +72,10 @@ canvas{display:block;width:100%;height:132px;cursor:grab}
 .tgroup .time{font-size:18px;min-width:6ch;text-align:center}
 .trow .nudge{padding:6px 8px}
 .mark{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:8px;padding:6px 10px;cursor:pointer}
+.listen{display:flex;gap:10px;flex-wrap:wrap}
+.listen .btn{flex:1 1 150px}
 .tfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
 .tinfo{font-size:14px;line-height:1.3}
-#playFrom{padding:8px 12px;font-size:14px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
 .chip .num{font-size:12px;color:var(--muted)}
@@ -128,23 +129,25 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       <div class="ruler num" id="ruler"></div>
     </div>
 
-    <p class="hint">גררו את שתי הידיות כדי לבחור התחלה וסוף, או גררו את הקטע כולו. נגיעה מחוץ לקטע מזיזה את הסמן.</p>
+    <p class="hint"><b>איך בוחרים מאיפה הרינגטון מתחיל:</b> נוגעים בצורת הגל בנקודה הרצויה, או מאזינים לשיר ולוחצים "התחל מכאן" ברגע הנכון. הידיות בקצוות משנות את האורך.</p>
+
+    <div class="listen">
+      <button class="btn" id="playFrom">השמע את השיר <span class="num" id="cursorT">0:00</span></button>
+      <button class="btn primary" id="startHere">התחל את הרינגטון מכאן</button>
+    </div>
 
     <div class="trim">
       <div class="trow">
         <span class="tlabel">התחלה</span>
         <span class="tgroup"><button class="nudge" data-h="start" data-n="-1">−1</button><button class="nudge" data-h="start" data-n="-0.1">−0.1</button><span class="time num" id="tStart">0:00.0</span><button class="nudge" data-h="start" data-n="0.1">+0.1</button><button class="nudge" data-h="start" data-n="1">+1</button></span>
-        <button class="mark" data-h="start">סמן כאן</button>
       </div>
       <div class="trow">
         <span class="tlabel">סוף</span>
         <span class="tgroup"><button class="nudge" data-h="end" data-n="-1">−1</button><button class="nudge" data-h="end" data-n="-0.1">−0.1</button><span class="time num" id="tEnd">0:00.0</span><button class="nudge" data-h="end" data-n="0.1">+0.1</button><button class="nudge" data-h="end" data-n="1">+1</button></span>
-        <button class="mark" data-h="end">סמן כאן</button>
       </div>
       <div class="tfoot">
-        <button class="play" id="play" aria-label="השמע את הקטע"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
-        <span class="tinfo">אורך הקטע <b class="num" id="tLen">0.0</b> שנ׳<br><span class="lbl">עד 29.5 שניות</span></span>
-        <button class="btn" id="playFrom">השמע מהסמן <span class="num" id="cursorT">0:00</span></button>
+        <button class="play" id="play" aria-label="השמע את הרינגטון"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+        <span class="tinfo"><b>השמע את הרינגטון</b><br>אורך <b class="num" id="tLen">0.0</b> שנ׳ <span class="lbl">(עד 29.5)</span></span>
       </div>
     </div>
 
@@ -299,25 +302,25 @@ cv.addEventListener('pointerdown',e=>{
   const r=cv.getBoundingClientRect(),x=e.clientX-r.left,w=r.width,D=song.duration;
   const xs=S.start/D*w,xe=(S.start+S.len)/D*w,ds=Math.abs(x-xs),de=Math.abs(x-xe),t=tAt(e);
   if(Math.min(ds,de)<=24)drag={mode:ds<=de?'start':'end'};
-  else if(t>S.start&&t<S.start+S.len)drag={mode:'move',off:t-S.start};
-  else{S.cursor=Math.round(t*10)/10;$('cursorT').textContent=fmtShort(S.cursor);if(playing&&mode==='full')playFull(S.cursor);else draw();return}
+  else drag={mode:(t>S.start&&t<S.start+S.len)?'move':'tap',off:t-S.start,x0:e.clientX,moved:false,t};
   cv.setPointerCapture(e.pointerId);S.cand=-1;markCand();
 });
 cv.addEventListener('pointermove',e=>{
   if(!drag)return;const t=tAt(e),end=S.start+S.len;
-  if(drag.mode==='start')setRange(t,end,'start');else if(drag.mode==='end')setRange(S.start,t,'end');else setRange(t-drag.off,t-drag.off+S.len,'move');
+  if(drag.mode==='start')setRange(t,end,'start');else if(drag.mode==='end')setRange(S.start,t,'end');
+  else if(drag.mode==='move'){if(!drag.moved&&Math.abs(e.clientX-drag.x0)<8)return;drag.moved=true;setRange(t-drag.off,t-drag.off+S.len,'move')}
 });
-const endDrag=()=>{if(!drag)return;const m=drag.mode;drag=null;if(playing&&mode==='sel')previewSel(m==='end')};
+const endDrag=()=>{if(!drag)return;const d=drag;drag=null;
+  if(d.mode==='tap'||(d.mode==='move'&&!d.moved)){startAt(d.t);return}
+  if(playing&&mode==='sel')previewSel(d.mode==='end')};
+function startAt(t){setRange(t,t+S.len,'move');S.cursor=S.start;$('cursorT').textContent=fmtShort(S.cursor);previewSel()}
 cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 
 document.querySelectorAll('.nudge').forEach(b=>b.addEventListener('click',()=>{
   const n=+b.dataset.n,end=S.start+S.len;S.cand=-1;markCand();
   if(b.dataset.h==='start')setRange(S.start+n,end,'start');else setRange(S.start,end+n,'end');
 }));
-document.querySelectorAll('.mark').forEach(b=>b.addEventListener('click',()=>{
-  const t=playing?pos():(S.cursor||0),end=S.start+S.len;S.cand=-1;markCand();
-  if(b.dataset.h==='start')setRange(t,Math.max(end,t+MINLEN),'start');else setRange(Math.min(S.start,t-MINLEN),t,'end');
-}));
+$('startHere').addEventListener('click',()=>{S.cand=-1;markCand();startAt(playing&&mode==='full'?pos():(S.cursor||0))});
 
 /* ---------- controls ---------- */
 $('fin').addEventListener('input',e=>{S.fin=+e.target.value;$('finV').textContent=S.fin.toFixed(1)+' שנ׳'});
@@ -355,7 +358,7 @@ function playFull(at){mode='full';startPlayback(at,song.duration-at,false)}
 function preview(){previewSel()}
 function stopPreview(){if(playing&&mode==='full')S.cursor=Math.round(pos()*10)/10;playing=false;try{src&&src.stop()}catch(e){}cancelAnimationFrame(raf);setIcon();$('cursorT').textContent=fmtShort(S.cursor||0);draw()}
 function setIcon(){const on=playing&&mode==='sel';$('playIcon').innerHTML=on?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',on?'עצור':'השמע את הקטע');
-  $('playFrom').firstChild.textContent=(playing&&mode==='full')?'עצור ':'השמע מהסמן '}
+  $('playFrom').firstChild.textContent=(playing&&mode==='full')?'עצור ':'השמע את השיר '}
 $('play').addEventListener('click',()=>(playing&&mode==='sel')?stopPreview():previewSel());
 $('playFrom').addEventListener('click',()=>(playing&&mode==='full')?stopPreview():playFull(S.cursor||0));
 
@@ -415,7 +418,7 @@ let ready=null,dlUrl=null,diag='';
 function invalidate(){ready=null;$('share').hidden=true;$('dl').hidden=true;$('export').hidden=false}
 ['fin','fout','norm','name'].forEach(id=>$(id).addEventListener('input',invalidate));
 ['pointerdown'].forEach(ev=>cv.addEventListener(ev,invalidate));
-document.querySelectorAll('.nudge,.mark').forEach(b=>b.addEventListener('click',invalidate));
+document.querySelectorAll('.nudge,#startHere').forEach(b=>b.addEventListener('click',invalidate));
 $('cands').addEventListener('click',invalidate);
 $('file').addEventListener('change',invalidate);
 $('export').addEventListener('click',async()=>{
