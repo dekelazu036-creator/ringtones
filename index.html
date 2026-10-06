@@ -88,7 +88,7 @@ main:focus{outline:none}
 .dropnote{margin:0;color:var(--muted);font-size:12.5px;max-width:42ch}
 /* once a song is open, the hero shrinks to a slim "choose another" bar */
 main.editing .drop{flex-direction:row;flex-wrap:wrap;justify-content:center;text-align:start;padding:12px 14px;gap:10px;border-radius:16px;box-shadow:none}
-main.editing .drop .viz,main.editing .drop .droph,main.editing .drop .dropsub,main.editing .drop .trust,main.editing .drop .dropnote{display:none}
+main.editing .drop .watch,main.editing .drop .viz,main.editing .drop .droph,main.editing .drop .dropsub,main.editing .drop .trust,main.editing .drop .dropnote{display:none}
 main.editing .drop .file.big{width:auto;margin:0;font-size:15px;padding:10px 18px;box-shadow:none;border-radius:12px}
 .file{position:relative;overflow:hidden}
 .file input{position:absolute;inset:0;opacity:0;cursor:pointer}
@@ -242,6 +242,14 @@ html.a-readable h1,html.a-readable .sname{font-family:Arial,"Arial Hebrew",Helve
 html.android .sheet{display:none}
 #helpBtn{min-width:34px;font-weight:800}
 dialog.help{border:1px solid var(--line);border-radius:16px;background:var(--paper);color:var(--ink);padding:18px;max-width:min(520px,calc(100vw - 32px));width:100%;max-height:calc(100dvh - 40px);overflow:auto}
+dialog.demo{max-width:min(400px,calc(100vw - 32px));display:none;flex-direction:column;gap:12px}
+dialog.demo[open]{display:flex}
+dialog.demo video{width:100%;height:auto;max-height:calc(100dvh - 210px);aspect-ratio:9/16;object-fit:contain;border-radius:16px;background:#0B0F1A;display:block}
+.droplinks{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 18px}
+.watch{font:inherit;font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px 6px 6px;cursor:pointer}
+html[dir=rtl] .watch{padding:6px 6px 6px 14px}
+.watch .wi{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.watch.inhelp{margin:12px 0 4px}
 dialog.help::backdrop{background:rgba(5,8,15,.55)}
 dialog.help h2{margin:0;font-size:19px}
 dialog.help h3{font-size:15px;margin:14px 0 6px}
@@ -308,8 +316,15 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <a href="accessibility.html" data-i18n="aStatement"></a>
   </div>
 
+  <dialog class="help demo" id="demo" aria-labelledby="demoTitle">
+    <div class="a11y-head"><h2 id="demoTitle" data-i18n="demoH"></h2><button class="a2hs-x" id="demoClose" type="button" data-i18n-aria="close">✕</button></div>
+    <video id="demoVid" playsinline muted loop controls preload="none" width="720" height="1280"></video>
+    <button class="btn primary" id="demoGo" type="button" data-i18n="demoGo"></button>
+  </dialog>
+
   <dialog class="help" id="help" aria-labelledby="helpTitle">
     <div class="a11y-head"><h2 id="helpTitle" data-i18n="help"></h2><button class="a2hs-x" id="helpClose" type="button" data-i18n-aria="close">✕</button></div>
+    <button class="watch inhelp" id="watchHelp" type="button"><span class="wi"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span data-i18n="watch"></span></button>
     <ol class="steps-h">
       <li data-i18n="h1"></li>
       <li data-i18n="h2"></li>
@@ -334,7 +349,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <label class="btn primary file big"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 16V4m0 0l-5 5m5-5l5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg,.mp4,.mov,.m4v"></label>
     <ul class="trust"><li data-i18n="tr1"></li><li data-i18n="tr2"></li><li data-i18n="tr3"></li></ul>
     <p class="dropnote" data-i18n="pickNote"></p>
-    <button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button>
+    <div class="droplinks"><button class="watch" id="watchBtn" type="button" aria-haspopup="dialog"><span class="wi"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span data-i18n="watch"></span></button><button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button></div>
   </section>
 
   <ol class="steps" id="steps">
@@ -894,7 +909,7 @@ g3_A:'לוחצים <b>+</b> (או "הצלילים שלי" ← <b>+</b>), ובו�
 note_A:'באנדרואיד אין מגבלת אורך, אבל רינגטון קצר מ‑30 שניות מתאים לכל טלפון.',
 sReady_A:'הרינגטון מוכן.',
 invText_A:'הפכתי שיר לרינגטון בדקה, בלי אפליקציה 🎵 נסו:',guideLink_A:'המדריך לאנדרואיד',
-mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
+mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
 nextH:'מה עכשיו?',next1:'לחצו <b>הגדר כרינגטון</b> למטה.',next2:'בתפריט שנפתח <b>גללו למטה</b> ובחרו <b>שימוש כצלצול</b>.',useAs:'שימוש כצלצול',
 next1_A:'לחצו <b>הורד MP3</b> למטה.',next2_A:'<b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>רינגטון</b> ← <b>+</b>, ובחרו את הקובץ מההורדות.',
 mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
@@ -927,7 +942,7 @@ g3_A:'Tap <b>+</b> (or My sounds → <b>+</b>) and pick the file from Downloads.
 note_A:'Android has no length limit, but a ringtone under 30 seconds works on every phone.',
 sReady_A:'Your ringtone is ready.',
 invText_A:'I turned a song into a ringtone in a minute, no app needed 🎵 Try it:',guideLink_A:'Android guide',
-mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
+mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
 nextH:'What now?',next1:'Tap <b>Set as ringtone</b> below.',next2:'In the menu that opens, <b>scroll down</b> and choose <b>Use as Ringtone</b>.',useAs:'Use as Ringtone',
 next1_A:'Tap <b>Download MP3</b> below.',next2_A:'<b>Settings</b> → <b>Sound &amp; vibration</b> → <b>Ringtone</b> → <b>+</b>, and pick the file from Downloads.',
 mineSaved:'Also saved in "My ringtones" below.',mineEmpty:'No ringtones yet. Every ringtone you create is saved here automatically.'}};
@@ -979,6 +994,18 @@ $('inviteBtn').addEventListener('click',async()=>{
 $('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('song_loaded',{source:'demo',lang})});
 $('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();track('language_switched',{to:lang});say(t('sReady0'))});
 $('name').addEventListener('input',()=>{$('name').dataset.touched='1'});
+/* demo video: a 30-second walkthrough recorded from the real site */
+function openDemo(from){const d=$('demo'),v=$('demoVid'),src='media/how-'+lang+'.mp4';
+  if(!v.src.endsWith(src)){v.src=src;v.poster='media/how-'+lang+'.jpg'}
+  if($('help').open)$('help').close();
+  d.showModal?d.showModal():d.setAttribute('open','');v.currentTime=0;v.play().catch(()=>{});track('demo_video_opened',{from})}
+function closeDemo(){const d=$('demo');$('demoVid').pause();d.close?d.close():d.removeAttribute('open')}
+$('watchBtn').addEventListener('click',()=>openDemo('hero'));
+$('watchHelp').addEventListener('click',()=>openDemo('help'));
+$('demoClose').addEventListener('click',closeDemo);
+$('demo').addEventListener('close',()=>$('demoVid').pause());
+$('demo').addEventListener('click',e=>{if(e.target===$('demo'))closeDemo()});
+$('demoGo').addEventListener('click',()=>{closeDemo();track('demo_video_cta');$('file').click()});
 /* help: the full how-to in a popup, reachable from anywhere */
 $('helpBtn').addEventListener('click',()=>{const d=$('help');
   if(d.showModal){d.showModal()}else{d.setAttribute('open','')}track('help_opened',{editor:$('editor').hidden?'no':'yes'})});
