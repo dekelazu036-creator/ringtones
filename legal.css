@@ -18,3 +18,12 @@ ul{padding-inline-start:22px}
 a{color:var(--accent)}
 .mail{font-weight:600;user-select:all}
 .foot{margin-top:18px;text-align:center;font-size:14px;color:var(--muted)}
+/* guide pages */
+.cta-box{margin:22px 0;padding:18px;border-radius:14px;background:var(--bg);border:1px solid var(--accent);text-align:center}
+.cta-box a.go{display:inline-block;margin-top:10px;background:var(--accent);color:#fff;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:10px}
+@media (prefers-color-scheme:dark){.cta-box a.go{color:#0B0F1A}}
+ol.howto{padding-inline-start:24px}
+ol.howto li{margin-bottom:6px}
+details.faq{border-top:1px solid var(--line);padding:10px 0}
+details.faq summary{cursor:pointer;font-weight:600}
+.langlink{font-size:14px}

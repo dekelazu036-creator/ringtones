@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url><loc>https://snipring.com/</loc><lastmod>2026-10-06</lastmod><priority>1.0</priority></url>
+  <url><loc>https://snipring.com/iphone-ringtone.html</loc><lastmod>2026-10-06</lastmod><priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="he" href="https://snipring.com/ringtone-iphone.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://snipring.com/iphone-ringtone.html"/></url>
+  <url><loc>https://snipring.com/ringtone-iphone.html</loc><lastmod>2026-10-06</lastmod><priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="he" href="https://snipring.com/ringtone-iphone.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://snipring.com/iphone-ringtone.html"/></url>
+  <url><loc>https://snipring.com/privacy.html</loc><lastmod>2026-10-06</lastmod><priority>0.3</priority></url>
+  <url><loc>https://snipring.com/terms.html</loc><lastmod>2026-10-06</lastmod><priority>0.3</priority></url>
+  <url><loc>https://snipring.com/accessibility.html</loc><lastmod>2026-10-06</lastmod><priority>0.3</priority></url>
+</urlset>
