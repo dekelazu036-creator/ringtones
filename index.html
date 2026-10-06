@@ -39,6 +39,8 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(46px,9vw,72px);lin
 header h1{text-align:start}
 .hrow{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .langbtn{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;flex:none}
+header .logo{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+header .logo:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:6px}
 header .ring{color:var(--accent)}
 header p{margin:6px 0 0;color:var(--muted);max-width:60ch}
 h2{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;margin:0}
@@ -144,7 +146,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 <body>
 <div class="wrap" dir="rtl">
   <header>
-    <div class="hrow"><h1 dir="ltr">Snip<span class="ring">Ring</span></h1><button class="langbtn" id="lang" type="button">English</button></div>
+    <div class="hrow"><h1 dir="ltr"><a class="logo" href="./" aria-label="SnipRing">Snip<span class="ring">Ring</span></a></h1><button class="langbtn" id="lang" type="button">English</button></div>
     <p data-i18n="tagline"></p>
   </header>
 
