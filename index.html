@@ -169,6 +169,9 @@ html.a-still *,html.a-still *::before,html.a-still *::after{animation:none!impor
 html.a-readable body,html.a-readable input,html.a-readable button,html.a-readable select{font-family:Arial,"Arial Hebrew",Helvetica,sans-serif!important;letter-spacing:.02em;word-spacing:.08em}
 html.a-readable h1,html.a-readable .sname{font-family:Arial,"Arial Hebrew",Helvetica,sans-serif!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.invite{flex:1 1 100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:12px}
+.invite p{margin:0;flex:1 1 200px;font-size:14px}
+.invite .btn{flex:0 0 auto}
 .steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:st}
 .steps li{counter-increment:st;display:grid;grid-template-columns:36px 1fr;column-gap:12px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .steps li::before{content:counter(st);grid-row:span 2;width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-family:var(--mono)}
@@ -223,7 +226,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
   </ol>
 
   <div class="drop" id="drop">
-    <label class="btn primary file big"><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg"></label>
+    <label class="btn primary file big"><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg,.mp4,.mov,.m4v"></label>
     <p data-i18n="pickNote"></p>
     <button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button>
   </div>
@@ -303,6 +306,10 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
       <button class="btn primary" id="share" hidden data-i18n="setRt"></button>
       <a class="btn" id="dl" hidden data-i18n="dl"></a>
       <p class="status" id="status" role="status"></p>
+      <div class="invite" id="invite" hidden>
+        <p><b data-i18n="invH"></b> <span data-i18n="invP"></span></p>
+        <button class="btn primary" id="inviteBtn" type="button" data-i18n="invBtn"></button>
+      </div>
     </div>
   </div>
 
@@ -621,7 +628,10 @@ $('playFrom').addEventListener('click',()=>(playing&&mode==='full')?stopPreview(
 
 /* ---------- load a file ---------- */
 async function loadFile(f){
-  if(!f)return;stopPreview();say(t('sOpening')+f.name+'…');
+  if(!f)return;stopPreview();
+  const isVideo=/^video\//.test(f.type)||/\.(mp4|mov|m4v)$/i.test(f.name);
+  if(f.size>400*1024*1024){say(t('sTooBig'));track('song_open_failed',{ext:'too_big'});return}
+  say(t('sOpening')+f.name+'…');
   try{
     const ab=await f.arrayBuffer();const c=ensureCtx();
     song=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
@@ -631,8 +641,8 @@ async function loadFile(f){
     S.cursor=0;$('cursorT').textContent='0:00';
     say(t('sFinding'));await new Promise(r=>setTimeout(r,30));
     analyse();ruler();openEditor();say(t('sLoaded'));
-    track('song_loaded',{source:'file',minutes:Math.round(song.duration/60),lang});
-  }catch(e){say(t('sOpenFail'));track('song_open_failed',{ext:(f.name.split('.').pop()||'').toLowerCase()})}
+    track('song_loaded',{source:isVideo?'video':'file',minutes:Math.round(song.duration/60),lang});
+  }catch(e){say(isVideo?t('sVideoFail'):t('sOpenFail'));track('song_open_failed',{ext:(f.name.split('.').pop()||'').toLowerCase()})}
 }
 $('file').addEventListener('change',e=>loadFile(e.target.files[0]));
 const drop=$('drop');
@@ -701,13 +711,13 @@ $('export').addEventListener('click',async()=>{
 $('share').addEventListener('click',async()=>{
   if(!ready)return;
   track('set_ringtone_tapped');
-  try{await navigator.share({files:[ready]});say(t('sShared'));track('share_completed')}
+  try{await navigator.share({files:[ready]});say(t('sShared'));track('share_completed');showInvite()}
   catch(e){say(e&&e.name==='AbortError'?t('sCancel'):t('sShareFail'));track(e&&e.name==='AbortError'?'share_cancelled':'share_failed')}
 });
 
 const T={
 he:{tagline:'גוזרים כל שיר לרינגטון לאייפון. בוחרים שיר, המערכת מוצאת את הפזמון, ובלחיצה אחת הוא הצלצול שלכם.',
-pick:'בחר שיר',pickNote:'MP3, M4A, WAV ועוד. הקובץ נשאר במכשיר ולא נשלח לשום מקום. שירים מ‑Apple Music מוגנים ולא ייפתחו.',
+pick:'בחר שיר או סרטון',pickNote:'שיר (MP3, M4A, WAV) או סרטון מהגלריה, והקול שלו יהפוך לרינגטון. הקובץ נשאר במכשיר ולא נשלח לשום מקום. שירים מ‑Apple Music מוגנים ולא ייפתחו.',
 song:'השיר',sample:'שיר דוגמה',sampleBadge:'שיר דוגמה סינתטי',waveAria:'צורת הגל של השיר. נגעו כדי לבחור מאיפה הרינגטון מתחיל.',
 howStart:'<b>איך בוחרים מאיפה הרינגטון מתחיל:</b> נוגעים בצורת הגל בנקודה הרצויה, או מאזינים לשיר ולוחצים "התחל מכאן" ברגע הנכון. הידיות בקצוות משנות את האורך.',
 playSong:'השמע את השיר',stop:'עצור',startHere:'התחל את הרינגטון מכאן',typeTime:'או הקלידו מאיזו דקה ושנייה להתחיל',min:'דקות',secs:'שניות',goTime:'התחל מהזמן הזה',
@@ -720,15 +730,15 @@ g1:'לוחצים <b>צור רינגטון</b>, ואז <b>הגדר כרינגטו
 g3:'אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים לחיצה ארוכה ← שתף ← שימוש כצלצול.',
 note:'באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29.5 שניות.',
 sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח את ',sFinding:'מחפש את הפזמון…',sLoaded:'השיר נטען. הקטע המסומן הוא ההצעה לפזמון.',
-sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
+sVideoFail:'לא הצלחנו לחלץ קול מהסרטון. נסו סרטון אחר, או קובץ MP3.',sTooBig:'הקובץ גדול מדי (מעל 400MB). נסו סרטון קצר יותר.',sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
 sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'מוכן. לחצו "הגדר כרינגטון" ובחרו "שימוש כצלצול".',
 sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
-langBtn:'English',guideLink:'המדריך המלא',skip:'דלג לתוכן הראשי',editorH:'עורך הרינגטון',a11y:'נגישות',aBig:'הגדלת טקסט',aContrast:'ניגודיות גבוהה',aLinks:'הדגשת קישורים',aStill:'עצירת אנימציות',aFont:'גופן קריא',aReset:'איפוס',aStatement:'הצהרת נגישות',
+langBtn:'English',invH:'יצא טוב? 🎉',invP:'שלחו את SnipRing לחבר שגם רוצה רינגטון משלו.',invBtn:'שלח לחבר',invText:'הפכתי שיר לרינגטון באייפון בדקה, בלי אפליקציה 🎵 נסו:',invCopied:'הקישור הועתק. הדביקו אותו בוואטסאפ.',guideLink:'המדריך המלא',skip:'דלג לתוכן הראשי',editorH:'עורך הרינגטון',a11y:'נגישות',aBig:'הגדלת טקסט',aContrast:'ניגודיות גבוהה',aLinks:'הדגשת קישורים',aStill:'עצירת אנימציות',aFont:'גופן קריא',aReset:'איפוס',aStatement:'הצהרת נגישות',
 waveVal:'הרינגטון מתחיל ב‑{a} ומסתיים ב‑{b}. חיצים מזיזים בשנייה, Shift עם חץ בחמש שניות.',
 'n_start_-1':'הזז התחלה שנייה אחורה','n_start_-0.1':'הזז התחלה עשירית שנייה אחורה','n_start_0.1':'הזז התחלה עשירית שנייה קדימה','n_start_1':'הזז התחלה שנייה קדימה',
-'n_end_-1':'הזז סוף שנייה אחורה','n_end_-0.1':'הזז סוף עשירית שנייה אחורה','n_end_0.1':'הזז סוף עשירית שנייה קדימה','n_end_1':'הזז סוף שנייה קדימה',terms:'תנאי שימוש',privacy:'מדיניות פרטיות',a2hs:'<b>הוסיפו את SnipRing למסך הבית:</b> לחצו על כפתור השיתוף בספארי ← <b>הוספה למסך הבית</b>. ככה הוא תמיד בהישג יד, כמו אפליקציה.',close:'סגירה',step1:'בוחרים שיר מהטלפון',step1s:'כל קובץ MP3, M4A או WAV',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות'},
+'n_end_-1':'הזז סוף שנייה אחורה','n_end_-0.1':'הזז סוף עשירית שנייה אחורה','n_end_0.1':'הזז סוף עשירית שנייה קדימה','n_end_1':'הזז סוף שנייה קדימה',terms:'תנאי שימוש',privacy:'מדיניות פרטיות',a2hs:'<b>הוסיפו את SnipRing למסך הבית:</b> לחצו על כפתור השיתוף בספארי ← <b>הוספה למסך הבית</b>. ככה הוא תמיד בהישג יד, כמו אפליקציה.',close:'סגירה',step1:'בוחרים שיר או סרטון',step1s:'קובץ שמע, או סרטון מהגלריה',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
-pick:'Choose a song',pickNote:'MP3, M4A, WAV and more. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
+pick:'Choose a song or video',pickNote:'A song (MP3, M4A, WAV) or a video from your library, and its sound becomes your ringtone. Your file stays on your device and is never uploaded. Apple Music songs are protected and won\'t open.',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
 howStart:'<b>Choose where the ringtone starts:</b> tap the waveform at the spot you want, or listen and press "Start here" at the right moment. Drag the edge handles to change the length.',
 playSong:'Play song',stop:'Stop',startHere:'Start the ringtone here',typeTime:'Or type the minute and second to start from',min:'Minutes',secs:'Seconds',goTime:'Start at this time',
@@ -741,13 +751,13 @@ g1:'Tap <b>Create ringtone</b>, then <b>Set as ringtone</b>.',g2:'In the share s
 g3:'If the share sheet doesn\'t open: <b>Download MP3</b>, then in Files long-press it → Share → Use as Ringtone.',
 note:'iPhone ringtones must be shorter than 30 seconds, so the maximum here is 29.5 seconds.',
 sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:'Finding the chorus…',sLoaded:'Song loaded. The highlighted part is our chorus pick.',
-sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
+sVideoFail:'Couldn\'t get the sound from this video. Try another video, or an MP3 file.',sTooBig:'This file is too large (over 400MB). Try a shorter video.',sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
 sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Ready. Tap "Set as ringtone" and choose "Use as Ringtone".',
 sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
-langBtn:'עברית',guideLink:'Full guide',skip:'Skip to main content',editorH:'Ringtone editor',a11y:'Accessibility',aBig:'Bigger text',aContrast:'High contrast',aLinks:'Highlight links',aStill:'Stop animations',aFont:'Readable font',aReset:'Reset',aStatement:'Accessibility statement',
+langBtn:'עברית',invH:'Turned out great? 🎉',invP:'Send SnipRing to a friend who wants their own ringtone too.',invBtn:'Send to a friend',invText:'I turned a song into an iPhone ringtone in a minute, no app needed 🎵 Try it:',invCopied:'Link copied. Paste it in WhatsApp.',guideLink:'Full guide',skip:'Skip to main content',editorH:'Ringtone editor',a11y:'Accessibility',aBig:'Bigger text',aContrast:'High contrast',aLinks:'Highlight links',aStill:'Stop animations',aFont:'Readable font',aReset:'Reset',aStatement:'Accessibility statement',
 waveVal:'Ringtone starts at {a} and ends at {b}. Arrow keys move it by 1 second, Shift plus arrow by 5 seconds.',
 'n_start_-1':'Move start back 1 second','n_start_-0.1':'Move start back 0.1 second','n_start_0.1':'Move start forward 0.1 second','n_start_1':'Move start forward 1 second',
-'n_end_-1':'Move end back 1 second','n_end_-0.1':'Move end back 0.1 second','n_end_0.1':'Move end forward 0.1 second','n_end_1':'Move end forward 1 second',terms:'Terms of Use',privacy:'Privacy Policy',a2hs:'<b>Add SnipRing to your Home Screen:</b> tap Share in Safari → <b>Add to Home Screen</b>. It opens like an app, one tap away.',close:'Close',step1:'Pick a song from your phone',step1s:'Any MP3, M4A or WAV file',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings'}};
+'n_end_-1':'Move end back 1 second','n_end_-0.1':'Move end back 0.1 second','n_end_0.1':'Move end forward 0.1 second','n_end_1':'Move end forward 1 second',terms:'Terms of Use',privacy:'Privacy Policy',a2hs:'<b>Add SnipRing to your Home Screen:</b> tap Share in Safari → <b>Add to Home Screen</b>. It opens like an app, one tap away.',close:'Close',step1:'Pick a song or video',step1s:'An audio file, or a video from your library',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings'}};
 let lang=(()=>{try{const v=localStorage.getItem('snipring-lang');if(v==='he'||v==='en')return v}catch(e){}return /^he|^iw/i.test(navigator.language||'')?'he':'en'})();
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
 function applyLang(){
@@ -761,7 +771,14 @@ function applyLang(){
 }
 function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;
   requestAnimationFrame(()=>{draw();if(was){const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');ed.scrollIntoView({behavior:calm?'auto':'smooth',block:'start'});$('main').focus({preventScroll:true})}})}
-$('dl').addEventListener('click',()=>track('mp3_downloaded'));
+$('dl').addEventListener('click',()=>{track('mp3_downloaded');setTimeout(showInvite,1500)});
+function showInvite(){let seen=false;try{seen=sessionStorage.getItem('snipring-inv')==='1'}catch(e){}
+  if(seen)return;$('invite').hidden=false;track('invite_shown');try{sessionStorage.setItem('snipring-inv','1')}catch(e){}}
+$('inviteBtn').addEventListener('click',async()=>{
+  const url='https://snipring.com/?ref=invite',text=t('invText');track('invite_tapped');
+  if(navigator.share){try{await navigator.share({title:'SnipRing',text,url});track('invite_shared');$('invite').hidden=true}catch(e){}return}
+  try{await navigator.clipboard.writeText(text+' '+url);say(t('invCopied'))}catch(e){location.href='https://wa.me/?text='+encodeURIComponent(text+' '+url)}
+});
 /* home screen: hint for iPhone Safari users who haven't added it yet */
 (()=>{const standalone=window.navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
   if(standalone){track('opened_from_home_screen');return}
