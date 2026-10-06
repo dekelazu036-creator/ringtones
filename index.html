@@ -74,6 +74,12 @@ canvas{display:block;width:100%;height:132px;cursor:grab}
 .mark{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:8px;padding:6px 10px;cursor:pointer}
 .listen{display:flex;gap:10px;flex-wrap:wrap}
 .listen .btn{flex:1 1 150px}
+.ttime{display:flex;flex-direction:column;gap:6px}
+.tinrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tin{display:flex;align-items:center;gap:4px}
+.tin input{font-family:var(--mono);font-size:20px;width:4.2ch;text-align:center;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 4px}
+.tin input#ts{width:5ch}
+.tin input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .tfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
 .tinfo{font-size:14px;line-height:1.3}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
@@ -134,6 +140,13 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <div class="listen">
       <button class="btn" id="playFrom">השמע את השיר <span class="num" id="cursorT">0:00</span></button>
       <button class="btn primary" id="startHere">התחל את הרינגטון מכאן</button>
+    </div>
+    <div class="ttime">
+      <label class="lbl" for="tm">או הקלידו מאיזו דקה ושנייה להתחיל</label>
+      <div class="tinrow">
+        <span class="tin" dir="ltr"><input id="tm" type="number" inputmode="numeric" min="0" placeholder="0" aria-label="דקות"><b>:</b><input id="ts" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" placeholder="00" aria-label="שניות"></span>
+        <button class="btn" id="goTime">התחל מהזמן הזה</button>
+      </div>
     </div>
 
     <div class="trim">
@@ -266,9 +279,11 @@ function setRange(a,b,mode){
   if(mode==='start'){ if(b-a>MAXLEN)b=Math.min(D,a+MAXLEN); if(b-a<MINLEN){b=Math.min(D,a+MINLEN);a=Math.max(0,b-MINLEN)} }
   else if(mode==='end'){ if(b-a>MAXLEN)a=Math.max(0,b-MAXLEN); if(b-a<MINLEN){a=Math.max(0,b-MINLEN);b=Math.min(D,a+MINLEN)} }
   S.start=r(a);S.len=Math.max(0,r(b)-r(a));
-  $('tStart').textContent=fmt(S.start);$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);
+  $('tStart').textContent=fmt(S.start);syncTime();$('tEnd').textContent=fmt(S.start+S.len);$('tLen').textContent=S.len.toFixed(1);
   draw();
 }
+function syncTime(){const a=document.activeElement;if(a&&(a.id==='tm'||a.id==='ts'))return;
+  const m=Math.floor(S.start/60),sec=Math.round((S.start-m*60)*10)/10;$('tm').value=m;$('ts').value=sec<10?'0'+sec:sec}
 function setStart(t){setRange(t,t+S.len,'move')}
 
 /* ---------- waveform ---------- */
@@ -320,6 +335,10 @@ document.querySelectorAll('.nudge').forEach(b=>b.addEventListener('click',()=>{
   const n=+b.dataset.n,end=S.start+S.len;S.cand=-1;markCand();
   if(b.dataset.h==='start')setRange(S.start+n,end,'start');else setRange(S.start,end+n,'end');
 }));
+function goTyped(){const m=parseFloat($('tm').value)||0,sec=parseFloat($('ts').value)||0,t=Math.max(0,Math.min(song.duration-1,m*60+sec));
+  S.cand=-1;markCand();document.activeElement&&document.activeElement.blur();startAt(t);syncTime();invalidate()}
+$('goTime').addEventListener('click',goTyped);
+['tm','ts'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();goTyped()}}));
 $('startHere').addEventListener('click',()=>{S.cand=-1;markCand();startAt(playing&&mode==='full'?pos():(S.cursor||0))});
 
 /* ---------- controls ---------- */
