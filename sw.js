@@ -2,7 +2,7 @@
    Pages: network first (so updates show up right away), cached copy when offline.
    Static files: served from cache, refreshed in the background.
    Nothing the user creates passes through here; analytics and other sites are never touched. */
-const CACHE = 'snipring-v1';
+const CACHE = 'snipring-v2';
 const CORE = [
   './', 'index.html', 'manifest.webmanifest', 'fonts/fonts.css',
   'fonts/karantina-400.woff', 'fonts/karantina-700.woff', 'fonts/plexhe-400.woff', 'fonts/plexhe-500.woff',

@@ -21,284 +21,353 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SnipRing">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#2546F0">
+<meta name="theme-color" content="#F4F6FA" id="themeColor">
+<script>/* theme before first paint: no flash */(()=>{try{const v=localStorage.getItem('snipring-theme');if(v==='light'||v==='dark')document.documentElement.dataset.theme=v}catch(e){}})();</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232546F0'/%3E%3Cpath d='M14 34h4m6-10v20m6-26v32m6-22v12m6-18v24m6-14v4' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="fonts/fonts.css">
 <script src="vendor/lame.min.js"></script>
 <style>
-/* Layout: one editing bench — waveform with a 30-second window you slide, then trim settings and one export button. */
+/* ============================================================
+   SnipRing design system
+   One font (IBM Plex Sans Hebrew), one icon family (SVG sprite),
+   semantic colour tokens for light/dark, a 4px spacing scale.
+   ============================================================ */
 :root{
-  --bg:#EEF1F6; --paper:#F9FAFD; --ink:#121A2B; --muted:#5B6680; --line:#CDD4E2; --well:#DCE2EC;
-  --accent:#2546F0; --accent-ink:#FFFFFF; --accent-soft:rgba(37,70,240,.13); --wave:#9AA6C0;
-  --display:"Karantina","IBM Plex Sans Hebrew",system-ui,sans-serif;
-  --body:"IBM Plex Sans Hebrew",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* colour — light */
+  --bg:#F4F6FA; --surface:#FFFFFF; --surface-2:#F0F2F7; --surface-3:#E6EAF2;
+  --line:#DDE2EC; --line-strong:#C3CAD9;
+  --ink:#0F172A; --ink-2:#334155; --muted:#5A6478;
+  --accent:#2546F0; --accent-hover:#1B38D6; --accent-ink:#FFFFFF; --accent-soft:#E8ECFE; --accent-line:#B9C4FB;
+  --danger:#C62E25; --danger-soft:#FDECEA; --ok:#12805C;
+  --wave:#A6B0C5; --focus:#2546F0;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.06); --shadow-md:0 4px 16px -6px rgba(15,23,42,.14); --shadow-lg:0 18px 48px -18px rgba(15,23,42,.32);
+  /* type */
+  --font:"IBM Plex Sans Hebrew",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --logo:"Karantina","IBM Plex Sans Hebrew",system-ui,sans-serif;
+  --fs-xs:12px; --fs-sm:13.5px; --fs-md:15px; --fs-lg:17px; --fs-xl:20px; --fs-2xl:26px; --fs-3xl:clamp(28px,7vw,36px);
+  /* space, radius, controls */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px; --r-pill:999px;
+  --h-sm:36px; --h-md:44px; --h-lg:52px;
+  --gutter:16px;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0B0F1A; --paper:#121828; --ink:#E7ECF6; --muted:#8D98B3; --line:#263049; --well:#1D2539;
-  --accent:#7088FF; --accent-ink:#0B0F1A; --accent-soft:rgba(112,136,255,.18); --wave:#46536F; color-scheme:dark}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B0F19; --surface:#131A29; --surface-2:#1A2234; --surface-3:#222C42;
+  --line:#26314A; --line-strong:#36435F;
+  --ink:#E8ECF5; --ink-2:#C5CCDB; --muted:#9AA5BC;
+  --accent:#7D92FF; --accent-hover:#93A4FF; --accent-ink:#0B0F19; --accent-soft:#1E2747; --accent-line:#3A4A85;
+  --danger:#FF8A80; --danger-soft:#3A1E22; --ok:#5BD3A2;
+  --wave:#46536F; --focus:#93A4FF;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-md:0 6px 18px -8px rgba(0,0,0,.6); --shadow-lg:0 20px 50px -20px rgba(0,0,0,.8);
+  color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0B0F1A; --paper:#121828; --ink:#E7ECF6; --muted:#8D98B3; --line:#263049; --well:#1D2539;
-  --accent:#7088FF; --accent-ink:#0B0F1A; --accent-soft:rgba(112,136,255,.18); --wave:#46536F; color-scheme:dark}
+  --bg:#0B0F19; --surface:#131A29; --surface-2:#1A2234; --surface-3:#222C42;
+  --line:#26314A; --line-strong:#36435F;
+  --ink:#E8ECF5; --ink-2:#C5CCDB; --muted:#9AA5BC;
+  --accent:#7D92FF; --accent-hover:#93A4FF; --accent-ink:#0B0F19; --accent-soft:#1E2747; --accent-line:#3A4A85;
+  --danger:#FF8A80; --danger-soft:#3A1E22; --ok:#5BD3A2;
+  --wave:#46536F; --focus:#93A4FF;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-md:0 6px 18px -8px rgba(0,0,0,.6); --shadow-lg:0 20px 50px -20px rgba(0,0,0,.8);
+  color-scheme:dark}
+/* legacy names still read by the waveform code */
+:root{--paper:var(--surface);--well:var(--surface-2)}
 
-*{box-sizing:border-box}
-html body{padding-top:env(safe-area-inset-top,0px)}
-body{margin:0}
+/* ---------- base ---------- */
+*,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
-a.btn{text-decoration:none;display:inline-block}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding:0 16px}
-.wrap{max-width:900px;margin:0 auto;padding-block:20px 48px;display:flex;flex-direction:column;gap:18px}
-h1{font-family:var(--display);font-weight:700;font-size:clamp(46px,9vw,72px);line-height:.9;margin:0;text-wrap:balance}
-header h1{text-align:start}
-.hrow{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.langbtn{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;flex:none}
-header .logo{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
-header .logo:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:6px}
-header .ring{color:var(--accent)}
-header p{display:none}
-h2{font-family:var(--display);font-weight:700;font-size:34px;line-height:1;margin:0}
-.lbl{font-size:11px;letter-spacing:.08em;color:var(--muted)}
-.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--fs-md);line-height:1.55;
+  padding:env(safe-area-inset-top,0px) 0 0}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;font-weight:600;line-height:1.25;color:var(--ink)}
+h2{font-size:var(--fs-xl)} h3{font-size:var(--fs-md)}
+p{margin:0}
+a{color:var(--accent);text-underline-offset:3px}
+.num{font-variant-numeric:tabular-nums;unicode-bidi:isolate}
+bdi{unicode-bidi:isolate}
+.lbl{font-size:var(--fs-sm);font-weight:500;color:var(--muted)}
+.hint,.muted{color:var(--muted);font-size:var(--fs-sm);line-height:1.5}
+.small{font-size:var(--fs-sm)}
+.val{font-weight:600;color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.tagline{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.skip{position:absolute;inset-inline-start:var(--s3);top:-80px;z-index:200;background:var(--accent);color:var(--accent-ink);padding:var(--s3) var(--s4);border-radius:var(--r-md);font-weight:600;text-decoration:none}
+.skip:focus{top:calc(var(--s3) + env(safe-area-inset-top,0px))}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.ic{width:20px;height:20px;flex:none;display:block}
+.ic.sm{width:16px;height:16px}.ic.xs{width:11px;height:11px}.ic.xl{width:30px;height:30px}
 
-main{display:flex;flex-direction:column;gap:18px}
+/* ---------- layout ---------- */
+.wrap{max-width:760px;margin:0 auto;padding:var(--s3) var(--gutter) var(--s8);display:flex;flex-direction:column;gap:var(--s4)}
+main{display:flex;flex-direction:column;gap:var(--s4)}
 main:focus{outline:none}
-/* hero: the upload card is the first and biggest thing on the page */
-.drop{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
-  padding:34px 22px 26px;border-radius:26px;border:1px solid var(--line);
-  background:radial-gradient(120% 90% at 50% 0%,var(--accent-soft),transparent 65%),var(--paper);
-  box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 18px 40px -24px rgba(18,26,43,.35)}
-.drop::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;z-index:-1;pointer-events:none;
-  background:linear-gradient(135deg,var(--accent),transparent 40%,transparent 60%,var(--accent));
-  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.55}
-.drop.over{background:var(--accent-soft)}
-.drop .viz{display:flex;align-items:center;gap:5px;height:54px;direction:ltr}
-.drop .viz i{display:block;width:6px;border-radius:3px;background:var(--accent);opacity:.35;height:18px;animation:eq 1.6s ease-in-out infinite}
-.drop .viz i:nth-child(n+5):nth-child(-n+9){opacity:1}
-.drop .viz i:nth-child(1){animation-delay:-.2s;height:14px}.drop .viz i:nth-child(2){animation-delay:-.9s;height:24px}.drop .viz i:nth-child(3){animation-delay:-.5s;height:20px}
-.drop .viz i:nth-child(4){animation-delay:-1.1s;height:30px}.drop .viz i:nth-child(5){animation-delay:-.3s;height:42px}.drop .viz i:nth-child(6){animation-delay:-1.3s;height:54px}
-.drop .viz i:nth-child(7){animation-delay:-.7s;height:46px}.drop .viz i:nth-child(8){animation-delay:-1.5s;height:52px}.drop .viz i:nth-child(9){animation-delay:-.1s;height:38px}
-.drop .viz i:nth-child(10){animation-delay:-.8s;height:28px}.drop .viz i:nth-child(11){animation-delay:-1.2s;height:22px}.drop .viz i:nth-child(12){animation-delay:-.4s;height:16px}.drop .viz i:nth-child(13){animation-delay:-1s;height:12px}
-@keyframes eq{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.45)}}
-.droph{font-size:clamp(40px,11vw,60px);line-height:.95;margin:2px 0 0;text-wrap:balance}
-.dropsub{margin:0;color:var(--muted);font-size:15.5px;max-width:34ch}
-.drop .file.big{width:100%;max-width:380px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:18px;padding:17px 24px;border-radius:16px;margin-top:6px;
-  box-shadow:0 12px 28px -12px var(--accent)}
-.trust{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px}
-.trust li{font-size:12.5px;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 11px}
-.linkbtn.nofile{font-weight:700;font-size:15px}
-.dropnote{margin:0;color:var(--muted);font-size:12.5px;max-width:42ch}
-/* once a song is open, the hero shrinks to a slim "choose another" bar */
-main.editing .drop{flex-direction:row;flex-wrap:wrap;justify-content:center;text-align:start;padding:12px 14px;gap:10px;border-radius:16px;box-shadow:none}
-main.editing .drop #noFile,main.editing .drop .watch,main.editing .drop .viz,main.editing .drop .droph,main.editing .drop .dropsub,main.editing .drop .trust,main.editing .drop .dropnote{display:none}
-main.editing .drop .file.big{width:auto;margin:0;font-size:15px;padding:10px 18px;box-shadow:none;border-radius:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--shadow-sm);padding:var(--s4)}
+@media (min-width:600px){.card{padding:var(--s6)} :root{--gutter:24px}}
+
+/* ---------- header ---------- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:56px}
+.logo{font-family:var(--logo);font-weight:700;font-size:44px;line-height:1;letter-spacing:-.5px;color:var(--ink);text-decoration:none}
+.logo .ring{color:var(--accent)}
+.hbtns{display:flex;align-items:center;gap:var(--s2)}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:var(--h-md);padding:0 var(--s4);
+  border-radius:var(--r-md);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-size:var(--fs-md);font-weight:600;
+  line-height:1.2;text-align:center;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s}
+.btn:hover{border-color:var(--accent-line);background:var(--surface-2)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn.lg{min-height:var(--h-lg);font-size:var(--fs-lg);border-radius:var(--r-md)}
+.btn.block{display:flex;width:100%}
+.btn:disabled,.btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed;transform:none}
+.btn .num{font-weight:600}
+.iconbtn{display:inline-grid;place-items:center;width:var(--h-md);height:var(--h-md);border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;flex:none}
+.iconbtn:hover{background:var(--surface-2)}
+.iconbtn.sm{width:var(--h-md);height:var(--h-md);border-radius:var(--r-sm)}
+.textbtn{min-height:var(--h-md);padding:0 var(--s3);border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:var(--fs-sm);cursor:pointer}
+.textbtn:hover{background:var(--surface-2)}
+.linkbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--h-md);padding:0 var(--s2);background:none;border:0;color:var(--accent);font-weight:600;font-size:var(--fs-md);cursor:pointer;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
 .file{position:relative;overflow:hidden}
-.file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.file input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.file:focus-within{outline:3px solid var(--focus);outline-offset:2px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.pair>.btn{min-width:0;padding-inline:var(--s3)}
+@media (max-width:359px){.pair{grid-template-columns:1fr}}
+.inline{display:flex;gap:var(--s2);align-items:stretch}
+.inline>.input{flex:1;min-width:0}
+.row-between{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2)}
+.spin{display:none;width:18px;height:18px;border-radius:50%;border:2px solid currentColor;border-inline-end-color:transparent;animation:spin .8s linear infinite}
+.btn.loading .spin{display:inline-block}
+@keyframes spin{to{transform:rotate(1turn)}}
 
-.deck{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:14px}
-.song{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
-.stitle{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px}
-.sname{font-family:var(--display);font-size:34px;line-height:1;overflow-wrap:anywhere}
-.rtname{display:flex;flex-direction:column;gap:4px;flex:1 1 100%}
-.rtname input{font:inherit;font-size:17px;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
-.rtname input:focus{outline:2px solid var(--accent);outline-offset:1px}
-.song label{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px}
-.song input{font-family:var(--display);font-size:34px;line-height:1;background:transparent;border:0;border-bottom:1px dashed var(--line);color:var(--ink);padding:2px 0;width:100%}
-.song input:focus{outline:none;border-bottom-color:var(--accent)}
-.badge{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+/* ---------- form controls ---------- */
+.field{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+.input{min-height:var(--h-md);padding:0 var(--s3);border-radius:var(--r-md);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-size:16px;width:100%}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input[type=range]{width:100%;height:var(--h-md);margin:0;background:transparent;accent-color:var(--accent);cursor:pointer}
+.switch{display:flex;align-items:center;gap:var(--s3);min-height:var(--h-md);cursor:pointer;font-weight:500}
+.switch input{width:22px;height:22px;accent-color:var(--accent);flex:none}
+/* segmented control: equal columns; the selected item is raised (shape cue, not colour only) */
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:var(--s1);padding:var(--s1);border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--line)}
+.seg.seg-wrap{grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
+.chip{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--h-md);padding:0 var(--s2);border-radius:var(--r-sm);border:1px solid transparent;
+  background:transparent;color:var(--ink-2);font-size:var(--fs-sm);font-weight:500;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.chip:disabled{opacity:.4;cursor:not-allowed}
+.chip:hover:not(:disabled){color:var(--ink);background:var(--surface-3)}
+.chip.sel-on,.chip[aria-pressed="true"]{background:var(--surface);color:var(--accent);border-color:var(--accent-line);font-weight:600;box-shadow:var(--shadow-sm)}
+.chip span{font-size:inherit}
+.seg .chip span+span{opacity:.75;font-size:var(--fs-xs);margin-inline-start:2px}
+#lens .chip{gap:3px}#lens .chip span{opacity:.75;font-size:var(--fs-xs)}
 
-.wavebox{position:relative;direction:ltr;border-radius:10px;background:var(--well);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-canvas{display:block;width:100%;height:132px;cursor:grab}
-.ruler{display:flex;justify-content:space-between;direction:ltr;font-size:11px;color:var(--muted)}
+/* ---------- start card ---------- */
+.drop{display:flex;flex-direction:column;align-items:stretch;gap:var(--s3);text-align:center}
+.droph{font-size:var(--fs-3xl);line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.dropsub{color:var(--muted);font-size:var(--fs-md);max-width:38ch;margin:0 auto}
+.drop .file{margin-top:var(--s2)}
+.trust{list-style:none;margin:var(--s1) 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s1) var(--s4);color:var(--muted);font-size:var(--fs-sm)}
+.trust li{display:inline-flex;align-items:center;gap:6px}
+.droplinks{display:flex;flex-direction:column;align-items:center;gap:0}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+@media (min-width:600px){.drop .file,.drop .alt{width:100%;max-width:420px;margin-inline:auto}}
+/* once a song is open the start card becomes a slim "choose another" bar */
+main.editing .drop{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;padding:var(--s3)}
+main.editing .drop>:not(.file):not(.alt):not(.droplinks){display:none}
+main.editing .drop .file{margin:0;min-height:var(--h-md);font-size:var(--fs-md);flex:1 1 220px;max-width:none}
+main.editing .drop .alt{flex:1 1 220px;max-width:none}
+main.editing .drop .droplinks{flex-basis:100%}
+main.editing .drop #noFile,main.editing .drop #watchBtn{display:none}
 
-.sel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;direction:ltr;justify-content:center}
-.sel .time{font-size:22px;min-width:7.5ch;text-align:center}
-.sel .arrow{color:var(--muted)}
-.nudge{font:inherit;font-family:var(--mono);font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer}
-.play{width:52px;height:52px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;cursor:pointer;flex:none}
-.play svg{width:20px;height:20px;fill:currentColor}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2);counter-reset:st}
+.steps li{counter-increment:st;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:var(--s1)}
+.steps li::before{content:counter(st);width:32px;height:32px;border-radius:50%;background:var(--surface);color:var(--accent);border:1px solid var(--accent-line);display:grid;place-items:center;font-weight:600;font-size:var(--fs-sm)}
+.steps b{font-size:var(--fs-sm);font-weight:600;line-height:1.35}
+.steps span{display:none}
+.notice{display:flex;align-items:center;gap:var(--s3);background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:var(--r-lg);padding:var(--s2) var(--s2) var(--s2) var(--s4);color:var(--ink)}
+html[dir=rtl] .notice{padding:var(--s2) var(--s4) var(--s2) var(--s2)}
+.notice>.ic{color:var(--accent)}
+.notice p{flex:1;font-size:var(--fs-sm)}
 
-.hint{margin:0;font-size:12.5px;color:var(--muted)}
-.trim{display:flex;flex-direction:column;gap:10px}
-.trow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}
-.tlabel{font-weight:600;min-width:3.5em}
-.tgroup{display:flex;align-items:center;gap:4px;direction:ltr}
-.tgroup .time{font-size:18px;min-width:6ch;text-align:center}
-.trow .nudge{padding:6px 8px}
-.mark{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:8px;padding:6px 10px;cursor:pointer}
-.listen{display:flex;gap:10px;flex-wrap:wrap}
-.listen .btn{flex:1 1 150px}
-.ttime{display:flex;flex-direction:column;gap:6px}
-.tinrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.tin{display:flex;align-items:center;gap:4px}
-.tin input{font-family:var(--mono);font-size:20px;width:4.2ch;text-align:center;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 4px}
-.tin input#ts{width:5ch}
-.tin input:focus{outline:2px solid var(--accent);outline-offset:1px}
-.lenbox{display:flex;flex-direction:column;gap:8px}
-.lenhead{display:flex;justify-content:space-between;align-items:baseline}
-.lenhead b{font-size:18px}
-#lenR{width:100%;accent-color:var(--accent)}
-.range{margin:0;font-size:16px}
-.range b{font-size:18px}
-.fine{border:1px solid var(--line);border-radius:10px;padding:8px 12px}
-.fine summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:14px}
-.fine[open]{display:flex;flex-direction:column;gap:10px}
-.fine[open] summary{margin-bottom:2px}
-.tfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.tinfo{font-size:14px;line-height:1.3}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;display:flex;gap:8px;align-items:baseline}
-.chip .num{font-size:12px;color:var(--muted)}
-.chip.sel-on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.chip.sel-on .num{color:var(--accent-ink)}
+/* ---------- editor ---------- */
+.editor{display:flex;flex-direction:column;gap:var(--s4);padding-bottom:0}
+.song{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s3);flex-wrap:wrap}
+.stitle{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
+.sname{font-size:clamp(20px,5.6vw,26px);font-weight:600;line-height:1.25;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.badges{display:flex;gap:var(--s2);flex-wrap:wrap;min-width:0}
+.badge{font-size:var(--fs-xs);color:var(--muted);border:1px solid var(--line);background:var(--surface-2);border-radius:var(--r-pill);padding:3px 10px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge:empty{display:none}
+.seg.modes .chip{min-height:var(--h-md);font-size:var(--fs-md)}
+@media (max-width:429px){.seg.modes .chip{flex-direction:column;gap:2px;min-height:56px;font-size:var(--fs-sm);white-space:normal;line-height:1.2;padding:var(--s1)}}
+.wavecard{display:flex;flex-direction:column;gap:var(--s2)}
+.zoom{display:flex;align-items:center;gap:var(--s1);align-self:flex-end}
+.zoom .num{min-width:3em;text-align:center;font-size:var(--fs-sm);color:var(--muted)}
+.zoom .iconbtn:disabled{opacity:.4;cursor:default}
+.wavebox{position:relative;direction:ltr;border-radius:var(--r-lg);background:var(--surface-2);border:1px solid var(--line);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.wavebox:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#wave{display:block;width:100%;height:150px;cursor:grab}
+.ruler{display:flex;justify-content:space-between;direction:ltr;font-size:var(--fs-xs);color:var(--muted);padding:0 2px}
+.hero{display:flex;align-items:center;gap:var(--s3);padding:var(--s3);border-radius:var(--r-lg);background:var(--accent-soft);border:1px solid var(--accent-line)}
+.play{width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.play svg{width:22px;height:22px;fill:currentColor}
+.hinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hero .range{display:flex;gap:var(--s2);align-items:baseline;font-size:var(--fs-xl);font-weight:600;color:var(--ink)}
+html[dir=rtl] .hero .range{justify-content:flex-end}
+.hero .range b{font-weight:600}
+.dash{color:var(--muted)}
+.hlen{flex:none;display:flex;align-items:baseline;gap:3px;background:var(--surface);color:var(--ink);border:1px solid var(--accent-line);border-radius:var(--r-md);padding:var(--s2) var(--s3)}
+.hlen b{font-size:var(--fs-xl);font-weight:600}.hlen span{font-size:var(--fs-xs);color:var(--muted)}
+/* sections inside the editor: dividers instead of nested boxes */
+.panel{display:flex;flex-direction:column;gap:var(--s3);padding-top:var(--s4);border-top:1px solid var(--line)}
+.panel h3{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-lg)}
+.panel h3 .ic{color:var(--accent)}
+/* best-part suggestions */
+.bests{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--s2)}
+@media (max-width:599px){.bests{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:minmax(240px,82%);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:var(--s1);scrollbar-width:thin}
+  .bests:has(> .best:only-child){grid-auto-columns:100%}}
+.best{scroll-snap-align:start;display:flex;flex-direction:column;gap:var(--s2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s3)}
+.best.sel-on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.best b{font-size:var(--fs-md);font-weight:600}
+.best .bd{font-size:var(--fs-sm);color:var(--muted);line-height:1.45}
+.best .bt{font-size:var(--fs-sm);font-weight:600;color:var(--ink-2)}
+.best .bb{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);margin-top:auto}
+.best .buse[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
+.best .bb .btn{min-height:var(--h-md);font-size:var(--fs-sm);padding:0 var(--s2)}
+.tin{display:flex;align-items:center;gap:var(--s1)}
+.tin .input{width:64px;text-align:center;padding:0 var(--s1);font-variant-numeric:tabular-nums}
+.tin b{color:var(--muted)}
+#lenR{margin-top:var(--s1)}
+.fxout,#fxOut{font-size:var(--fs-sm)}
+#fxOut b{color:var(--ink)}
+.dedinfo{display:flex;align-items:center;gap:var(--s2);font-weight:500}
+.dedinfo .ic{color:var(--ok)}
+.dedhas{display:flex;flex-direction:column;gap:var(--s2)}
+/* disclosure (fine-tune, advanced) */
+.disclosure{border-top:1px solid var(--line)}
+.disclosure summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:var(--s2);min-height:var(--h-lg);cursor:pointer;font-weight:600;color:var(--ink)}
+.disclosure summary::-webkit-details-marker{display:none}
+.disclosure .chev{color:var(--muted);transition:transform .2s}
+.disclosure[open] .chev{transform:rotate(180deg)}
+.dbody{display:flex;flex-direction:column;gap:var(--s3);padding-bottom:var(--s4)}
+.trow{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);flex-wrap:wrap}
+.tlabel{font-weight:600}
+.tgroup{display:flex;align-items:center;gap:var(--s1)}
+.tgroup .time{min-width:6.5ch;text-align:center;font-weight:600}
+.nudge{min-width:var(--h-md);min-height:var(--h-md);border-radius:var(--r-sm);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-size:var(--fs-sm);font-variant-numeric:tabular-nums;cursor:pointer}
+.nudge:hover{background:var(--surface-2)}
+/* "what now?" card */
+.next{display:flex;gap:var(--s4);align-items:center;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:var(--r-lg);padding:var(--s4)}
+.next h3{margin-bottom:var(--s2)}
+.next .txt{flex:1;min-width:0}
+.sheet{flex:none;width:112px;border-radius:12px 12px 6px 6px;background:var(--surface);border:1px solid var(--line);padding:8px 8px 6px;display:flex;flex-direction:column;gap:5px;position:relative}
+.sheet .icons{display:flex;gap:5px;justify-content:center;margin-bottom:2px}
+.sheet .icons i{width:18px;height:18px;border-radius:5px;background:var(--surface-3)}
+.sheet .row{height:15px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line)}
+.sheet .row.hit{height:auto;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:10.5px;font-weight:600;padding:3px 5px;display:flex;align-items:center;gap:4px;line-height:1.2}
+.sheet .scroll{position:absolute;inset-inline-end:-12px;top:34px;bottom:30px;width:2px;border-radius:2px;background:var(--accent)}
+html.android .sheet{display:none}
+.olist{margin:0;padding-inline-start:var(--s5);display:flex;flex-direction:column;gap:var(--s2)}
+.invite{display:flex;flex-direction:column;gap:var(--s3);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s4);background:var(--surface-2)}
+/* sticky create bar: compact — main action + one line of status */
+.export{position:sticky;bottom:0;z-index:5;margin-inline:calc(-1 * var(--s4));padding:var(--s3) var(--s4) calc(var(--s3) + env(safe-area-inset-bottom,0px));
+  background:var(--surface);border-top:1px solid var(--line);border-radius:0 0 var(--r-xl) var(--r-xl);display:flex;flex-direction:column;gap:6px}
+@media (min-width:600px){.export{margin-inline:calc(-1 * var(--s6));padding-inline:var(--s6)}}
+.xbtns{display:flex;gap:var(--s2)}
+.xbtns>.btn{flex:1 1 0;min-width:0}
+.export .status{font-size:var(--fs-xs);color:var(--muted);text-align:center;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:0}
+.export .status:empty{display:none}
+html.kbd .export{position:static}
+@media (min-width:768px){.xbtns{width:100%;max-width:480px;margin-inline:auto}}
 
-.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
-.field{display:flex;flex-direction:column;gap:4px;min-width:0}
-.field .row{display:flex;justify-content:space-between}
-input[type=range]{width:100%;accent-color:var(--accent)}
-.switch{display:flex;align-items:center;gap:8px;padding-top:16px;cursor:pointer}
-.switch input{accent-color:var(--accent);width:18px;height:18px}
+/* ---------- my ringtones ---------- */
+.mine{display:flex;flex-direction:column;gap:var(--s2)}
+.minehead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);flex-wrap:wrap}
+.mine ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.mine li{display:flex;flex-direction:column;gap:var(--s2);padding:var(--s3) 0;border-top:1px solid var(--line)}
+.mine li:first-child{border-top:0}
+.mine .stop{display:flex;align-items:center;gap:var(--s3)}
+.mine .mname{flex:1;min-width:0;font-weight:600;display:flex;flex-direction:column;gap:2px}
+.mine .mname>bdi{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.mine .mname small{font-weight:400;color:var(--muted);font-size:var(--fs-xs);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mine .srow{display:grid;grid-template-columns:1fr 1fr var(--h-md);gap:var(--s2)}
+.mine .srow.three{grid-template-columns:1fr 1fr 1fr var(--h-md)}
+.mine .srow .btn{min-height:var(--h-md);font-size:var(--fs-sm);padding:0 var(--s2)}
+.mine .srow.extra{grid-template-columns:repeat(2,1fr);padding:var(--s2);border-radius:var(--r-md);background:var(--surface-2)}
+@media (min-width:600px){.mine .srow.extra{grid-template-columns:repeat(4,1fr)}}
+.mine .star{color:var(--muted)}
+.mine .star svg{fill:none}
+.mine li.fav .star{color:#C98A00;border-color:#E6B44C}
+.mine li.fav .star svg{fill:currentColor}
+.mine .btn.danger{color:var(--danger)}
+.mine .ren{min-height:var(--h-md);width:100%;padding:0 var(--s3);border-radius:var(--r-md);border:1px solid var(--accent);background:var(--surface);color:var(--ink);font-size:16px;font-weight:600}
 
-.btn{font:inherit;font-weight:600;border-radius:10px;padding:11px 18px;cursor:pointer;border:1px solid var(--accent);background:transparent;color:var(--accent)}
-.btn.primary{background:var(--accent);color:var(--accent-ink)}
-.btn:disabled{opacity:.5;cursor:default}
-button:focus-visible,input:focus-visible,label.file:focus-within{outline:2px solid var(--accent);outline-offset:2px}
-.export{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;position:sticky;bottom:0;z-index:5;background:var(--paper);margin-inline:-14px;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);border-radius:0 0 14px 14px}
-.export .btn{flex:1 1 auto}
-.export .status{flex:1 1 100%;margin:0}
-.a2hs{display:flex;align-items:center;gap:12px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:12px 14px}
-.a2hs p{margin:0;flex:1;font-size:14px;line-height:1.45}
-.a2hs-icon{color:var(--accent);flex:none;display:grid}
-.a2hs-x{flex:none;font:inherit;font-size:16px;background:none;border:0;color:var(--muted);cursor:pointer;padding:6px}
-.sitefoot{text-align:center;font-size:13px;color:var(--muted);padding-block:8px 24px}
+/* ---------- bottom guide + footer ---------- */
+.guide{display:flex;flex-direction:column;gap:var(--s3)}
+.sitefoot{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s1) var(--s4);font-size:var(--fs-sm);color:var(--muted);padding-top:var(--s2)}
+.sitefoot>*{min-height:var(--h-md);display:inline-flex;align-items:center}
 .sitefoot a{color:var(--muted)}
-.skip{position:absolute;inset-inline-start:12px;top:-60px;z-index:50;background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;font-weight:600;text-decoration:none}
-.skip:focus{top:calc(10px + env(safe-area-inset-top,0px))}
-.sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-main:focus{outline:none}
-.hbtns{display:flex;gap:8px;flex:none;flex-wrap:wrap}
-.hrow{flex-wrap:wrap}
-#a11yBtn{display:flex;align-items:center;gap:6px}
-.wavebox:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
-a:focus-visible,.chip:focus-visible,.nudge:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.a11y{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
-.a11y-head{display:flex;justify-content:space-between;align-items:center}
-.a11y-head h2{font-family:var(--body);font-size:17px;margin:0}
-.a11y-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
-.a11y-opt{font:inherit;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);cursor:pointer}
-.a11y-opt b{font-size:18px}
-.a11y-opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
-.a11y a{color:var(--accent);font-size:14px}
-/* accessibility modes */
+
+/* ---------- dialogs & panels ---------- */
+.dlg{border:1px solid var(--line);border-radius:var(--r-xl);background:var(--surface);color:var(--ink);padding:var(--s5);width:min(520px,calc(100vw - 2 * var(--gutter)));
+  max-height:calc(100dvh - 32px);overflow:auto;box-shadow:var(--shadow-lg)}
+.dlg[open]{display:flex;flex-direction:column;gap:var(--s4)}
+.dlg::backdrop{background:rgba(6,10,20,.55)}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+.dlg-head h2{font-size:var(--fs-xl)}
+.dlg h3{font-size:var(--fs-md)}
+.dlg .links{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s4);font-size:var(--fs-sm)}
+.dlg .links a{min-height:var(--h-md);display:inline-flex;align-items:center}
+.dlg.demo{width:min(420px,calc(100vw - 2 * var(--gutter)))}
+.dlg.demo video{width:100%;height:auto;max-height:calc(100dvh - 220px);aspect-ratio:9/16;object-fit:contain;border-radius:var(--r-lg);background:#0B0F1A;display:block}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2)}
+.list li{display:flex;gap:var(--s3);align-items:flex-start;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s3);font-size:var(--fs-sm);line-height:1.5}
+.list li .ic{color:var(--accent);margin-top:1px}
+.recbox{display:flex;flex-direction:column;align-items:center;gap:var(--s3);padding:var(--s4);border-radius:var(--r-lg);background:var(--surface-2);border:1px solid var(--line)}
+#recMeter{width:100%;height:64px;display:block}
+.rect{font-size:28px;font-weight:600}
+.recgo{width:72px;height:72px;border-radius:50%;border:3px solid var(--ink);background:transparent;display:grid;place-items:center;cursor:pointer;padding:0}
+.recgo .dot{width:50px;height:50px;border-radius:50%;background:#E5484D;transition:all .2s}
+.recgo[aria-pressed="true"] .dot{width:26px;height:26px;border-radius:6px}
+.recbox .status{text-align:center;color:var(--muted);font-size:var(--fs-sm);min-height:1.5em}
+.a11y{display:flex;flex-direction:column;gap:var(--s3)}
+.a11y-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:var(--s2)}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s1);min-height:72px;padding:var(--s2);border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);color:var(--ink);cursor:pointer;font-size:var(--fs-sm)}
+.tile b{font-size:var(--fs-lg)}
+.tile[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.toastzone{position:fixed;inset-inline:0;bottom:calc(var(--s5) + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none;z-index:150}
+.toast{background:var(--ink);color:var(--bg);padding:var(--s3) var(--s4);border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:600;box-shadow:var(--shadow-lg);max-width:calc(100vw - 2 * var(--gutter))}
+
+/* ---------- accessibility modes ---------- */
 html.a-bigger{font-size:125%}
 html.a-bigger body{font-size:18.75px}
-html:root.a-contrast:not([data-none]){--bg:#000;--paper:#000;--ink:#fff;--muted:#e6e6e6;--line:#fff;--well:#111;--accent:#ffd400;--accent-ink:#000;--accent-soft:rgba(255,212,0,.22);--wave:#9a9a9a;color-scheme:dark}
+html:root.a-contrast:not([data-none]){--bg:#000;--surface:#000;--surface-2:#0A0A0A;--surface-3:#1A1A1A;--ink:#fff;--ink-2:#fff;--muted:#E6E6E6;--line:#fff;--line-strong:#fff;--accent:#FFD400;--accent-hover:#FFE14D;--accent-ink:#000;--accent-soft:#2A2400;--accent-line:#FFD400;--wave:#9A9A9A;--focus:#FFD400;color-scheme:dark}
 html.a-links a{text-decoration:underline!important;text-underline-offset:3px;font-weight:700}
 html.a-still *,html.a-still *::before,html.a-still *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
-html.a-readable body,html.a-readable input,html.a-readable button,html.a-readable select{font-family:Arial,"Arial Hebrew",Helvetica,sans-serif!important;letter-spacing:.02em;word-spacing:.08em}
-html.a-readable h1,html.a-readable .sname{font-family:Arial,"Arial Hebrew",Helvetica,sans-serif!important}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.invite{flex:1 1 100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:12px}
-.invite p{margin:0;flex:1 1 200px;font-size:14px}
-.invite .btn{flex:0 0 auto}
-.steps{list-style:none;margin:4px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;counter-reset:st}
-.steps li{counter-increment:st;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:4px 2px;position:relative}
-.steps li::before{content:counter(st);width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);display:grid;place-items:center;font-weight:700;font-family:var(--mono);font-size:14px}
-.steps li+li::after{content:"";position:absolute;top:17px;inset-inline-end:calc(50% + 24px);width:calc(100% - 38px);height:1px;background:var(--line)}
-.steps b{font-size:13.5px;line-height:1.3}
-.steps span{display:none}
-.a2hs{border-radius:16px}
-.btn.big{font-size:17px;padding:14px 24px}
-.linkbtn{font:inherit;font-size:14px;background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;padding:4px 0}
-.adv .controls{margin-top:12px}
-.status{font-size:13.5px;color:var(--muted);margin:0;flex:1 1 220px;min-width:0}
+html.a-readable body,html.a-readable button,html.a-readable input{font-family:Arial,"Arial Hebrew",Helvetica,sans-serif!important;letter-spacing:.02em;word-spacing:.08em}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 
-.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
-.guide section{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:14px;min-width:0}
-.guide h3{margin:0 0 8px;font-size:16px}
-.guide ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px}
-.note{font-size:13px;color:var(--muted);margin:0}
-.mine{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:14px}
-.minehead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-.minehead h2{margin:0;font-size:18px}
-.mine ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.mine li{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
-.mine .stop{display:flex;align-items:flex-start;gap:8px}
-.mine .srow{display:flex;flex-wrap:wrap;gap:6px}
-.mine .srow.extra{padding:8px;border-radius:12px;background:var(--bg)}
-.mine .star{font-size:18px;line-height:1;padding:6px 9px;color:var(--muted)}
-.mine li.fav .star{color:#E8A400;border-color:#E8A400}
-.mine .more{font-weight:800;min-width:40px;justify-content:center}
-.mine .ren{font:inherit;font-size:16px;font-weight:600;width:100%;padding:6px 10px;border-radius:10px;border:1px solid var(--accent);background:var(--bg);color:var(--ink)}
-.mine li:first-child{border-top:0}
-.mine .mname{flex:1 1 140px;min-width:0;font-weight:600;overflow-wrap:anywhere}
-.mine .mname small{display:block;font-weight:400;color:var(--muted);font-size:12px}
-.mine .mb{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer;text-decoration:none;min-height:36px;display:inline-flex;align-items:center}
-.mine .mb.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.mine .mb.del{color:var(--muted)}
-/* "what now" card shown right after a ringtone is created */
-.next{display:flex;gap:16px;align-items:center;background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:14px}
-.next h3{margin:0 0 6px;font-size:16px}
-.next ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px;font-size:14.5px}
-.next .txt{flex:1 1 auto;min-width:0}
-.sheet{flex:none;width:118px;border-radius:14px 14px 6px 6px;background:var(--paper);border:1px solid var(--line);padding:8px 8px 6px;display:flex;flex-direction:column;gap:5px;position:relative}
-.sheet .icons{display:flex;gap:5px;justify-content:center;margin-bottom:2px}
-.sheet .icons i{width:18px;height:18px;border-radius:5px;background:var(--line)}
-.sheet .row{height:15px;border-radius:4px;background:var(--well,var(--bg));border:1px solid var(--line)}
-.sheet .row.hit{height:auto;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:10.5px;font-weight:700;padding:3px 5px;display:flex;align-items:center;gap:4px;line-height:1.2}
-.sheet .scroll{position:absolute;inset-inline-end:-14px;top:34px;bottom:30px;width:3px;border-radius:2px;background:var(--accent)}
-.sheet .scroll::after{content:"";position:absolute;bottom:-6px;left:-4px;border:5.5px solid transparent;border-top:7px solid var(--accent)}
-html.android .sheet{display:none}
-#helpBtn{min-width:34px;font-weight:800}
-dialog.help{border:1px solid var(--line);border-radius:16px;background:var(--paper);color:var(--ink);padding:18px;max-width:min(520px,calc(100vw - 32px));width:100%;max-height:calc(100dvh - 40px);overflow:auto}
-dialog.demo{max-width:min(400px,calc(100vw - 32px));display:none;flex-direction:column;gap:12px}
-dialog.demo[open]{display:flex}
-dialog.demo video{width:100%;height:auto;max-height:calc(100dvh - 210px);aspect-ratio:9/16;object-fit:contain;border-radius:16px;background:#0B0F1A;display:block}
-.droplinks{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 18px}
-.watch{font:inherit;font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px 6px 6px;cursor:pointer}
-html[dir=rtl] .watch{padding:6px 6px 6px 14px}
-.watch .wi{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
-.watch.inhelp{margin:12px 0 4px}
-ul.nf{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
-ul.nf li{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:14.5px;line-height:1.45}
-ul.nf .ne{font-size:20px;line-height:1.2;flex:none}
-#nofile .btn{width:100%;margin-top:12px;padding:13px;border-radius:14px}
-#nofile p{margin:6px 0 0}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);max-width:calc(100vw - 32px)}
-.alt{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px}
-.altor{font-size:13px;color:var(--muted)}
-.altbtn{font:inherit;font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent);background:var(--paper);color:var(--accent);border-radius:999px;padding:8px 14px;cursor:pointer}
-.altbtn:hover{background:var(--accent-soft)}
-main.editing .drop .alt .altor{display:none}
-main.editing .drop .altbtn{padding:8px 12px;font-size:13.5px}
-.nfalt{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.recbox{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:12px;padding:16px;border-radius:18px;background:var(--well)}
-#recMeter{width:100%;height:70px;cursor:default}
-.rect{font-size:30px;font-weight:600}
-.recgo{width:76px;height:76px;border-radius:50%;border:4px solid var(--ink);background:transparent;display:grid;place-items:center;cursor:pointer;padding:0}
-.recgo .dot{width:54px;height:54px;border-radius:50%;background:#E5484D;transition:all .2s}
-.recgo[aria-pressed="true"] .dot{width:28px;height:28px;border-radius:7px}
-.recbox .status{text-align:center;margin:0;flex:none;min-height:1.5em}
-.styles{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin:6px 0 12px}
-.styles .chip{flex-direction:column;align-items:center;gap:2px;border-radius:14px;padding:10px 6px;font-size:13.5px;justify-content:center}
-.styles .chip b{font-size:22px}
-.styles .chip.sel-on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.gtempo{display:flex;justify-content:space-between;align-items:baseline}
-.genrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 8px}
-.genrow .btn,#genUse{border-radius:14px;padding:12px}
-#genUse{width:100%}
-.voices{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.voices .chip{flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:12px;padding:8px 2px;font-size:12px;background:var(--paper)}
-.voices .chip b{font-size:19px;line-height:1.1}
-.voices .chip.sel-on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.dedrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.dedrow .btn{border-radius:14px;padding:10px 14px}
-.dedchip{flex:1 1 100%;font-weight:600;background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:8px 12px}
-.callbtn{font:inherit;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:-6px;padding:11px;border-radius:14px;border:1px dashed var(--accent);background:transparent;color:var(--accent);cursor:pointer}
-.gname{display:flex;gap:8px;margin:4px 0 12px}
-.gname input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.gname .btn{border-radius:12px;padding:10px 14px;flex:none}
-/* simulated incoming call (generic design, for previewing and screenshots) */
+/* ---------- small screens ---------- */
+@media (max-width:374px){
+  .logo{font-size:34px}
+  .top{gap:var(--s2)}
+  .hbtns{gap:var(--s1)}
+  .textbtn{padding:0 var(--s2)}
+  .sname{font-size:var(--fs-xl)}
+  .hero .range{font-size:var(--fs-lg)}
+  .hero{display:grid;grid-template-columns:auto 1fr;row-gap:var(--s1)}
+  .hero .play{grid-row:span 2}
+  .hlen{justify-self:start;padding:2px var(--s2)}
+  .hlen b{font-size:var(--fs-md)}
+  .steps b{font-size:var(--fs-xs)}
+}
+
+/* ---------- call preview overlay ---------- */
+.cpill{width:72px;height:72px;border-radius:50%;border:0;background:#34C759;color:#fff;display:grid;place-items:center;cursor:pointer}
+.callov .cb{color:#fff}
+.callov .cb .ic{width:30px;height:30px}
+.genrow{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
 .callov{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;color:#fff;padding:calc(56px + env(safe-area-inset-top,0px)) 24px calc(28px + env(safe-area-inset-bottom,0px));overflow:hidden}
 .callov[hidden]{display:none}
 .cbg{position:absolute;inset:-20%;z-index:-1;background:radial-gradient(60% 45% at 30% 20%,#5B6CFF 0,transparent 70%),radial-gradient(55% 45% at 80% 70%,#B04CE0 0,transparent 70%),radial-gradient(50% 40% at 20% 90%,#1FB5A8 0,transparent 70%),#0B0F1A;filter:blur(30px);animation:drift 12s ease-in-out infinite alternate}
@@ -349,127 +418,107 @@ main.editing .drop .altbtn{padding:8px 12px;font-size:13.5px}
 .callov.and .cbtns>div{display:flex;flex-direction:column;align-items:center;gap:8px}
 .callov.and .cb{width:68px;height:68px;border-radius:50%}
 .callov.and .cb.yes{animation:none;touch-action:none;cursor:grab;box-shadow:0 8px 24px -8px #34C759;position:relative}
-.callov.and .cbtns>div:last-child::before{content:"︿";display:block;font-size:20px;line-height:.5;opacity:.7;animation:up 1.4s ease-in-out infinite}
-@keyframes up{0%,100%{transform:translateY(4px);opacity:.3}50%{transform:translateY(-4px);opacity:.9}}
+.callov.and .cbtns>div:last-child::before{content:"";display:block;width:12px;height:12px;border-top:2px solid currentColor;border-inline-start:2px solid currentColor;transform:rotate(45deg);margin-bottom:4px;opacity:.7;animation:up 1.4s ease-in-out infinite}
+@keyframes up{0%,100%{transform:translateY(4px) rotate(45deg);opacity:.3}50%{transform:translateY(-4px) rotate(45deg);opacity:.9}}
 .callov.and .cbtns>div:first-child::before{content:"";display:block;height:10px}
 .callov.and .cswipe{display:none}
 html.a-still .ctrack,html.a-still .carrows,html.a-still .callov.and .cbtns>div:last-child::before,html.a-still .cbg,html.a-still .cring,html.a-still .cb.yes{animation:none}
 @media (prefers-reduced-motion:reduce){.ctrack,.carrows,.cbg,.cring,.cb.yes{animation:none}}
-.bests{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin-inline:-14px;padding:2px 14px 4px;scroll-snap-type:x proximity}
-.bests::-webkit-scrollbar{display:none}
-.best{flex:0 0 min(78%,230px);scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:12px}
-.best.sel-on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:linear-gradient(160deg,var(--accent-soft),transparent 70%),var(--paper)}
-.best .bh{display:flex;align-items:center;gap:8px}
-.best .bi{font-size:20px}
-.best b{font-size:15px}
-.best .bd{margin:0;font-size:12.5px;color:var(--muted);line-height:1.4;min-height:2.8em}
-.best .bt{margin:0;font-size:13px;font-weight:600}
-.best .bb{display:flex;gap:6px;margin-top:2px}
-.best .mb{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 12px;cursor:pointer;flex:1}
-.best .mb.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.devrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.seg.dev{grid-template-columns:1fr 1fr;flex:1 1 220px;max-width:320px}
-.seg.dev .chip{font-family:var(--body);font-size:14px;gap:6px;align-items:center}
-.seg.dev .chip span{font-size:15px;opacity:1}
-dialog.help::backdrop{background:rgba(5,8,15,.55)}
-dialog.help h2{margin:0;font-size:19px}
-dialog.help h3{font-size:15px;margin:14px 0 6px}
-dialog.help ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px}
-dialog.help .note{margin-top:12px}
-dialog.help .more{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:14px}
-dialog.help a{color:var(--accent)}
-.deck{border-radius:24px;padding:16px;gap:16px}
-.song{align-items:center}
-.sname{font-size:38px}
-.wavecard{display:flex;flex-direction:column;gap:6px;position:relative}
-.zoom{align-self:flex-end;display:flex;align-items:center;gap:2px;background:color-mix(in srgb,var(--paper) 88%,transparent);border:1px solid var(--line);border-radius:999px;padding:2px;backdrop-filter:blur(6px)}
-.zoom button{font:inherit;font-size:18px;font-weight:700;width:32px;height:32px;border-radius:50%;border:0;background:transparent;color:var(--ink);cursor:pointer;line-height:1}
-.zoom button:disabled{opacity:.35;cursor:default}
-.zoom span{font-size:12px;min-width:2.6em;text-align:center;color:var(--muted)}
-.seg.modes{grid-template-columns:repeat(3,1fr)}
-.modes .chip{font-family:var(--body);font-size:13.5px;gap:5px;padding:11px 2px;align-items:center;white-space:nowrap}
-.modes .chip span{font-size:inherit;opacity:1}
-.seg.s4{grid-template-columns:repeat(4,1fr)}
-.fx .fxrow{display:flex;flex-direction:column;gap:6px}
-.fx .seg .chip{font-family:var(--body);font-size:13px}
-.fx .hint b{color:var(--ink)}
-.wavebox{border-radius:18px;background:radial-gradient(120% 140% at 50% 0%,var(--accent-soft),transparent 60%),var(--well);box-shadow:inset 0 0 0 1px var(--line)}
-canvas{height:150px}
-.ruler{padding-inline:4px}
-.hero{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:20px;border:1px solid var(--accent);
-  background:linear-gradient(120deg,var(--accent-soft),transparent 70%),var(--paper)}
-.hero .play{width:58px;height:58px;box-shadow:0 10px 24px -10px var(--accent)}
-.hero .play svg{width:22px;height:22px}
-.hinfo{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
-.hero .range{margin:0;font-size:24px;font-weight:600;display:flex;gap:8px;align-items:baseline;justify-content:flex-start}
-html[dir=rtl] .hero .range{justify-content:flex-end}
-.hero .dash{color:var(--muted)}
-.hlen{flex:none;display:flex;align-items:baseline;gap:3px;background:var(--accent);color:var(--accent-ink);border-radius:14px;padding:8px 12px}
-.hlen b{font-size:20px}.hlen span{font-size:12px;font-weight:600}
-.panel{overflow:hidden;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:12px}
-.panel h3{margin:0;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
-.pi{width:28px;height:28px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
-.chips.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-14px;padding-inline:14px;padding-block:2px;scroll-snap-type:x proximity}
-.chips.scroll::-webkit-scrollbar{display:none}
-.chips.scroll .chip{flex:none;scroll-snap-align:start;padding:9px 16px;background:var(--paper)}
-.chips.scroll .chip.sel-on{background:var(--accent)}
-.seg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--well)}
-.seg .chip{justify-content:center;align-items:baseline;gap:2px;border:0;border-radius:10px;background:transparent;padding:10px 0;font-weight:600;font-family:var(--mono);font-size:15px}
-.seg .chip span{font-family:var(--body);font-size:11px;font-weight:500;opacity:.75}
-.seg .chip[data-len="29.5"]{font-family:var(--body);font-size:13.5px}
-.seg .chip.sel-on{background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 14px -8px var(--accent)}
-.panel .listen .btn,.panel .tinrow .btn{border-radius:14px}
-.fine{border-radius:16px;padding:10px 14px}
-.rtname input{border-radius:14px}
-.export .btn{border-radius:14px;padding:13px 18px}
-.export{border-radius:0 0 24px 24px;margin-inline:-16px;padding-inline:16px}
-code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
 </style>
 
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z" fill="currentColor"/></symbol>
+    <symbol id="i-phone-off" viewBox="0 0 24 24"><path d="M3 15.5c5-4.6 13-4.6 18 0l-2.4 2.4-3.2-1.5v-2.6c-2.2-.8-4.6-.8-6.8 0v2.6l-3.2 1.5z" fill="currentColor"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-alarm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 9v4l2 2M5 3 2 6M22 6l-3-3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><path d="M5 10.2a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zm7 0a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zm7 0a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z" fill="currentColor"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9h11v11H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></symbol>
+    <symbol id="i-a11y" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.6" fill="currentColor" stroke="none"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0-3.5 6M12 15l3.5 6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+    <symbol id="i-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v12H3zM8 20h8M12 16v4"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h14v12H2zM16 10l6-3v10l-6-3"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12zM6 6 5 2H2M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM18 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-contrast" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h1M7 8v8M11 4v16M15 7v10M19 10v4M21 12h0"/></symbol>
+    <symbol id="i-pause-bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6v12M15 6v12"/></symbol>
+  </defs>
+</svg>
 <a class="skip" href="#main" data-i18n="skip"></a>
 <div class="callov" id="callOv" role="dialog" aria-modal="true" aria-labelledby="callName" hidden>
   <div class="cbg"></div>
   <div class="ctop">
     <span class="csub" data-i18n="callIncoming"></span><span class="ckind" data-i18n="callMobile"></span>
-    <input class="cname" id="callName" maxlength="24" autocomplete="off" data-i18n-aria="callNameAria">
+    <input class="cname" id="callName" maxlength="24" autocomplete="off" dir="auto" data-i18n-aria="callNameAria">
     <span class="cedit" data-i18n="callEdit"></span>
   </div>
   <div class="cav" aria-hidden="true"><span class="cring r1"></span><span class="cring r2"></span><span class="cring r3"></span><span class="cinit" id="callInit"></span></div>
-  <div class="cnow"><span aria-hidden="true">🎵</span> <span id="callTune"></span></div>
+  <div class="cnow"><svg class="ic sm" aria-hidden="true"><use href="#i-music"/></svg><bdi id="callTune"></bdi></div>
   <span class="chintA" data-i18n="callSwipe"></span>
   <div class="cbtns">
-    <div><button class="cb no" id="callNo" type="button" data-i18n-aria="callDecline"><svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M3 15.5c5-4.6 13-4.6 18 0l-2.4 2.4-3.2-1.5v-2.6c-2.2-.8-4.6-.8-6.8 0v2.6l-3.2 1.5z" fill="#fff"/></svg></button><span data-i18n="callDecline"></span></div>
-    <div><button class="cb yes" id="callYes" type="button" data-i18n-aria="callAccept"><svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z" fill="#fff"/></svg></button><span data-i18n="callAccept"></span></div>
+    <div><button class="cb no" id="callNo" type="button" data-i18n-aria="callDecline"><svg class="ic xl" aria-hidden="true"><use href="#i-phone-off"/></svg></button><span data-i18n="callDecline"></span></div>
+    <div><button class="cb yes" id="callYes" type="button" data-i18n-aria="callAccept"><svg class="ic xl" aria-hidden="true"><use href="#i-phone"/></svg></button><span data-i18n="callAccept"></span></div>
   </div>
-  <div class="cslide" id="cSlide"><button class="cknob" id="cKnob" type="button" data-i18n-aria="callAccept"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z" fill="currentColor"/></svg></button><span class="ctrack" data-i18n="callSlide"></span></div>
+  <div class="cslide" id="cSlide"><button class="cknob" id="cKnob" type="button" data-i18n-aria="callAccept"><svg class="ic xl" aria-hidden="true"><use href="#i-phone"/></svg></button><span class="ctrack" data-i18n="callSlide"></span></div>
   <button class="cdeclink" id="cDecl" type="button" data-i18n="callDecline"></button>
-  <div class="cswipe" id="cSwipe"><span class="carrows" aria-hidden="true">︿<br>︿</span><button class="cpill" id="cPill" type="button" data-i18n-aria="callAccept"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z" fill="currentColor"/></svg></button><span class="chint" data-i18n="callSwipe"></span></div>
-  <div class="cfoot"><span data-i18n="callShot"></span> · <b>snipring.com</b></div>
+  <div class="cswipe" id="cSwipe"><button class="cpill" id="cPill" type="button" data-i18n-aria="callAccept"><svg class="ic xl" aria-hidden="true"><use href="#i-phone"/></svg></button></div>
+  <div class="cfoot"><span data-i18n="callShot"></span> · <b dir="ltr">snipring.com</b></div>
 </div>
-<div class="wrap" dir="rtl">
-  <header>
-    <div class="hrow"><h1 dir="ltr"><a class="logo" href="./" aria-label="SnipRing">Snip<span class="ring">Ring</span></a></h1><span class="hbtns"><button class="langbtn" id="helpBtn" type="button" aria-haspopup="dialog" data-i18n-aria="help">?</button><button class="langbtn" id="a11yBtn" type="button" aria-haspopup="dialog" aria-controls="a11yPanel" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="4.5" r="2" fill="currentColor"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0l-3.5 6M12 15l3.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-i18n="a11y"></span></button><button class="langbtn" id="lang" type="button" lang="en">English</button></span></div>
-    <p data-i18n="tagline"></p>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="./" aria-label="SnipRing" dir="ltr">Snip<span class="ring">Ring</span></a>
+    <div class="hbtns">
+      <button class="iconbtn" id="themeBtn" type="button"><svg class="ic" aria-hidden="true"><use id="themeIc" href="#i-system"/></svg></button>
+      <button class="iconbtn" id="helpBtn" type="button" aria-haspopup="dialog" data-i18n-aria="help"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg></button>
+      <button class="iconbtn" id="a11yBtn" type="button" aria-haspopup="dialog" aria-controls="a11yPanel" aria-expanded="false" data-i18n-aria="a11y"><svg class="ic" aria-hidden="true"><use href="#i-a11y"/></svg></button>
+      <button class="textbtn" id="lang" type="button" lang="en">English</button>
+    </div>
   </header>
+  <p class="tagline" data-i18n="tagline"></p>
 
-  <div class="a11y" id="a11yPanel" role="dialog" aria-modal="false" aria-labelledby="a11yTitle" hidden>
-    <div class="a11y-head"><h2 id="a11yTitle" data-i18n="a11y"></h2><button class="a2hs-x" id="a11yClose" type="button" data-i18n-aria="close">✕</button></div>
+  <div class="card a11y" id="a11yPanel" role="dialog" aria-modal="false" aria-labelledby="a11yTitle" hidden>
+    <div class="dlg-head"><h2 id="a11yTitle" data-i18n="a11y"></h2><button class="iconbtn" id="a11yClose" type="button" data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
     <div class="a11y-grid">
-      <button type="button" class="a11y-opt" data-a="bigger" aria-pressed="false"><b>A+</b><span data-i18n="aBig"></span></button>
-      <button type="button" class="a11y-opt" data-a="contrast" aria-pressed="false"><b>◐</b><span data-i18n="aContrast"></span></button>
-      <button type="button" class="a11y-opt" data-a="links" aria-pressed="false"><b><u>ab</u></b><span data-i18n="aLinks"></span></button>
-      <button type="button" class="a11y-opt" data-a="still" aria-pressed="false"><b>❚❚</b><span data-i18n="aStill"></span></button>
-      <button type="button" class="a11y-opt" data-a="readable" aria-pressed="false"><b>Aa</b><span data-i18n="aFont"></span></button>
-      <button type="button" class="a11y-opt" id="a11yReset"><b>↺</b><span data-i18n="aReset"></span></button>
+      <button type="button" class="tile a11y-opt" data-a="bigger" aria-pressed="false"><b aria-hidden="true">A+</b><span data-i18n="aBig"></span></button>
+      <button type="button" class="tile a11y-opt" data-a="contrast" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-contrast"/></svg><span data-i18n="aContrast"></span></button>
+      <button type="button" class="tile a11y-opt" data-a="links" aria-pressed="false"><b aria-hidden="true"><u>ab</u></b><span data-i18n="aLinks"></span></button>
+      <button type="button" class="tile a11y-opt" data-a="still" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-pause-bars"/></svg><span data-i18n="aStill"></span></button>
+      <button type="button" class="tile a11y-opt" data-a="readable" aria-pressed="false"><b aria-hidden="true">Aa</b><span data-i18n="aFont"></span></button>
+      <button type="button" class="tile a11y-opt" id="a11yReset"><svg class="ic" aria-hidden="true"><use href="#i-reset"/></svg><span data-i18n="aReset"></span></button>
     </div>
     <a href="accessibility.html" data-i18n="aStatement"></a>
   </div>
 
-  <dialog class="help" id="rec" aria-labelledby="recTitle">
-    <div class="a11y-head"><h2 id="recTitle" data-i18n="recH"></h2><button class="a2hs-x" id="recClose" type="button" data-i18n-aria="close">✕</button></div>
-    <p class="note" id="recPtxt" data-i18n="recP"></p>
+  <dialog class="dlg" id="rec" aria-labelledby="recTitle">
+    <div class="dlg-head"><h2 id="recTitle" data-i18n="recH"></h2><button class="iconbtn" id="recClose" type="button" data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <p class="muted" id="recPtxt" data-i18n="recP"></p>
     <div class="recbox">
       <canvas id="recMeter" aria-hidden="true"></canvas>
       <span class="num rect" id="recT">0:00</span>
@@ -478,75 +527,82 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     </div>
   </dialog>
 
-  <dialog class="help" id="gen" aria-labelledby="genTitle">
-    <div class="a11y-head"><h2 id="genTitle" data-i18n="genH"></h2><button class="a2hs-x" id="genClose" type="button" data-i18n-aria="close">✕</button></div>
-    <p class="note" data-i18n="genP"></p>
-    <label class="lbl" for="genNameIn" data-i18n="genNameL"></label>
-    <div class="gname"><input id="genNameIn" maxlength="20" autocomplete="off" data-i18n-ph="genNamePh"><button class="btn" id="genNameGo" type="button" data-i18n="genNameGo"></button></div>
-    <span class="lbl" data-i18n="genStyle"></span>
-    <div class="styles" id="genStyles">
-      <button class="chip" type="button" data-style="marimba"><b aria-hidden="true">🪵</b><span data-i18n="stMarimba"></span></button>
-      <button class="chip" type="button" data-style="pop"><b aria-hidden="true">✨</b><span data-i18n="stPop"></span></button>
-      <button class="chip" type="button" data-style="retro"><b aria-hidden="true">👾</b><span data-i18n="stRetro"></span></button>
-      <button class="chip" type="button" data-style="chill"><b aria-hidden="true">🌙</b><span data-i18n="stChill"></span></button>
-      <button class="chip" type="button" data-style="bells"><b aria-hidden="true">🔔</b><span data-i18n="stBells"></span></button>
+  <dialog class="dlg" id="gen" aria-labelledby="genTitle">
+    <div class="dlg-head"><h2 id="genTitle" data-i18n="genH"></h2><button class="iconbtn" id="genClose" type="button" data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <p class="muted" data-i18n="genP"></p>
+    <div class="field">
+      <label class="lbl" for="genNameIn" data-i18n="genNameL"></label>
+      <div class="inline"><input class="input" id="genNameIn" maxlength="20" autocomplete="off" dir="auto" data-i18n-ph="genNamePh"><button class="btn" id="genNameGo" type="button" data-i18n="genNameGo"></button></div>
     </div>
-    <div class="row gtempo"><label class="lbl" for="genTempo" data-i18n="genTempo"></label><span class="num" id="genTempoV">120</span></div>
-    <input type="range" id="genTempo" min="70" max="170" step="5" value="120">
-    <div class="genrow"><button class="btn" id="genPlay" type="button"></button><button class="btn" id="genNew" type="button" data-i18n="genNew"></button></div>
-    <button class="btn primary" id="genUse" type="button" data-i18n="genUse"></button>
+    <div class="field">
+      <span class="lbl" id="genStyleL" data-i18n="genStyle"></span>
+      <div class="seg seg-wrap" id="genStyles" role="group" aria-labelledby="genStyleL">
+        <button class="chip" type="button" data-style="marimba" data-i18n="stMarimba"></button>
+        <button class="chip" type="button" data-style="pop" data-i18n="stPop"></button>
+        <button class="chip" type="button" data-style="retro" data-i18n="stRetro"></button>
+        <button class="chip" type="button" data-style="chill" data-i18n="stChill"></button>
+        <button class="chip" type="button" data-style="bells" data-i18n="stBells"></button>
+      </div>
+    </div>
+    <div class="field">
+      <div class="row-between"><label class="lbl" for="genTempo" data-i18n="genTempo"></label><span class="num val" id="genTempoV">120</span></div>
+      <input type="range" id="genTempo" min="70" max="170" step="5" value="120">
+    </div>
+    <div class="pair"><button class="btn" id="genPlay" type="button"></button><button class="btn" id="genNew" type="button"><svg class="ic" aria-hidden="true"><use href="#i-shuffle"/></svg><span data-i18n="genNew"></span></button></div>
+    <button class="btn primary block" id="genUse" type="button" data-i18n="genUse"></button>
   </dialog>
 
-  <dialog class="help" id="nofile" aria-labelledby="nfTitle">
-    <div class="a11y-head"><h2 id="nfTitle" data-i18n="nfH"></h2><button class="a2hs-x" id="nfClose" type="button" data-i18n-aria="close">✕</button></div>
-    <p data-i18n="nfP"></p>
-    <div class="nfalt"><button class="altbtn" id="nfRec" type="button"><span aria-hidden="true">🎙️</span><span data-i18n="recBtn"></span></button><button class="altbtn" id="nfGen" type="button"><span aria-hidden="true">🎹</span><span data-i18n="genBtn"></span></button></div>
-    <ul class="nf">
-      <li><span class="ne" aria-hidden="true">🎬</span><span data-i18n="nf1"></span></li>
-      <li><span class="ne" aria-hidden="true">💬</span><span data-i18n="nf2"></span></li>
-      <li><span class="ne" aria-hidden="true">🎙️</span><span data-i18n="nf3"></span></li>
-      <li><span class="ne" aria-hidden="true">🛒</span><span data-i18n="nf4"></span></li>
-      <li><span class="ne" aria-hidden="true">☁️</span><span data-i18n="nf5"></span></li>
+  <dialog class="dlg" id="nofile" aria-labelledby="nfTitle">
+    <div class="dlg-head"><h2 id="nfTitle" data-i18n="nfH"></h2><button class="iconbtn" id="nfClose" type="button" data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <p class="muted" data-i18n="nfP"></p>
+    <div class="pair"><button class="btn" id="nfRec" type="button"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg><span data-i18n="recBtn"></span></button><button class="btn" id="nfGen" type="button"><svg class="ic" aria-hidden="true"><use href="#i-music"/></svg><span data-i18n="genBtn"></span></button></div>
+    <ul class="list">
+      <li><svg class="ic" aria-hidden="true"><use href="#i-video"/></svg><span data-i18n="nf1"></span></li>
+      <li><svg class="ic" aria-hidden="true"><use href="#i-message"/></svg><span data-i18n="nf2"></span></li>
+      <li><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg><span data-i18n="nf3"></span></li>
+      <li><svg class="ic" aria-hidden="true"><use href="#i-cart"/></svg><span data-i18n="nf4"></span></li>
+      <li><svg class="ic" aria-hidden="true"><use href="#i-cloud"/></svg><span data-i18n="nf5"></span></li>
     </ul>
-    <p class="note" data-i18n="nfNote"></p>
-    <button class="btn primary" id="nfGo" type="button" data-i18n="pick"></button>
+    <p class="small muted" data-i18n="nfNote"></p>
+    <button class="btn primary block" id="nfGo" type="button"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg><span data-i18n="pick"></span></button>
   </dialog>
 
-  <dialog class="help demo" id="demo" aria-labelledby="demoTitle">
-    <div class="a11y-head"><h2 id="demoTitle" data-i18n="demoH"></h2><button class="a2hs-x" id="demoClose" type="button" data-i18n-aria="close">✕</button></div>
+  <dialog class="dlg demo" id="demo" aria-labelledby="demoTitle">
+    <div class="dlg-head"><h2 id="demoTitle" data-i18n="demoH"></h2><button class="iconbtn" id="demoClose" type="button" data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
     <video id="demoVid" playsinline muted loop controls preload="none" width="720" height="1280"></video>
-    <button class="btn primary" id="demoGo" type="button" data-i18n="demoGo"></button>
+    <button class="btn primary block" id="demoGo" type="button" data-i18n="demoGo"></button>
   </dialog>
 
-  <dialog class="help" id="help" aria-labelledby="helpTitle">
-    <div class="a11y-head"><h2 id="helpTitle" data-i18n="help"></h2><button class="a2hs-x" id="helpClose" type="button" data-i18n-aria="close">✕</button></div>
-    <button class="watch inhelp" id="watchHelp" type="button"><span class="wi"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span data-i18n="watch"></span></button>
-    <ol class="steps-h">
+  <dialog class="dlg" id="help" aria-labelledby="helpTitle">
+    <div class="dlg-head"><h2 id="helpTitle" data-i18n="help"></h2><button class="iconbtn" id="helpClose" type="button" data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <button class="btn block" id="watchHelp" type="button"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span data-i18n="watch"></span></button>
+    <ol class="olist">
       <li data-i18n="h1"></li>
       <li data-i18n="h2"></li>
     </ol>
     <h3 data-i18n="guideSub"></h3>
-    <ol>
+    <ol class="olist">
       <li data-i18n="g1"></li>
       <li data-i18n="g2"></li>
       <li data-i18n="g3"></li>
     </ol>
-    <p class="note" data-i18n="note"></p>
-    <p class="more"><a id="helpGuide" href="ringtone-iphone.html" data-i18n="guideLink"></a><a id="helpOther" href="ringtone-android.html" data-i18n="otherOs"></a><a id="helpVideo" href="ringtone-video.html" data-i18n="vidGuide"></a></p>
+    <p class="small muted" data-i18n="note"></p>
+    <p class="links"><a id="helpGuide" href="ringtone-iphone.html" data-i18n="guideLink"></a><a id="helpOther" href="ringtone-android.html" data-i18n="otherOs"></a><a id="helpVideo" href="ringtone-video.html" data-i18n="vidGuide"></a></p>
   </dialog>
 
 <main id="main" tabindex="-1">
 
-
-  <section class="drop" id="drop" aria-labelledby="dropH">
-    <div class="viz" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <section class="card drop" id="drop" aria-labelledby="dropH">
     <h2 class="droph" id="dropH" data-i18n="dropH"></h2>
     <p class="dropsub" data-i18n="dropSub"></p>
-    <label class="btn primary file big"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 16V4m0 0l-5 5m5-5l5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg,.mp4,.mov,.m4v"></label>
-    <div class="alt" role="group"><span class="altor" data-i18n="altOr"></span><button class="altbtn" id="recBtn" type="button" aria-haspopup="dialog"><span aria-hidden="true">🎙️</span><span data-i18n="recBtn"></span></button><button class="altbtn" id="genBtn" type="button" aria-haspopup="dialog"><span aria-hidden="true">🎹</span><span data-i18n="genBtn"></span></button></div>
-    <ul class="trust"><li data-i18n="tr1"></li><li data-i18n="tr2"></li><li data-i18n="tr3"></li></ul>
-    <button class="linkbtn nofile" id="noFile" type="button" aria-haspopup="dialog" data-i18n="noFile"></button>
-    <div class="droplinks"><button class="watch" id="watchBtn" type="button" aria-haspopup="dialog"><span class="wi"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><span data-i18n="watch"></span></button><button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button></div>
+    <label class="btn primary lg file"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg><span data-i18n="pick"></span><input type="file" id="file" accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.ogg,.mp4,.mov,.m4v"></label>
+    <div class="pair alt"><button class="btn" id="recBtn" type="button" aria-haspopup="dialog"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg><span data-i18n="recBtn"></span></button><button class="btn" id="genBtn" type="button" aria-haspopup="dialog"><svg class="ic" aria-hidden="true"><use href="#i-music"/></svg><span data-i18n="genBtn"></span></button></div>
+    <ul class="trust"><li><svg class="ic sm" aria-hidden="true"><use href="#i-lock"/></svg><span data-i18n="tr1"></span></li><li data-i18n="tr2"></li><li data-i18n="tr3"></li></ul>
+    <div class="droplinks">
+      <button class="linkbtn" id="noFile" type="button" aria-haspopup="dialog" data-i18n="noFile"></button>
+      <button class="linkbtn" id="watchBtn" type="button" aria-haspopup="dialog"><svg class="ic sm" aria-hidden="true"><use href="#i-play"/></svg><span data-i18n="watch"></span></button>
+      <button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button>
+    </div>
   </section>
 
   <ol class="steps" id="steps">
@@ -555,157 +611,171 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
     <li><b data-i18n="step3"></b><span data-i18n="step3s"></span></li>
   </ol>
 
-  <div class="a2hs" id="a2hs" hidden>
-    <span class="a2hs-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+  <div class="notice" id="a2hs" hidden>
+    <svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>
     <p data-i18n="a2hs"></p>
-    <button class="a2hs-x" id="a2hsX" type="button" data-i18n-aria="close">✕</button>
+    <button class="iconbtn" id="a2hsX" type="button" data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
   </div>
 
-  <div class="deck" id="editor" hidden>
+  <div class="card editor" id="editor" hidden>
     <h2 class="sr" data-i18n="editorH"></h2>
     <div class="song">
-      <div class="stitle"><span class="lbl" data-i18n="song"></span><span class="sname" id="songTitle"></span></div>
-      <span class="badge" id="badge"></span>
-      <span class="badge num" id="songLen">0:00</span>
+      <div class="stitle"><span class="lbl" data-i18n="song"></span><bdi class="sname" id="songTitle"></bdi></div>
+      <div class="badges"><bdi class="badge" id="badge"></bdi><span class="badge num" id="songLen" dir="ltr">0:00</span></div>
     </div>
 
     <div class="seg modes" id="modes" role="group" data-i18n-aria="modeAria">
-      <button class="chip" type="button" data-mode="ring"><span aria-hidden="true">🔔</span><span data-i18n="mRing"></span></button><button class="chip" type="button" data-mode="text"><span aria-hidden="true">💬</span><span data-i18n="mText"></span></button><button class="chip" type="button" data-mode="alarm"><span aria-hidden="true">⏰</span><span data-i18n="mAlarm"></span></button>
+      <button class="chip" type="button" data-mode="ring"><svg class="ic sm" aria-hidden="true"><use href="#i-bell"/></svg><span data-i18n="mRing"></span></button>
+      <button class="chip" type="button" data-mode="text"><svg class="ic sm" aria-hidden="true"><use href="#i-message"/></svg><span data-i18n="mText"></span></button>
+      <button class="chip" type="button" data-mode="alarm"><svg class="ic sm" aria-hidden="true"><use href="#i-alarm"/></svg><span data-i18n="mAlarm"></span></button>
     </div>
 
     <div class="wavecard">
-      <div class="zoom" dir="ltr"><button type="button" id="zOut" data-i18n-aria="zoomOut">−</button><span class="num" id="zLbl">1×</span><button type="button" id="zIn" data-i18n-aria="zoomIn">+</button></div>
+      <div class="zoom" dir="ltr"><button class="iconbtn sm" type="button" id="zOut" data-i18n-aria="zoomOut"><svg class="ic" aria-hidden="true"><use href="#i-minus"/></svg></button><span class="num" id="zLbl">1×</span><button class="iconbtn sm" type="button" id="zIn" data-i18n-aria="zoomIn"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button></div>
       <div class="wavebox" id="wavebox" role="slider" tabindex="0" aria-valuemin="0" data-i18n-aria="waveAria"><canvas id="wave" aria-hidden="true"></canvas></div>
-      <div class="ruler num" id="ruler"></div>
+      <div class="ruler num" id="ruler" dir="ltr"></div>
     </div>
 
     <div class="hero">
-      <button class="play" id="play"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+      <button class="play" id="play" type="button"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
       <div class="hinfo">
         <span class="lbl" data-i18n="playRt"></span>
         <p class="range num" dir="ltr"><b id="sumA">0:00</b><span class="dash">–</span><b id="sumB">0:29</b></p>
       </div>
-      <div class="hlen"><b class="num" id="tLen">0.0</b><span data-i18n="sec"></span></div>
+      <div class="hlen" dir="ltr"><b class="num" id="tLen">0.0</b><span data-i18n="sec"></span></div>
     </div>
-    <button class="callbtn" id="callBtn" type="button"><span aria-hidden="true">📞</span> <span data-i18n="callBtn"></span></button>
+    <button class="btn block" id="callBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg><span data-i18n="callBtn"></span></button>
 
     <section class="panel">
-      <h3><span class="pi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n="secStart"></span></h3>
+      <h3><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span data-i18n="secStart"></span></h3>
       <div class="field"><span class="lbl" data-i18n="cands"></span><div class="bests" id="cands"></div></div>
       <p class="hint" data-i18n="howStart"></p>
-      <div class="listen">
-        <button class="btn" id="playFrom"><span id="playFromT"></span> <span class="num" id="cursorT">0:00</span></button>
-        <button class="btn primary" id="startHere" data-i18n="startHere"></button>
+      <div class="pair">
+        <button class="btn" id="playFrom" type="button"><span id="playFromT"></span><span class="num" id="cursorT" dir="ltr">0:00</span></button>
+        <button class="btn primary" id="startHere" type="button" data-i18n="startHere"></button>
       </div>
-      <div class="ttime">
+      <div class="field">
         <label class="lbl" for="tm" data-i18n="typeTime"></label>
-        <div class="tinrow">
-          <span class="tin" dir="ltr"><input id="tm" type="number" inputmode="numeric" min="0" placeholder="0" data-i18n-aria="min"><b>:</b><input id="ts" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" placeholder="00" data-i18n-aria="secs"></span>
-          <button class="btn" id="goTime" data-i18n="goTime"></button>
+        <div class="inline">
+          <span class="tin" dir="ltr"><input class="input" id="tm" type="number" inputmode="numeric" min="0" placeholder="0" data-i18n-aria="min"><b>:</b><input class="input" id="ts" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" placeholder="00" data-i18n-aria="secs"></span>
+          <button class="btn" id="goTime" type="button" data-i18n="goTime"></button>
         </div>
       </div>
     </section>
 
     <section class="panel">
-      <h3><span class="pi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 6v6l4 2M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><label for="lenR" data-i18n="length"></label></h3>
-      <div class="seg" id="lens"></div>
+      <h3><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><label for="lenR" data-i18n="length"></label></h3>
+      <div class="seg" id="lens" role="group" data-i18n-aria="length"></div>
       <input type="range" id="lenR" min="3" max="29.5" step="0.5" value="29" data-i18n-aria="lengthAria">
     </section>
 
     <section class="panel fx">
-      <h3><span class="pi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n="fxH"></span></h3>
-      <div class="fxrow"><span class="lbl" data-i18n="fxVoice"></span><div class="voices" id="fxVoice">
-        <button class="chip" type="button" data-v="none"><b aria-hidden="true">🎵</b><span data-i18n="vNone"></span></button>
-        <button class="chip" type="button" data-v="chip"><b aria-hidden="true">🐿️</b><span data-i18n="vChip"></span></button>
-        <button class="chip" type="button" data-v="robot"><b aria-hidden="true">🤖</b><span data-i18n="vRobot"></span></button>
-        <button class="chip" type="button" data-v="echo"><b aria-hidden="true">🏔️</b><span data-i18n="vEcho"></span></button>
-        <button class="chip" type="button" data-v="rev"><b aria-hidden="true">⏪</b><span data-i18n="vRev"></span></button>
-        <button class="chip" type="button" data-v="bit"><b aria-hidden="true">👾</b><span data-i18n="vBit"></span></button>
-        <button class="chip" type="button" data-v="bass"><b aria-hidden="true">🔊</b><span data-i18n="vBass"></span></button>
-        <button class="chip" type="button" data-v="phone"><b aria-hidden="true">📻</b><span data-i18n="vPhone"></span></button>
+      <h3><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg><span data-i18n="fxH"></span></h3>
+      <div class="field"><span class="lbl" id="fxVoiceL" data-i18n="fxVoice"></span><div class="seg seg-wrap voices" id="fxVoice" role="group" aria-labelledby="fxVoiceL">
+        <button class="chip" type="button" data-v="none" data-i18n="vNone"></button>
+        <button class="chip" type="button" data-v="chip" data-i18n="vChip"></button>
+        <button class="chip" type="button" data-v="robot" data-i18n="vRobot"></button>
+        <button class="chip" type="button" data-v="echo" data-i18n="vEcho"></button>
+        <button class="chip" type="button" data-v="rev" data-i18n="vRev"></button>
+        <button class="chip" type="button" data-v="bit" data-i18n="vBit"></button>
+        <button class="chip" type="button" data-v="bass" data-i18n="vBass"></button>
+        <button class="chip" type="button" data-v="phone" data-i18n="vPhone"></button>
       </div></div>
-      <div class="fxrow"><span class="lbl" data-i18n="fxVol"></span><div class="seg s4" id="fxGain"><button class="chip" data-v="0" data-i18n="vol0"></button><button class="chip" data-v="3" data-i18n="vol1"></button><button class="chip" data-v="6" data-i18n="vol2"></button><button class="chip" data-v="9" data-i18n="vol3"></button></div></div>
-      <div class="fxrow"><span class="lbl" data-i18n="fxSpeed"></span><div class="seg" id="fxSpeed"><button class="chip" data-v="0.8">🐢</button><button class="chip" data-v="0.9" dir="ltr">0.9×</button><button class="chip" data-v="1" data-i18n="spd1"></button><button class="chip" data-v="1.12" dir="ltr">1.1×</button><button class="chip" data-v="1.25">🐇</button></div></div>
-      <div class="fxrow"><span class="lbl" data-i18n="fxLoop"></span><div class="seg s4" id="fxLoop"><button class="chip" data-v="1" data-i18n="loop1"></button><button class="chip" data-v="2" dir="ltr">2×</button><button class="chip" data-v="3" dir="ltr">3×</button><button class="chip" data-v="4" dir="ltr">4×</button></div></div>
+      <div class="field"><span class="lbl" id="fxGainL" data-i18n="fxVol"></span><div class="seg" id="fxGain" role="group" aria-labelledby="fxGainL"><button class="chip" type="button" data-v="0" data-i18n="vol0"></button><button class="chip" type="button" data-v="3" data-i18n="vol1"></button><button class="chip" type="button" data-v="6" data-i18n="vol2"></button><button class="chip" type="button" data-v="9" data-i18n="vol3"></button></div></div>
+      <div class="field"><span class="lbl" id="fxSpeedL" data-i18n="fxSpeed"></span><div class="seg" id="fxSpeed" role="group" aria-labelledby="fxSpeedL"><button class="chip num" type="button" data-v="0.8" dir="ltr">0.8×</button><button class="chip num" type="button" data-v="0.9" dir="ltr">0.9×</button><button class="chip" type="button" data-v="1" data-i18n="spd1"></button><button class="chip num" type="button" data-v="1.12" dir="ltr">1.1×</button><button class="chip num" type="button" data-v="1.25" dir="ltr">1.25×</button></div></div>
+      <div class="field"><span class="lbl" id="fxLoopL" data-i18n="fxLoop"></span><div class="seg" id="fxLoop" role="group" aria-labelledby="fxLoopL"><button class="chip" type="button" data-v="1" data-i18n="loop1"></button><button class="chip num" type="button" data-v="2" dir="ltr">2×</button><button class="chip num" type="button" data-v="3" dir="ltr">3×</button><button class="chip num" type="button" data-v="4" dir="ltr">4×</button></div></div>
       <p class="hint" id="fxOut"></p>
     </section>
 
     <section class="panel ded">
-      <h3><span class="pi" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n="dedH"></span></h3>
+      <h3><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg><span data-i18n="dedH"></span></h3>
       <p class="hint" data-i18n="dedP"></p>
-      <div class="dedrow" id="dedEmpty"><button class="btn" id="dedRec" type="button"><span aria-hidden="true">🎙️</span> <span data-i18n="dedRec"></span></button></div>
-      <div class="dedrow" id="dedHas" hidden><span class="dedchip"><span aria-hidden="true">🎙️</span> <span data-i18n="dedHas"></span> <b class="num" id="dedLen">0.0</b></span><button class="btn" id="dedPlay" type="button" data-i18n="dedListen"></button><button class="btn" id="dedDel" type="button" data-i18n="dedDel"></button></div>
+      <div id="dedEmpty"><button class="btn block" id="dedRec" type="button"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg><span data-i18n="dedRec"></span></button></div>
+      <div class="dedhas" id="dedHas" hidden>
+        <p class="dedinfo"><svg class="ic sm" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="dedHas"></span><b class="num" id="dedLen" dir="ltr">0.0</b></p>
+        <div class="pair"><button class="btn" id="dedPlay" type="button"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span data-i18n="dedListen"></span></button><button class="btn" id="dedDel" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg><span data-i18n="dedDel"></span></button></div>
+      </div>
     </section>
 
-      <details class="fine">
-        <summary data-i18n="fine"></summary>
+    <details class="disclosure fine">
+      <summary><span data-i18n="fine"></span><svg class="ic chev" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+      <div class="dbody">
         <p class="hint" data-i18n="fineHint"></p>
-    <div class="trow">
-        <span class="tlabel" data-i18n="start"></span>
-        <span class="tgroup"><button class="nudge" data-h="start" data-n="-1" data-i18n-aria="n_start_-1">−1</button><button class="nudge" data-h="start" data-n="-0.1" data-i18n-aria="n_start_-0.1">−0.1</button><span class="time num" id="tStart">0:00.0</span><button class="nudge" data-h="start" data-n="0.1" data-i18n-aria="n_start_0.1">+0.1</button><button class="nudge" data-h="start" data-n="1" data-i18n-aria="n_start_1">+1</button></span>
+        <div class="trow">
+          <span class="tlabel" data-i18n="start"></span>
+          <span class="tgroup" dir="ltr"><button class="nudge" type="button" data-h="start" data-n="-1" data-i18n-aria="n_start_-1">−1</button><button class="nudge" type="button" data-h="start" data-n="-0.1" data-i18n-aria="n_start_-0.1">−0.1</button><span class="time num" id="tStart">0:00.0</span><button class="nudge" type="button" data-h="start" data-n="0.1" data-i18n-aria="n_start_0.1">+0.1</button><button class="nudge" type="button" data-h="start" data-n="1" data-i18n-aria="n_start_1">+1</button></span>
+        </div>
+        <div class="trow">
+          <span class="tlabel" data-i18n="end"></span>
+          <span class="tgroup" dir="ltr"><button class="nudge" type="button" data-h="end" data-n="-1" data-i18n-aria="n_end_-1">−1</button><button class="nudge" type="button" data-h="end" data-n="-0.1" data-i18n-aria="n_end_-0.1">−0.1</button><span class="time num" id="tEnd">0:00.0</span><button class="nudge" type="button" data-h="end" data-n="0.1" data-i18n-aria="n_end_0.1">+0.1</button><button class="nudge" type="button" data-h="end" data-n="1" data-i18n-aria="n_end_1">+1</button></span>
+        </div>
       </div>
-    <div class="trow">
-        <span class="tlabel" data-i18n="end"></span>
-        <span class="tgroup"><button class="nudge" data-h="end" data-n="-1" data-i18n-aria="n_end_-1">−1</button><button class="nudge" data-h="end" data-n="-0.1" data-i18n-aria="n_end_-0.1">−0.1</button><span class="time num" id="tEnd">0:00.0</span><button class="nudge" data-h="end" data-n="0.1" data-i18n-aria="n_end_0.1">+0.1</button><button class="nudge" data-h="end" data-n="1" data-i18n-aria="n_end_1">+1</button></span>
-      </div>
-      </details>
-
-    <details class="fine adv">
-      <summary data-i18n="adv"></summary>
-    <div class="controls">
-      <div class="field"><div class="row"><label class="lbl" for="fin" data-i18n="fadeIn"></label><span class="num" id="finV">0.5</span></div>
-        <input type="range" id="fin" min="0" max="3" step="0.1" value="0.5"></div>
-      <div class="field"><div class="row"><label class="lbl" for="fout" data-i18n="fadeOut"></label><span class="num" id="foutV">2.0</span></div>
-        <input type="range" id="fout" min="0" max="5" step="0.1" value="2"></div>
-      <label class="switch"><input type="checkbox" id="norm" checked> <span data-i18n="norm"></span></label>
-    </div>
     </details>
 
-    <label class="rtname"><span class="lbl" data-i18n="rtName"></span><input id="name" maxlength="40" value="" autocomplete="off"></label>
+    <details class="disclosure adv">
+      <summary><span data-i18n="adv"></span><svg class="ic chev" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+      <div class="dbody">
+        <div class="field"><div class="row-between"><label class="lbl" for="fin" data-i18n="fadeIn"></label><span class="num val" id="finV" dir="ltr">0.5</span></div>
+          <input type="range" id="fin" min="0" max="3" step="0.1" value="0.5"></div>
+        <div class="field"><div class="row-between"><label class="lbl" for="fout" data-i18n="fadeOut"></label><span class="num val" id="foutV" dir="ltr">2.0</span></div>
+          <input type="range" id="fout" min="0" max="5" step="0.1" value="2"></div>
+        <label class="switch"><input type="checkbox" id="norm" checked><span data-i18n="norm"></span></label>
+      </div>
+    </details>
+
+    <div class="field">
+      <label class="lbl" for="name" data-i18n="rtName"></label>
+      <input class="input" id="name" maxlength="40" value="" autocomplete="off" dir="auto">
+    </div>
+
+    <div class="field">
+      <span class="lbl" id="devL" data-i18n="devL"></span>
+      <div class="seg dev" id="device" role="group" aria-labelledby="devL"><button class="chip" type="button" data-dev="iphone">iPhone</button><button class="chip" type="button" data-dev="android">Android</button></div>
+    </div>
 
     <div class="next" id="next" hidden>
       <div class="txt">
         <h3 data-i18n="nextH"></h3>
-        <ol><li id="nx1"></li><li id="nx2"></li><li id="nx3" hidden></li></ol>
+        <ol class="olist"><li id="nx1"></li><li id="nx2"></li><li id="nx3" hidden></li></ol>
       </div>
-      <div class="sheet" aria-hidden="true"><div class="icons"><i></i><i></i><i></i><i></i></div><div class="row"></div><div class="row"></div><div class="row"></div><div class="row hit"><svg width="10" height="10" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 0 0-5.5-6.8V3.5a1.5 1.5 0 0 0-3 0v.7A7 7 0 0 0 5 11v5l-2 2v1h18v-1z" fill="currentColor"/></svg><span data-i18n="useAs"></span></div><span class="scroll"></span></div>
+      <div class="sheet" aria-hidden="true"><div class="icons"><i></i><i></i><i></i><i></i></div><div class="row"></div><div class="row"></div><div class="row"></div><div class="row hit"><svg class="ic xs" aria-hidden="true"><use href="#i-bell"/></svg><span data-i18n="useAs"></span></div><span class="scroll"></span></div>
     </div>
 
-    <div class="devrow"><span class="lbl" id="devL" data-i18n="devL"></span><div class="seg dev" id="device" role="group" aria-labelledby="devL"><button class="chip" type="button" data-dev="iphone"><span aria-hidden="true">📱</span>iPhone</button><button class="chip" type="button" data-dev="android"><span aria-hidden="true">🤖</span>Android</button></div></div>
+    <div class="invite" id="invite" hidden>
+      <div><b data-i18n="invH"></b> <span data-i18n="invP"></span></div>
+      <button class="btn block" id="inviteBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg><span data-i18n="invBtn"></span></button>
+    </div>
 
-    <div class="export">
-      <button class="btn primary" id="export" data-i18n="create"></button>
-      <button class="btn primary" id="share" hidden data-i18n="setRt"></button>
-      <a class="btn" id="dl" hidden data-i18n="dl"></a>
-      <p class="status" id="status" role="status"></p>
-      <div class="invite" id="invite" hidden>
-        <p><b data-i18n="invH"></b> <span data-i18n="invP"></span></p>
-        <button class="btn primary" id="inviteBtn" type="button" data-i18n="invBtn"></button>
+    <div class="export" id="exportBar">
+      <div class="xbtns">
+        <button class="btn primary lg" id="export" type="button"><span class="spin" aria-hidden="true"></span><span data-i18n="create"></span></button>
+        <button class="btn primary lg" id="share" type="button" hidden><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><span data-i18n="setRt"></span></button>
+        <a class="btn lg" id="dl" hidden><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg><span data-i18n="dl"></span></a>
       </div>
+      <p class="status" id="status" role="status"></p>
     </div>
   </div>
 
-  <section class="mine" id="mine" hidden aria-labelledby="mineH">
-    <div class="minehead"><h2 id="mineH" data-i18n="mineH"></h2><span class="note" data-i18n="mineSub"></span></div>
-    <p class="note" id="mineEmpty" data-i18n="mineEmpty"></p>
+  <section class="card mine" id="mine" hidden aria-labelledby="mineH">
+    <div class="minehead"><h2 id="mineH" data-i18n="mineH"></h2><span class="small muted" data-i18n="mineSub"></span></div>
+    <p class="muted" id="mineEmpty" data-i18n="mineEmpty"></p>
     <ul id="mineList"></ul>
   </section>
 
+  <section class="card guide" aria-labelledby="guideH">
+    <h2 id="guideH" data-i18n="guideH"></h2>
+    <h3 data-i18n="guideSub"></h3>
+    <ol class="olist">
+      <li data-i18n="g1"></li>
+      <li data-i18n="g2"></li>
+      <li data-i18n="g3"></li>
+    </ol>
+    <p class="small muted" data-i18n="note"></p>
+  </section>
 </main>
-  <h2 data-i18n="guideH"></h2>
-  <div class="guide">
-    <section>
-      <h3 data-i18n="guideSub"></h3>
-      <ol>
-        <li data-i18n="g1"></li>
-        <li data-i18n="g2"></li>
-        <li data-i18n="g3"></li>
-      </ol>
-    </section>
-  </div>
-  <p class="note" data-i18n="note"></p>
-  <footer class="sitefoot"><a href="ringtone-iphone.html" id="guideLink" data-i18n="guideLink"></a> · <a href="terms.html" data-i18n="terms"></a> · <a href="privacy.html" data-i18n="privacy"></a> · <a href="accessibility.html" data-i18n="aStatement"></a> · <span dir="ltr">hello@snipring.com</span></footer>
+  <footer class="sitefoot"><a href="ringtone-iphone.html" id="guideLink" data-i18n="guideLink"></a><a href="terms.html" data-i18n="terms"></a><a href="privacy.html" data-i18n="privacy"></a><a href="accessibility.html" data-i18n="aStatement"></a><span dir="ltr">hello@snipring.com</span></footer>
 </div>
+<div class="toastzone" id="toastzone" aria-live="polite"></div>
 
 <script>
 (() => {
@@ -728,7 +798,10 @@ let cands=[];
 function ensureCtx(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
 const fmt=t=>{t=Math.max(0,t);const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(1)};
 const fmtShort=t=>{const m=Math.floor(t/60),s=Math.floor(t-m*60);return m+':'+(s<10?'0':'')+s};
-function say(t){$('status').textContent=t}
+function say(t){$('status').textContent=t;
+  // before the editor is open the status line is not on screen, so show the message as a toast instead
+  if($('editor').hidden&&t&&t!==T.he.sReady0&&t!==T.en.sReady0)toast(t)}
+let toastT=0;function toast(msg){const z=$('toastzone');z.textContent='';const d=document.createElement('div');d.className='toast';d.textContent=msg;z.appendChild(d);clearTimeout(toastT);toastT=setTimeout(()=>d.remove(),5000)}
 /* analytics: anonymous funnel events, no cookies; no-op until the Umami script is present */
 function track(name,data){try{window.umami&&window.umami.track(name,data)}catch(e){}}
 
@@ -898,13 +971,14 @@ function findCandidates(){
 function candLen(c){return Math.min(Math.min(M().def,CAP()),song.duration-c.t)}
 function pickCand(i){S.cand=i;const t=cands[i].t,room=song.duration-t,L=Math.min(M().def,CAP());
   if(room>=Math.min(L,12))setRange(t,t+Math.min(L,room),'start');else setRange(t,t+L,'move');markCand()}
-const KIND={chorus:['🎤','kChorus','kChorusD'],drop:['💥','kDrop','kDropD'],peak:['🔥','kPeak','kPeakD'],start:['▶️','kStart','kStartD']};
+const KIND={chorus:['','kChorus','kChorusD'],drop:['','kDrop','kDropD'],peak:['','kPeak','kPeakD'],start:['','kStart','kStartD']};
+const svg=(n,c)=>'<svg class="ic'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>';
 function renderCands(){
   const box=$('cands');box.innerHTML='';
   cands.forEach((c,i)=>{const [ic,lk,dk]=KIND[c.kind]||KIND.start,card=document.createElement('div');card.className='best';
-    card.innerHTML='<div class="bh"><span class="bi" aria-hidden="true">'+ic+'</span><b>'+t(lk)+'</b></div><p class="bd">'+t(dk)+'</p>'
-      +'<p class="bt num" dir="ltr">'+fmtShort(c.t)+' · '+candLen(c).toFixed(0)+t('secShort')+'</p>'
-      +'<div class="bb"><button type="button" class="mb bplay">'+t('bListen')+'</button><button type="button" class="mb pri buse">'+t('bUse')+'</button></div>';
+    card.innerHTML='<b>'+t(lk)+'</b><p class="bd">'+t(dk)+'</p>'
+      +'<p class="bt"><bdi class="num">'+fmtShort(c.t)+'</bdi> · <bdi class="num">'+candLen(c).toFixed(0)+'</bdi>'+t('secShort')+'</p>'
+      +'<div class="bb"><button type="button" class="btn bplay">'+svg('play','sm')+'<span>'+t('bListen')+'</span></button><button type="button" class="btn primary buse">'+svg('check','sm')+'<span>'+t('bUse')+'</span></button></div>';
     card.querySelector('.bplay').setAttribute('aria-label',t('bListen')+': '+t(lk));card.querySelector('.buse').setAttribute('aria-label',t('bUse')+': '+t(lk));
     card.querySelector('.bplay').addEventListener('click',()=>{const on=playing&&mode==='cand'&&candPlaying===i;stopPreview();if(on)return;
       mode='cand';candPlaying=i;startPlayback(c.t,candLen(c),true);mode='cand';track('best_listen',{kind:c.kind})});
@@ -912,7 +986,7 @@ function renderCands(){
     box.appendChild(card)});
 }
 let candPlaying=-1;
-function markCand(){[...$('cands').children].forEach((b,i)=>{b.classList.toggle('sel-on',i===S.cand);const u=b.querySelector('.buse');if(u){u.setAttribute('aria-pressed',String(i===S.cand));u.textContent=i===S.cand?t('bUsing'):t('bUse')}})}
+function markCand(){[...$('cands').children].forEach((b,i)=>{b.classList.toggle('sel-on',i===S.cand);const u=b.querySelector('.buse');if(u){u.setAttribute('aria-pressed',String(i===S.cand));u.querySelector('span').textContent=i===S.cand?t('bUsing'):t('bUse');u.classList.toggle('primary',i!==S.cand)}})}
 
 /* selection: start + len, both handles free, length capped below 30 s */
 function setRange(a,b,mode){
@@ -947,7 +1021,7 @@ function draw(playT){
   const rr=(x,y,ww,hh,r)=>{g.beginPath();g.roundRect?g.roundRect(x,y,ww,hh,r):g.rect(x,y,ww,hh)};
   // selected window: soft fill and a glowing outline
   g.fillStyle=css('--accent-soft');rr(x0,6,x1-x0,h-12,12);g.fill();
-  g.save();g.shadowColor=acc;g.shadowBlur=14;g.strokeStyle=acc;g.lineWidth=2;rr(x0+1,7,x1-x0-2,h-14,12);g.stroke();g.restore();
+  g.save();g.strokeStyle=acc;g.lineWidth=2;rr(x0+1,7,x1-x0-2,h-14,12);g.stroke();g.restore();
   // rounded bars; inside the window they light up, and fill in as the ringtone plays
   const ph=playT!=null?X(playT):-1,step=5,bw=3,mid=h/2;
   for(let x=2;x<w-1;x+=step){const tt=V0+x/w*VD,i0=Math.floor(tt/D*peaks.length),i1=Math.max(i0+1,Math.floor((tt+step/w*VD)/D*peaks.length));
@@ -961,7 +1035,7 @@ function draw(playT){
   const ct=playT!=null?playT:S.cursor;
   if(ct!=null){const px=X(ct);g.fillStyle=ink;g.fillRect(px-1,4,2,h-8);g.beginPath();g.arc(px,6,4.5,0,7);g.fill()}
 }
-function ruler(){const D=song.duration,VD=D/Z,r=$('ruler');r.innerHTML='';for(let i=0;i<=4;i++){const s=document.createElement('span');s.textContent=Z>1&&VD<20?fmt(V0+VD*i/4):fmtShort(V0+VD*i/4);r.appendChild(s)}}
+function ruler(){const D=song.duration,VD=D/Z,r=$('ruler');r.innerHTML='';for(let i=0;i<=4;i++){const s=document.createElement('span');s.textContent=VD<20?fmt(V0+VD*i/4):fmtShort(V0+VD*i/4);r.appendChild(s)}}
 /* zoom: keep the selection in view; × buttons step 2× up to a ~3 s window */
 function follow(){if(Z<=1||!song)return;const VD=song.duration/Z,D=song.duration;let v=V0;
   if(S.start<V0||S.start+S.len>V0+VD)v=S.len<VD?S.start-(VD-S.len)/2:S.start;
@@ -1013,7 +1087,7 @@ $('goTime').addEventListener('click',goTyped);
 function setLen(L){S.cand=-1;markCand();setRange(S.start,S.start+L,'move');invalidate()}
 function renderLens(){const m=M(),box=$('lens');box.innerHTML='';box.style.gridTemplateColumns='repeat('+m.lens.length+',1fr)';
   m.lens.forEach(L=>{const b=document.createElement('button');b.className='chip';b.type='button';b.dataset.len=L;
-    if(L===29.5)b.textContent=t('max');else{b.textContent=L;const u=document.createElement('span');u.textContent=t('sec');b.appendChild(u)}box.appendChild(b)});
+    if(L===29.5)b.textContent=t('max');else{b.textContent=L;const u=document.createElement('span');u.textContent=t('sec');b.appendChild(u)}if(song&&L!==29.5&&L>song.duration+.05)b.disabled=true;box.appendChild(b)});
   const r=$('lenR');r.min=m.min;r.max=m.max;r.step=m.step;
   [...box.children].forEach(b=>{b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05);b.setAttribute('aria-pressed',String(b.classList.contains('sel-on')))})}
 function setMode(m,user){if(!MODES[m])return;S.mode=m;const c=M();
@@ -1099,7 +1173,11 @@ $('file').addEventListener('change',e=>loadFile(e.target.files[0]));
 /* any decoded/generated audio → editor (recordings and original ringtones use this too) */
 /* effects belong to one ringtone: a new source starts clean (otherwise "edit again" would apply them twice) */
 function resetFx(){S.voice='none';S.gain=0;S.speed=1;S.loop=1;S.vo=null;refreshOut();refreshDed()}
+/* name/badge may be functions: auto-generated names (recordings, tunes) are re-translated when the language changes */
+let songAuto=null;
 async function useSong(buf,name,source,badge){
+  songAuto=(typeof name==='function'||typeof badge==='function')?{nf:typeof name==='function'?name:null,bf:typeof badge==='function'?badge:null}:null;
+  if(typeof name==='function')name=name();if(typeof badge==='function')badge=badge();
   stopPreview();song=buf;resetFx();invalidate();
   $('songTitle').textContent=name;$('name').value=name.slice(0,40);delete $('name').dataset.touched;$('badge').textContent=badge||'';
   $('songLen').textContent=fmtShort(song.duration);S.cursor=0;$('cursorT').textContent='0:00';
@@ -1109,7 +1187,7 @@ async function useSong(buf,name,source,badge){
     // a saved ringtone is already cut and faded: select all of it and don't fade it again
     S.fin=0;S.fout=0;$('fin').value=0;$('fout').value=0;$('finV').textContent='0.0 '+t('sec');$('foutV').textContent='0.0 '+t('sec');
     S.cand=-1;setRange(0,Math.min(song.duration,CAP()),'start');markCand();say(t('sMineLoaded'));
-  }else{S.fin=M().fin;S.fout=M().fout;$('fin').value=S.fin;$('fout').value=S.fout;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');say(t('sLoaded'))}
+  }else{S.fin=M().fin;S.fout=M().fout;$('fin').value=S.fin;$('fout').value=S.fout;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');say(t(cands.length===1&&cands[0].kind==='start'?'sLoadedShort':'sLoaded'))}
   // always bring the editor into view, also when it was already open (e.g. "edit again" from the bottom of the page)
   {const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');
    requestAnimationFrame(()=>$('editor').scrollIntoView({behavior:calm?'auto':'smooth',block:'start'}))}
@@ -1156,8 +1234,8 @@ function stopRec(){const r=rec;if(!r)return;rec=null;recUI(false);endRec(r);
     if(recTarget==='ded'){let pk=0;for(const v of mono)pk=Math.max(pk,Math.abs(v));const g=pk>0?Math.min(8,.9/pk):1;for(let i=0;i<n;i++)mono[i]*=g;
       S.vo={data:mono,sr:r.sr};closeDlg($('rec'));refreshDed();refreshOut();invalidate();track('ded_added',{seconds:Math.round(n/r.sr)});previewSel();return}
     const buf={sampleRate:r.sr,length:n,duration:n/r.sr,numberOfChannels:2,getChannelData:()=>mono};
-    closeDlg($('rec'));const d=new Date(),nm=t('recName')+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
-    track('rec_done',{seconds:Math.round(buf.duration)});useSong(buf,nm,'record',t('recBadge'));
+    closeDlg($('rec'));const d=new Date(),hm=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'),nm=()=>t('recName')+' '+hm;
+    track('rec_done',{seconds:Math.round(buf.duration)});useSong(buf,nm,'record',()=>t('recBadge'));
   }catch(e){$('recSt').textContent=e&&e.message==='short'?t('recShort'):t('recFail');track('rec_failed',{why:(e&&e.message)||'build'})}}
 $('recGo').addEventListener('click',()=>rec?stopRec():startRec());
 $('rec').addEventListener('close',()=>{if(rec){const r=rec;rec=null;endRec(r);recUI(false)}});
@@ -1218,11 +1296,12 @@ function compose(style,seed,bpm,NAME){
   let pk=0;for(let i=0;i<n;i++)pk=Math.max(pk,Math.abs(L[i]),Math.abs(Rt[i]));const k=.9/(pk||1);for(let i=0;i<n;i++){L[i]*=k;Rt[i]*=k}
   return {sampleRate:sr,length:n,duration:n/sr,numberOfChannels:2,getChannelData:c=>c?Rt:L};
 }
-function genName(){if(G.name)return t('genOf').replace('{n}',G.name);return t('st'+G.style[0].toUpperCase()+G.style.slice(1))+' #'+String(G.seed%10000).padStart(4,'0')}
-function genStop(){if(G.src){try{G.src.stop()}catch(e){}G.src=null}$('genPlay').textContent='▶ '+t('genPlayL')}
+function genName(g=G){if(g.name)return t('genOf').replace('{n}',g.name);return t('st'+g.style[0].toUpperCase()+g.style.slice(1))+' #'+String(g.seed%10000).padStart(4,'0')}
+function genStop(){if(G.src){try{G.src.stop()}catch(e){}G.src=null}genLbl(false)}
+function genLbl(on){$('genPlay').innerHTML=svg(on?'pause':'play')+'<span>'+t(on?'stop':'genPlayL')+'</span>'}
 function genPlay(){genStop();if(!G.song)G.song=compose(G.style,G.seed,G.bpm,G.name);const c=ensureCtx(),s=G.song,b=c.createBuffer(2,s.length,s.sampleRate);
   b.copyToChannel(s.getChannelData(0),0);b.copyToChannel(s.getChannelData(1),1);G.src=c.createBufferSource();G.src.buffer=b;G.src.connect(c.destination);G.src.start();
-  const me=G.src;G.src.onended=()=>{if(G.src===me)genStop()};$('genPlay').textContent='■ '+t('stop')}
+  const me=G.src;G.src.onended=()=>{if(G.src===me)genStop()};genLbl(true)}
 function genMark(){[...$('genStyles').children].forEach(b=>{const on=b.dataset.style===G.style;b.classList.toggle('sel-on',on);b.setAttribute('aria-pressed',String(on))});$('genTempoV').textContent=G.bpm}
 function genChanged(){G.song=null;genMark();genPlay()}
 $('genStyles').addEventListener('click',e=>{const b=e.target.closest('[data-style]');if(!b)return;G.style=b.dataset.style;track('gen_style',{style:G.style});genChanged()});
@@ -1233,7 +1312,7 @@ $('genPlay').addEventListener('click',()=>G.src?genStop():genPlay());
 function nameTune(){const v=$('genNameIn').value.trim();if(!v)return;G.name=v;let h=7;for(const ch of v)h=(h*31+ch.codePointAt(0))>>>0;G.seed=1+h%99999;$('genNameIn').blur();track('gen_name');genChanged()}
 $('genNameGo').addEventListener('click',nameTune);
 $('genNameIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();nameTune()}});
-$('genUse').addEventListener('click',()=>{genStop();if(!G.song)G.song=compose(G.style,G.seed,G.bpm,G.name);closeDlg($('gen'));track('gen_used',{style:G.style,bpm:G.bpm});useSong(G.song,genName(),'generated',t('genBadge'))});
+$('genUse').addEventListener('click',()=>{genStop();if(!G.song)G.song=compose(G.style,G.seed,G.bpm,G.name);closeDlg($('gen'));track('gen_used',{style:G.style,bpm:G.bpm});{const g={style:G.style,seed:G.seed,name:G.name};useSong(G.song,()=>genName(g),'generated',()=>t('genBadge'))}});
 $('gen').addEventListener('close',genStop);
 function openGen(from){stopPreview();openDlg($('gen'));genMark();$('genTempo').value=G.bpm;genStop();track('gen_opened',{from})}
 $('genBtn').addEventListener('click',()=>openGen('hero'));
@@ -1322,13 +1401,13 @@ document.querySelectorAll('.nudge,#startHere').forEach(b=>b.addEventListener('cl
 $('cands').addEventListener('click',invalidate);
 $('file').addEventListener('change',invalidate);
 $('export').addEventListener('click',async()=>{
-  if(!song)return;stopPreview();$('export').disabled=true;say(t('sEncoding'));
+  if(!song)return;stopPreview();$('export').disabled=true;$('export').classList.add('loading');$('export').setAttribute('aria-busy','true');say(t('sEncoding'));
   await new Promise(r=>setTimeout(r,30));
   try{
     const mp3=toMp3(renderClip());
     if(!mp3){say(t('sEncFail'));return}
-    const base=($('name').value.trim()||'Ringtone').replace(/[\\/:*?"<>|%]/g,'').trim()||'Ringtone';
-    ready=new File([id3(base),mp3],base+'.mp3',{type:'audio/mpeg'});
+    const title=($('name').value.trim()||t('defName')).replace(/[\\/*?"<>|%]/g,'').trim()||t('defName'),base=title.replace(/:/g,'.');
+    ready=new File([id3(title),mp3],base+'.mp3',{type:'audio/mpeg'});
     track('ringtone_created',{mode:S.mode,voice:S.voice,ded:S.vo?'yes':'no',fx:[S.gain?'vol':'',S.speed!==1?'speed':'',S.loop>1?'loop':''].filter(Boolean).join('+')||'none',seconds:Math.round(outLen()),picked:S.cand>=0?'auto':'manual',renamed:$('name').dataset.touched?'yes':'no',lang});
     if(dlUrl)URL.revokeObjectURL(dlUrl);dlUrl=URL.createObjectURL(ready);
     const a=$('dl');a.href=dlUrl;a.download=ready.name;a.hidden=false;
@@ -1337,11 +1416,11 @@ $('export').addEventListener('click',async()=>{
     diag='share='+(hasShare?'yes':'no')+' canShare='+(canShare?'yes':'no');
     // Android has no "Use as Ringtone" in its share sheet, so there the download is the main action
     exportButtons();say(t('sReady'));
-    saveMine(ready,S.len);
+    saveMine(ready,S.len,title);
     $('next').hidden=false;
     {const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');
      requestAnimationFrame(()=>$('next').scrollIntoView({behavior:calm?'auto':'smooth',block:'center'}))}
-  }finally{$('export').disabled=false}
+  }finally{$('export').disabled=false;$('export').classList.remove('loading');$('export').removeAttribute('aria-busy')}
 });
 $('share').addEventListener('click',async()=>{
   if(!ready)return;
@@ -1352,23 +1431,23 @@ $('share').addEventListener('click',async()=>{
 
 const T={
 he:{tagline:'גוזרים כל שיר לרינגטון לאייפון. בוחרים שיר, המערכת מוצאת את הפזמון, ובלחיצה אחת הוא הצלצול שלכם.',
-pick:'בחר שיר או סרטון',pickNote:'שירים מ‑Apple Music או מספוטיפיי מוגנים ולא ייפתחו. צריך קובץ שיש לכם, כמו MP3.',dropH:'השיר שלכם. הצלצול שלכם.',dropSub:'בוחרים שיר או סרטון מהטלפון, ותוך דקה הוא הרינגטון שלכם.',tr1:'🔒 לא עולה לשום שרת',tr2:'MP3 · M4A · WAV · וידאו',tr3:'חינם, בלי הרשמה',
+pick:'בחר שיר או סרטון',pickNote:'שירים מ‑Apple Music או מספוטיפיי מוגנים ולא ייפתחו. צריך קובץ שיש לכם, כמו MP3.',dropH:'השיר שלכם. הצלצול שלכם.',dropSub:'בוחרים שיר או סרטון מהטלפון, ותוך דקה הוא הרינגטון שלכם.',tr1:'לא עולה לשום שרת',tr2:'MP3 · M4A · WAV · וידאו',tr3:'חינם, בלי הרשמה',
 song:'השיר',sample:'שיר דוגמה',sampleBadge:'שיר דוגמה סינתטי',waveAria:'צורת הגל של השיר. נגעו כדי לבחור מאיפה הרינגטון מתחיל.',
 howStart:'<b>איך בוחרים מאיפה הרינגטון מתחיל:</b> נוגעים בצורת הגל בנקודה הרצויה, או מאזינים לשיר ולוחצים "התחל מכאן" ברגע הנכון. הידיות בקצוות משנות את האורך.',
 playSong:'השמע את השיר',stop:'עצור',startHere:'התחל את הרינגטון מכאן',typeTime:'או הקלידו מאיזו דקה ושנייה להתחיל',min:'דקות',secs:'שניות',goTime:'התחל מהזמן הזה',
 length:'אורך הרינגטון',sec:'שנ׳',max:'מקסימום',lengthAria:'אורך הרינגטון בשניות',plays:'הרינגטון ינגן מ‑',secStart:'מאיפה הרינגטון מתחיל',to:'עד',
 fine:'כוונון מדויק',fineHint:'מזיזים את ההתחלה או את הסוף בעשיריות שנייה, למשל כדי לא לחתוך מילה באמצע.',start:'התחלה',end:'סוף',
-playRt:'השמע את הרינגטון',cands:'מצא את הקטע הכי טוב (ניתוח אוטומטי של השיר)',kChorus:'הפזמון',kChorusD:'החלק שחוזר הכי הרבה פעמים בשיר',kDrop:'הדרופ',kDropD:'הרגע שבו השיר מתפרץ ונהיה חזק בבת אחת',kPeak:'השיא',kPeakD:'הקטע הכי חזק ואנרגטי בשיר',kStart:'מההתחלה',kStartD:'הקובץ קצר, אז מתחילים מההתחלה',bListen:'▶ האזנה',bUse:'השתמש',bUsing:'✓ נבחר',secShort:' שנ׳',chorus:'הפזמון (הצעה מובילה)',part:'קטע',
+playRt:'השמע את הרינגטון',cands:'מצא את הקטע הכי טוב (ניתוח אוטומטי של השיר)',kChorus:'הפזמון',kChorusD:'החלק שחוזר הכי הרבה פעמים בשיר',kDrop:'הדרופ',kDropD:'הרגע שבו השיר מתפרץ ונהיה חזק בבת אחת',kPeak:'השיא',kPeakD:'הקטע הכי חזק ואנרגטי בשיר',kStart:'מההתחלה',kStartD:'הקובץ קצר, אז מתחילים מההתחלה',bListen:'האזנה',bUse:'השתמש',bUsing:'נבחר',secShort:' שנ׳',chorus:'הפזמון (הצעה מובילה)',part:'קטע',
 fadeIn:'כניסה הדרגתית',fadeOut:'יציאה הדרגתית',norm:'השוואת עוצמה',rtName:'איך הרינגטון ייקרא בטלפון',
 create:'צור רינגטון',setRt:'הגדר כרינגטון',dl:'הורד MP3',guideH:'מהקובץ לצלצול',guideSub:'אייפון עם iOS 26 ומעלה',
 g1:'לוחצים <b>צור רינגטון</b>, ואז <b>הגדר כרינגטון</b>.',g2:'בתפריט השיתוף גוללים למטה ובוחרים <b>שימוש כצלצול</b>. זהו.',
 g3:'אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים לחיצה ארוכה ← שתף ← שימוש כצלצול.',
 note:'באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29.5 שניות.',
-sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח את ',sFinding:'מחפש את הפזמון…',sMineLoaded:'הצלצול נפתח לעריכה. כל הקטע מסומן, והאפקטים אופסו כדי שלא יוכפלו.',sLoaded:'השיר נטען. הקטע המסומן הוא ההצעה לפזמון.',
+sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח את ',sFinding:'מחפש את הפזמון…',sMineLoaded:'הצלצול נפתח לעריכה. כל הקטע מסומן, והאפקטים אופסו כדי שלא יוכפלו.',sLoaded:'השיר נטען. הקטע המסומן הוא ההצעה לפזמון.',sLoadedShort:'השיר נטען. הוא קצר, אז הוא נבחר מההתחלה.',
 sVideoFail:'לא הצלחנו לחלץ קול מהסרטון. נסו סרטון אחר, או קובץ MP3.',sTooBig:'הקובץ גדול מדי (מעל 400MB). נסו סרטון קצר יותר.',sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
 sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'הרינגטון מוכן.',
 sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
-langBtn:'English',invH:'יצא טוב? 🎉',invP:'שלחו את SnipRing לחבר שגם רוצה רינגטון משלו.',invBtn:'שלח לחבר',invText:'הפכתי שיר לרינגטון באייפון בדקה, בלי אפליקציה 🎵 נסו:',invCopied:'הקישור הועתק. הדביקו אותו בוואטסאפ.',guideLink:'המדריך המלא',skip:'דלג לתוכן הראשי',editorH:'עורך הרינגטון',a11y:'נגישות',aBig:'הגדלת טקסט',aContrast:'ניגודיות גבוהה',aLinks:'הדגשת קישורים',aStill:'עצירת אנימציות',aFont:'גופן קריא',aReset:'איפוס',aStatement:'הצהרת נגישות',
+langBtn:'English',invH:'יצא טוב?',invP:'שלחו את SnipRing לחבר שגם רוצה רינגטון משלו.',invBtn:'שלח לחבר',invText:'הפכתי שיר לרינגטון באייפון בדקה, בלי אפליקציה. נסו:',invCopied:'הקישור הועתק. הדביקו אותו בוואטסאפ.',guideLink:'המדריך המלא',skip:'דלג לתוכן הראשי',editorH:'עורך הרינגטון',a11y:'נגישות',aBig:'הגדלת טקסט',aContrast:'ניגודיות גבוהה',aLinks:'הדגשת קישורים',aStill:'עצירת אנימציות',aFont:'גופן קריא',aReset:'איפוס',aStatement:'הצהרת נגישות',
 waveVal:'הרינגטון מתחיל ב‑{a} ומסתיים ב‑{b}. חיצים מזיזים בשנייה, Shift עם חץ בחמש שניות.',
 'n_start_-1':'הזז התחלה שנייה אחורה','n_start_-0.1':'הזז התחלה עשירית שנייה אחורה','n_start_0.1':'הזז התחלה עשירית שנייה קדימה','n_start_1':'הזז התחלה שנייה קדימה',
 'n_end_-1':'הזז סוף שנייה אחורה','n_end_-0.1':'הזז סוף עשירית שנייה אחורה','n_end_0.1':'הזז סוף עשירית שנייה קדימה','n_end_1':'הזז סוף שנייה קדימה',terms:'תנאי שימוש',privacy:'מדיניות פרטיות',a2hs:'<b>הוסיפו את SnipRing למסך הבית:</b> לחצו על כפתור השיתוף בספארי ← <b>הוספה למסך הבית</b>. ככה הוא תמיד בהישג יד, כמו אפליקציה.',close:'סגירה',step1:'בוחרים שיר או סרטון',step1s:'קובץ שמע, או סרטון מהגלריה',step2:'SnipRing מוצא את הפזמון',step2s:'אפשר לשנות התחלה ואורך',step3:'לוחצים "שימוש כצלצול"',step3s:'וזהו, השיר הוא הצלצול שלכם',tryDemo:'או נסו עם שיר דוגמה',adv:'הגדרות מתקדמות',
@@ -1379,29 +1458,29 @@ g2_A:'פותחים <b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>�
 g3_A:'לוחצים <b>+</b> (או "הצלילים שלי" ← <b>+</b>), ובוחרים את הקובץ מההורדות. זהו.',
 note_A:'באנדרואיד אין מגבלת אורך, אבל רינגטון קצר מ‑30 שניות מתאים לכל טלפון.',
 sReady_A:'הרינגטון מוכן.',
-invText_A:'הפכתי שיר לרינגטון בדקה, בלי אפליקציה 🎵 נסו:',guideLink_A:'המדריך לאנדרואיד',
-mineH:'הרינגטונים שלי',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',devL:'הצלצול מיועד ל:',fxVoice:'אפקט קולי',vNone:'רגיל',vChip:'צ׳יפמאנק',vRobot:'רובוט',vEcho:'הד',vRev:'הפוך',vBit:'8‑ביט',vBass:'בס',vPhone:'רדיו',dedH:'הקדשה קולית',dedP:'הקליטו משפט קצר, למשל "אמא מתקשרת!", והוא יתנגן בתחילת הצלצול כשהשיר מונמך מתחתיו.',dedRec:'הקליטו הקדשה',dedHas:'הקדשה:',dedListen:'האזנה',dedDel:'מחיקה',dedRecP:'אמרו משפט קצר, עד 12 שניות. הוא יתנגן בתחילת הצלצול.',genNameL:'או: מנגינה מהשם (כל אות הופכת לצליל)',genNamePh:'למשל: אמא',genNameGo:'הלחינו',genOf:'הצלצול של {n}',callBtn:'נסו את זה כשיחה נכנסת',callSlide:'החליקו כדי לענות',callSwipe:'החליקו למעלה כדי לענות',callMobile:'נייד',callIncoming:'שיחה נכנסת…',callNameAria:'שם המתקשר',callEdit:'אפשר לשנות את השם',callDecline:'דחייה',callAccept:'מענה',callShot:'צלמו מסך ושתפו',callDefault:'אמא',altOr:'או',recBtn:'הקליטו',genBtn:'צלצול מקורי',recH:'הקלטה',recP:'הקליטו קול, שירה, משפט או את הצחוק של הילד. עד דקה אחת. ההקלטה נשארת בטלפון ולא נשלחת לשום מקום.',recStart:'התחלת הקלטה',recStop:'עצירת הקלטה',recReady:'לחצו על הכפתור האדום כדי להתחיל.',recOn:'מקליט… לחצו שוב כדי לעצור.',recDenied:'אין גישה למיקרופון. אפשרו גישה בהגדרות הדפדפן ונסו שוב.',recNo:'הדפדפן הזה לא תומך בהקלטה. נסו בספארי או בכרום.',recFail:'ההקלטה לא הצליחה. נסו שוב.',recShort:'ההקלטה קצרה מדי. הקליטו לפחות שנייה.',recName:'הקלטה',recBadge:'הקלטה',genH:'צלצול מקורי',genP:'SnipRing מלחין בשבילכם מנגינה חדשה. היא שלכם, בלי זכויות יוצרים ובלי קובץ.',genStyle:'סגנון',stMarimba:'מרימבה',stPop:'פופ',stRetro:'8‑ביט',stChill:'צ׳יל',stBells:'פעמונים',genTempo:'קצב (BPM)',genNew:'🎲 מנגינה אחרת',genPlayL:'השמעה',genUse:'השתמשו בצלצול הזה',genBadge:'צלצול מקורי',modeAria:'סוג הצליל',mRing:'רינגטון',mText:'צליל הודעה',mAlarm:'שעון מעורר',zoomIn:'הגדלת צורת הגל',zoomOut:'הקטנת צורת הגל',fxH:'אפקטים',fxVol:'עוצמה',vol0:'רגיל',vol1:'חזק',vol2:'חזק מאוד',vol3:'מקסימום',fxSpeed:'מהירות וגובה צליל',spd1:'רגיל',fxLoop:'חזרה על הקטע',loop1:'בלי',fxOut:'אורך הצלצול הסופי: {n} שנ׳',fxNone:'בלי אפקטים. אפשר להגביר, להאיץ או לחזור על קטע קצר.',next3_text:'אחר כך: <b>הגדרות</b> ← <b>צלילים</b> ← <b>צליל הודעה</b>, ובחרו את הצליל החדש.',next3_text_A:'בהגדרות בחרו <b>צליל התראה</b> (במקום רינגטון) ← <b>+</b>.',next3_alarm:'אחר כך: אפליקציית <b>שעון</b> ← <b>שעון מעורר</b> ← עריכה ← <b>צליל</b>, ובחרו את הצליל מרשימת הרינגטונים.',next3_alarm_A:'באפליקציית <b>שעון</b> ← המעורר ← <b>צליל</b> ← <b>+</b>, ובחרו את הקובץ.',noFile:'אין לכם קובץ שיר?',nfH:'מאיפה מביאים קובץ?',nfP:'שירים מספוטיפיי ומ‑Apple Music מוגנים ואי אפשר לחתוך אותם. אבל יש הרבה מקורות שכן עובדים:',nf1:'<b>סרטון מהגלריה</b>: הופעה, צחוק של הילד, כל סרטון שצילמתם. הקול שלו הופך לצלצול.',nf2:'<b>קובץ שחבר שלח בוואטסאפ</b>: שומרים אותו ל"קבצים" ובוחרים אותו כאן.',nf3:'<b>הקלטה שלכם</b>: הקליטו באפליקציית ההקלטות ושמרו ל"קבצים".',nf4:'<b>שיר שקניתם</b> ב‑iTunes Store, או MP3 שהורדתם מאתר שמוכר מוזיקה.',nf5:'<b>קובץ מ‑iCloud Drive או Google Drive</b>: כל MP3, M4A או WAV שיש לכם שם.',nfNote:'השתמשו רק בקבצים שיש לכם זכות להשתמש בהם.',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
+invText_A:'הפכתי שיר לרינגטון בדקה, בלי אפליקציה. נסו:',guideLink_A:'המדריך לאנדרואיד',
+mineH:'הרינגטונים שלי',theme:'ערכת צבעים',th_system:'לפי המערכת',th_light:'בהירה',th_dark:'כהה',defName:'רינגטון',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',devL:'הצלצול מיועד ל:',fxVoice:'אפקט קולי',vNone:'רגיל',vChip:'צ׳יפמאנק',vRobot:'רובוט',vEcho:'הד',vRev:'הפוך',vBit:'8‑ביט',vBass:'בס',vPhone:'רדיו',dedH:'הקדשה קולית',dedP:'הקליטו משפט קצר, למשל "אמא מתקשרת!", והוא יתנגן בתחילת הצלצול כשהשיר מונמך מתחתיו.',dedRec:'הקליטו הקדשה',dedHas:'הקדשה:',dedListen:'האזנה',dedDel:'מחיקה',dedRecP:'אמרו משפט קצר, עד 12 שניות. הוא יתנגן בתחילת הצלצול.',genNameL:'או: מנגינה מהשם (כל אות הופכת לצליל)',genNamePh:'למשל: אמא',genNameGo:'הלחינו',genOf:'הצלצול של {n}',callBtn:'נסו את זה כשיחה נכנסת',callSlide:'החליקו כדי לענות',callSwipe:'החליקו למעלה כדי לענות',callMobile:'נייד',callIncoming:'שיחה נכנסת…',callNameAria:'שם המתקשר',callEdit:'אפשר לשנות את השם',callDecline:'דחייה',callAccept:'מענה',callShot:'צלמו מסך ושתפו',callDefault:'אמא',altOr:'או',recBtn:'הקליטו',genBtn:'צלצול מקורי',recH:'הקלטה',recP:'הקליטו קול, שירה, משפט או את הצחוק של הילד. עד דקה אחת. ההקלטה נשארת בטלפון ולא נשלחת לשום מקום.',recStart:'התחלת הקלטה',recStop:'עצירת הקלטה',recReady:'לחצו על הכפתור האדום כדי להתחיל.',recOn:'מקליט… לחצו שוב כדי לעצור.',recDenied:'אין גישה למיקרופון. אפשרו גישה בהגדרות הדפדפן ונסו שוב.',recNo:'הדפדפן הזה לא תומך בהקלטה. נסו בספארי או בכרום.',recFail:'ההקלטה לא הצליחה. נסו שוב.',recShort:'ההקלטה קצרה מדי. הקליטו לפחות שנייה.',recName:'הקלטה',recBadge:'הקלטה',genH:'צלצול מקורי',genP:'SnipRing מלחין בשבילכם מנגינה חדשה. היא שלכם, בלי זכויות יוצרים ובלי קובץ.',genStyle:'סגנון',stMarimba:'מרימבה',stPop:'פופ',stRetro:'8‑ביט',stChill:'צ׳יל',stBells:'פעמונים',genTempo:'קצב (BPM)',genNew:'מנגינה אחרת',genPlayL:'השמעה',genUse:'השתמשו בצלצול הזה',genBadge:'צלצול מקורי',modeAria:'סוג הצליל',mRing:'רינגטון',mText:'צליל הודעה',mAlarm:'שעון מעורר',zoomIn:'הגדלת צורת הגל',zoomOut:'הקטנת צורת הגל',fxH:'אפקטים',fxVol:'עוצמה',vol0:'רגיל',vol1:'חזק',vol2:'חזק מאוד',vol3:'מקסימום',fxSpeed:'מהירות וגובה צליל',spd1:'רגיל',fxLoop:'חזרה על הקטע',loop1:'בלי',fxOut:'אורך הצלצול הסופי: {n} שנ׳',fxNone:'בלי אפקטים. אפשר להגביר, להאיץ או לחזור על קטע קצר.',next3_text:'אחר כך: <b>הגדרות</b> ← <b>צלילים</b> ← <b>צליל הודעה</b>, ובחרו את הצליל החדש.',next3_text_A:'בהגדרות בחרו <b>צליל התראה</b> (במקום רינגטון) ← <b>+</b>.',next3_alarm:'אחר כך: אפליקציית <b>שעון</b> ← <b>שעון מעורר</b> ← עריכה ← <b>צליל</b>, ובחרו את הצליל מרשימת הרינגטונים.',next3_alarm_A:'באפליקציית <b>שעון</b> ← המעורר ← <b>צליל</b> ← <b>+</b>, ובחרו את הקובץ.',noFile:'אין לכם קובץ שיר?',nfH:'מאיפה מביאים קובץ?',nfP:'שירים מספוטיפיי ומ‑Apple Music מוגנים ואי אפשר לחתוך אותם. אבל יש הרבה מקורות שכן עובדים:',nf1:'<b>סרטון מהגלריה</b>: הופעה, צחוק של הילד, כל סרטון שצילמתם. הקול שלו הופך לצלצול.',nf2:'<b>קובץ שחבר שלח בוואטסאפ</b>: שומרים אותו ל"קבצים" ובוחרים אותו כאן.',nf3:'<b>הקלטה שלכם</b>: הקליטו באפליקציית ההקלטות ושמרו ל"קבצים".',nf4:'<b>שיר שקניתם</b> ב‑iTunes Store, או MP3 שהורדתם מאתר שמוכר מוזיקה.',nf5:'<b>קובץ מ‑iCloud Drive או Google Drive</b>: כל MP3, M4A או WAV שיש לכם שם.',nfNote:'השתמשו רק בקבצים שיש לכם זכות להשתמש בהם.',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
 nextH:'מה עכשיו?',next1:'לחצו <b>הגדר כרינגטון</b> למטה.',next2:'בתפריט שנפתח <b>גללו למטה</b> ובחרו <b>שימוש כצלצול</b>.',useAs:'שימוש כצלצול',
 next1_A:'לחצו <b>הורד MP3</b> למטה.',next2_A:'<b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>רינגטון</b> ← <b>+</b>, ובחרו את הקובץ מההורדות.',
 mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineFav:'סימון כמועדף',mineUnfav:'הסרה מהמועדפים',mineMore:'עוד אפשרויות',mineRename:'שינוי שם',mineEdit:'עריכה מחדש',mineDup:'שכפול',mineCopy:'(עותק)',mineBadge:'מהרינגטונים שלי',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
-pick:'Choose a song or video',pickNote:'Songs from Apple Music or Spotify are protected and won\'t open. You need a file you own, like an MP3.',dropH:'Your song. Your ringtone.',dropSub:'Pick a song or video on your phone, and in a minute it rings.',tr1:'🔒 Never uploaded',tr2:'MP3 · M4A · WAV · video',tr3:'Free, no sign-up',
+pick:'Choose a song or video',pickNote:'Songs from Apple Music or Spotify are protected and won\'t open. You need a file you own, like an MP3.',dropH:'Your song. Your ringtone.',dropSub:'Pick a song or video on your phone, and in a minute it rings.',tr1:'Never uploaded',tr2:'MP3 · M4A · WAV · video',tr3:'Free, no sign-up',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
 howStart:'<b>Choose where the ringtone starts:</b> tap the waveform at the spot you want, or listen and press "Start here" at the right moment. Drag the edge handles to change the length.',
 playSong:'Play song',stop:'Stop',startHere:'Start the ringtone here',typeTime:'Or type the minute and second to start from',min:'Minutes',secs:'Seconds',goTime:'Start at this time',
 length:'Ringtone length',sec:'s',max:'Max',lengthAria:'Ringtone length in seconds',plays:'Your ringtone plays from',secStart:'Where it starts',to:'to',
 fine:'Fine-tune',fineHint:'Move the start or end by tenths of a second, for example to avoid cutting a word in half.',start:'Start',end:'End',
-playRt:'Play ringtone',cands:'Find the best part (automatic song analysis)',kChorus:'Chorus',kChorusD:'The part that repeats most in the song',kDrop:'The drop',kDropD:'Where the song suddenly bursts and gets loud',kPeak:'Peak',kPeakD:'The loudest, most energetic stretch',kStart:'From the start',kStartD:'Short file, so it starts at the beginning',bListen:'▶ Listen',bUse:'Use',bUsing:'✓ Selected',secShort:'s',chorus:'Chorus (top pick)',part:'Part',
+playRt:'Play ringtone',cands:'Find the best part (automatic song analysis)',kChorus:'Chorus',kChorusD:'The part that repeats most in the song',kDrop:'The drop',kDropD:'Where the song suddenly bursts and gets loud',kPeak:'Peak',kPeakD:'The loudest, most energetic stretch',kStart:'From the start',kStartD:'Short file, so it starts at the beginning',bListen:'Listen',bUse:'Use',bUsing:'Selected',secShort:'s',chorus:'Chorus (top pick)',part:'Part',
 fadeIn:'Fade in',fadeOut:'Fade out',norm:'Even out volume',rtName:'Ringtone name on your phone',
 create:'Create ringtone',setRt:'Set as ringtone',dl:'Download MP3',guideH:'From song to ringtone',guideSub:'iPhone with iOS 26 or later',
 g1:'Tap <b>Create ringtone</b>, then <b>Set as ringtone</b>.',g2:'In the share sheet, scroll down and choose <b>Use as Ringtone</b>. Done.',
 g3:'If the share sheet doesn\'t open: <b>Download MP3</b>, then in Files long-press it → Share → Use as Ringtone.',
 note:'iPhone ringtones must be shorter than 30 seconds, so the maximum here is 29.5 seconds.',
-sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:'Finding the chorus…',sMineLoaded:'Your ringtone is open for editing. The whole clip is selected, and effects were reset so they don\'t apply twice.',sLoaded:'Song loaded. The highlighted part is our chorus pick.',
+sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:'Finding the chorus…',sMineLoaded:'Your ringtone is open for editing. The whole clip is selected, and effects were reset so they don\'t apply twice.',sLoaded:'Song loaded. The highlighted part is our chorus pick.',sLoadedShort:'Song loaded. It\'s short, so it starts from the beginning.',
 sVideoFail:'Couldn\'t get the sound from this video. Try another video, or an MP3 file.',sTooBig:'This file is too large (over 400MB). Try a shorter video.',sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
 sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Your ringtone is ready.',
 sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
-langBtn:'עברית',invH:'Turned out great? 🎉',invP:'Send SnipRing to a friend who wants their own ringtone too.',invBtn:'Send to a friend',invText:'I turned a song into an iPhone ringtone in a minute, no app needed 🎵 Try it:',invCopied:'Link copied. Paste it in WhatsApp.',guideLink:'Full guide',skip:'Skip to main content',editorH:'Ringtone editor',a11y:'Accessibility',aBig:'Bigger text',aContrast:'High contrast',aLinks:'Highlight links',aStill:'Stop animations',aFont:'Readable font',aReset:'Reset',aStatement:'Accessibility statement',
+langBtn:'עברית',invH:'Turned out great?',invP:'Send SnipRing to a friend who wants their own ringtone too.',invBtn:'Send to a friend',invText:'I turned a song into an iPhone ringtone in a minute, no app needed. Try it:',invCopied:'Link copied. Paste it in WhatsApp.',guideLink:'Full guide',skip:'Skip to main content',editorH:'Ringtone editor',a11y:'Accessibility',aBig:'Bigger text',aContrast:'High contrast',aLinks:'Highlight links',aStill:'Stop animations',aFont:'Readable font',aReset:'Reset',aStatement:'Accessibility statement',
 waveVal:'Ringtone starts at {a} and ends at {b}. Arrow keys move it by 1 second, Shift plus arrow by 5 seconds.',
 'n_start_-1':'Move start back 1 second','n_start_-0.1':'Move start back 0.1 second','n_start_0.1':'Move start forward 0.1 second','n_start_1':'Move start forward 1 second',
 'n_end_-1':'Move end back 1 second','n_end_-0.1':'Move end back 0.1 second','n_end_0.1':'Move end forward 0.1 second','n_end_1':'Move end forward 1 second',terms:'Terms of Use',privacy:'Privacy Policy',a2hs:'<b>Add SnipRing to your Home Screen:</b> tap Share in Safari → <b>Add to Home Screen</b>. It opens like an app, one tap away.',close:'Close',step1:'Pick a song or video',step1s:'An audio file, or a video from your library',step2:'SnipRing finds the chorus',step2s:'Change the start and length if you like',step3:'Tap "Use as Ringtone"',step3s:'That\'s it. The song is your ringtone.',tryDemo:'Or try a sample song',adv:'Advanced settings',
@@ -1412,8 +1491,8 @@ g2_A:'Open <b>Settings</b> → <b>Sound &amp; vibration</b> → <b>Ringtone</b>.
 g3_A:'Tap <b>+</b> (or My sounds → <b>+</b>) and pick the file from Downloads. Done.',
 note_A:'Android has no length limit, but a ringtone under 30 seconds works on every phone.',
 sReady_A:'Your ringtone is ready.',
-invText_A:'I turned a song into a ringtone in a minute, no app needed 🎵 Try it:',guideLink_A:'Android guide',
-mineH:'My ringtones',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',devL:'This ringtone is for:',fxVoice:'Voice effect',vNone:'Normal',vChip:'Chipmunk',vRobot:'Robot',vEcho:'Echo',vRev:'Reverse',vBit:'8-bit',vBass:'Bass',vPhone:'Radio',dedH:'Voice dedication',dedP:'Record a short line, like "Mom\'s calling!", and it plays at the start of the ringtone with the music dipped underneath.',dedRec:'Record a dedication',dedHas:'Dedication:',dedListen:'Listen',dedDel:'Delete',dedRecP:'Say a short line, up to 12 seconds. It plays at the start of the ringtone.',genNameL:'Or: a melody from a name (each letter becomes a note)',genNamePh:'e.g. Mom',genNameGo:'Compose',genOf:'{n}\'s ringtone',callBtn:'Try it as an incoming call',callSlide:'slide to answer',callSwipe:'Swipe up to answer',callMobile:'Mobile',callIncoming:'Incoming call…',callNameAria:'Caller name',callEdit:'Tap the name to change it',callDecline:'Decline',callAccept:'Accept',callShot:'Screenshot and share',callDefault:'Mom',altOr:'or',recBtn:'Record',genBtn:'Original tune',recH:'Record',recP:'Record a voice, a song, a line, or your kid laughing. Up to one minute. The recording stays on your phone and is never uploaded.',recStart:'Start recording',recStop:'Stop recording',recReady:'Tap the red button to start.',recOn:'Recording… tap again to stop.',recDenied:'No microphone access. Allow it in your browser settings and try again.',recNo:'This browser can\'t record. Try Safari or Chrome.',recFail:'The recording didn\'t work. Try again.',recShort:'Too short. Record at least a second.',recName:'Recording',recBadge:'Recording',genH:'Original ringtone',genP:'SnipRing composes a brand-new melody for you. It\'s yours: no copyright, no file needed.',genStyle:'Style',stMarimba:'Marimba',stPop:'Pop',stRetro:'8-bit',stChill:'Chill',stBells:'Bells',genTempo:'Tempo (BPM)',genNew:'🎲 Another melody',genPlayL:'Play',genUse:'Use this ringtone',genBadge:'Original tune',modeAria:'Sound type',mRing:'Ringtone',mText:'Text tone',mAlarm:'Alarm',zoomIn:'Zoom in on the waveform',zoomOut:'Zoom out',fxH:'Effects',fxVol:'Volume',vol0:'Normal',vol1:'Loud',vol2:'Louder',vol3:'Max',fxSpeed:'Speed and pitch',spd1:'Normal',fxLoop:'Repeat the part',loop1:'Off',fxOut:'Final length: {n} s',fxNone:'No effects. Boost it, speed it up, or repeat a short part.',next3_text:'Then: <b>Settings</b> → <b>Sounds &amp; Haptics</b> → <b>Text Tone</b>, and pick the new sound.',next3_text_A:'In Settings choose <b>Notification sound</b> (instead of Ringtone) → <b>+</b>.',next3_alarm:'Then: <b>Clock</b> app → <b>Alarms</b> → Edit → <b>Sound</b>, and pick it from the Ringtones list.',next3_alarm_A:'In the <b>Clock</b> app → your alarm → <b>Sound</b> → <b>+</b>, and pick the file.',noFile:'No song file?',nfH:'Where to get a file',nfP:'Songs from Spotify and Apple Music are protected and can\'t be trimmed. But plenty of sources do work:',nf1:'<b>A video from your gallery</b>: a concert, your kid laughing, anything you filmed. Its sound becomes the ringtone.',nf2:'<b>A file a friend sent on WhatsApp</b>: save it to Files and pick it here.',nf3:'<b>Your own recording</b>: record in Voice Memos and share it to Files.',nf4:'<b>A song you bought</b> on the iTunes Store, or an MP3 from a store that sells music.',nf5:'<b>A file in iCloud Drive or Google Drive</b>: any MP3, M4A or WAV you keep there.',nfNote:'Only use files you have the right to use.',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
+invText_A:'I turned a song into a ringtone in a minute, no app needed. Try it:',guideLink_A:'Android guide',
+mineH:'My ringtones',theme:'Colour theme',th_system:'System',th_light:'Light',th_dark:'Dark',defName:'Ringtone',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',devL:'This ringtone is for:',fxVoice:'Voice effect',vNone:'Normal',vChip:'Chipmunk',vRobot:'Robot',vEcho:'Echo',vRev:'Reverse',vBit:'8-bit',vBass:'Bass',vPhone:'Radio',dedH:'Voice dedication',dedP:'Record a short line, like "Mom\'s calling!", and it plays at the start of the ringtone with the music dipped underneath.',dedRec:'Record a dedication',dedHas:'Dedication:',dedListen:'Listen',dedDel:'Delete',dedRecP:'Say a short line, up to 12 seconds. It plays at the start of the ringtone.',genNameL:'Or: a melody from a name (each letter becomes a note)',genNamePh:'e.g. Mom',genNameGo:'Compose',genOf:'{n}\'s ringtone',callBtn:'Try it as an incoming call',callSlide:'slide to answer',callSwipe:'Swipe up to answer',callMobile:'Mobile',callIncoming:'Incoming call…',callNameAria:'Caller name',callEdit:'Tap the name to change it',callDecline:'Decline',callAccept:'Accept',callShot:'Screenshot and share',callDefault:'Mom',altOr:'or',recBtn:'Record',genBtn:'Original tune',recH:'Record',recP:'Record a voice, a song, a line, or your kid laughing. Up to one minute. The recording stays on your phone and is never uploaded.',recStart:'Start recording',recStop:'Stop recording',recReady:'Tap the red button to start.',recOn:'Recording… tap again to stop.',recDenied:'No microphone access. Allow it in your browser settings and try again.',recNo:'This browser can\'t record. Try Safari or Chrome.',recFail:'The recording didn\'t work. Try again.',recShort:'Too short. Record at least a second.',recName:'Recording',recBadge:'Recording',genH:'Original ringtone',genP:'SnipRing composes a brand-new melody for you. It\'s yours: no copyright, no file needed.',genStyle:'Style',stMarimba:'Marimba',stPop:'Pop',stRetro:'8-bit',stChill:'Chill',stBells:'Bells',genTempo:'Tempo (BPM)',genNew:'Another melody',genPlayL:'Play',genUse:'Use this ringtone',genBadge:'Original tune',modeAria:'Sound type',mRing:'Ringtone',mText:'Text tone',mAlarm:'Alarm',zoomIn:'Zoom in on the waveform',zoomOut:'Zoom out',fxH:'Effects',fxVol:'Volume',vol0:'Normal',vol1:'Loud',vol2:'Louder',vol3:'Max',fxSpeed:'Speed and pitch',spd1:'Normal',fxLoop:'Repeat the part',loop1:'Off',fxOut:'Final length: {n} s',fxNone:'No effects. Boost it, speed it up, or repeat a short part.',next3_text:'Then: <b>Settings</b> → <b>Sounds &amp; Haptics</b> → <b>Text Tone</b>, and pick the new sound.',next3_text_A:'In Settings choose <b>Notification sound</b> (instead of Ringtone) → <b>+</b>.',next3_alarm:'Then: <b>Clock</b> app → <b>Alarms</b> → Edit → <b>Sound</b>, and pick it from the Ringtones list.',next3_alarm_A:'In the <b>Clock</b> app → your alarm → <b>Sound</b> → <b>+</b>, and pick the file.',noFile:'No song file?',nfH:'Where to get a file',nfP:'Songs from Spotify and Apple Music are protected and can\'t be trimmed. But plenty of sources do work:',nf1:'<b>A video from your gallery</b>: a concert, your kid laughing, anything you filmed. Its sound becomes the ringtone.',nf2:'<b>A file a friend sent on WhatsApp</b>: save it to Files and pick it here.',nf3:'<b>Your own recording</b>: record in Voice Memos and share it to Files.',nf4:'<b>A song you bought</b> on the iTunes Store, or an MP3 from a store that sells music.',nf5:'<b>A file in iCloud Drive or Google Drive</b>: any MP3, M4A or WAV you keep there.',nfNote:'Only use files you have the right to use.',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
 nextH:'What now?',next1:'Tap <b>Set as ringtone</b> below.',next2:'In the menu that opens, <b>scroll down</b> and choose <b>Use as Ringtone</b>.',useAs:'Use as Ringtone',
 next1_A:'Tap <b>Download MP3</b> below.',next2_A:'<b>Settings</b> → <b>Sound &amp; vibration</b> → <b>Ringtone</b> → <b>+</b>, and pick the file from Downloads.',
 mineSaved:'Also saved in "My ringtones" below.',mineFav:'Add to favourites',mineUnfav:'Remove from favourites',mineMore:'More options',mineRename:'Rename',mineEdit:'Edit again',mineDup:'Duplicate',mineCopy:'(copy)',mineBadge:'From My ringtones',mineEmpty:'No ringtones yet. Every ringtone you create is saved here automatically.'}};
@@ -1428,12 +1507,13 @@ function applyLang(){
   $('lang').textContent=t('langBtn');{const he=lang==='he',ios=he?'ringtone-iphone.html':'iphone-ringtone.html',and=he?'ringtone-android.html':'android-ringtone.html';
     $('helpGuide').href=ANDROID?and:ios;$('helpOther').href=ANDROID?ios:and;$('helpVideo').href=he?'ringtone-video.html':'video-ringtone.html'}$('guideLink').href=ANDROID?(lang==='he'?'ringtone-android.html':'android-ringtone.html'):(lang==='he'?'ringtone-iphone.html':'iphone-ringtone.html');
   if(song&&song._demo){$('songTitle').textContent=t('sample');$('badge').textContent=t('sampleBadge');if(!$('name').dataset.touched)$('name').value=t('sample')}
+  else if(song&&songAuto){if(songAuto.nf){const n=songAuto.nf();$('songTitle').textContent=n;if(!$('name').dataset.touched)$('name').value=n.slice(0,40)}if(songAuto.bf)$('badge').textContent=songAuto.bf()}
   $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
-  if(cands.length)renderCands(),markCand();setIcon();syncAria();renderLens();renderNext();refreshOut();if(typeof renderMine==='function')renderMine();if(typeof refreshDed==='function')refreshDed();if(typeof G!=='undefined'&&!G.src)$('genPlay').textContent='▶ '+t('genPlayL');
+  if(cands.length)renderCands(),markCand();setIcon();syncAria();renderLens();renderNext();refreshOut();if(typeof renderMine==='function')renderMine();if(typeof refreshDed==='function')refreshDed();if(typeof G!=='undefined'&&!G.src)genLbl(false);if(typeof paintTheme==='function')paintTheme();
 }
 function renderNext(){$('nx1').innerHTML=t('next1');$('nx2').innerHTML=t('next2');
   const x=S.mode==='ring'?'':t('next3_'+S.mode);$('nx3').innerHTML=x;$('nx3').hidden=!x}
-function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('steps').hidden=true;$('main').classList.add('editing');$('a2hs').hidden=true;
+function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('toastzone').textContent='';$('steps').hidden=true;$('main').classList.add('editing');$('a2hs').hidden=true;
   requestAnimationFrame(()=>{draw();if(was){const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');ed.scrollIntoView({behavior:calm?'auto':'smooth',block:'start'});$('main').focus({preventScroll:true})}})}
 $('dl').addEventListener('click',()=>{track('mp3_downloaded');setTimeout(showInvite,1500)});
 function showInvite(){let seen=false;try{seen=sessionStorage.getItem('snipring-inv')==='1'}catch(e){}
@@ -1466,6 +1546,19 @@ $('inviteBtn').addEventListener('click',async()=>{
   paint();
 })();
 $('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('song_loaded',{source:'demo',lang})});
+/* theme: system → light → dark; stored per device, applied before paint by the head script */
+const THEMES=['system','light','dark'];let theme='system';try{theme=localStorage.getItem('snipring-theme')||'system'}catch(e){}if(!THEMES.includes(theme))theme='system';
+function paintTheme(){const r=document.documentElement;if(theme==='system')delete r.dataset.theme;else r.dataset.theme=theme;
+  $('themeIc').setAttribute('href','#i-'+(theme==='system'?'system':theme==='light'?'sun':'moon'));
+  $('themeBtn').setAttribute('aria-label',t('theme')+': '+t('th_'+theme));$('themeBtn').title=t('theme')+': '+t('th_'+theme);
+  $('themeColor').setAttribute('content',getComputedStyle(r).getPropertyValue('--bg').trim()||'#F4F6FA');
+  if(typeof song!=='undefined'&&song)requestAnimationFrame(()=>draw())}
+$('themeBtn').addEventListener('click',()=>{theme=THEMES[(THEMES.indexOf(theme)+1)%3];try{if(theme==='system')localStorage.removeItem('snipring-theme');else localStorage.setItem('snipring-theme',theme)}catch(e){}paintTheme();track('theme_switched',{to:theme})});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(theme==='system')paintTheme()});
+/* on-screen keyboard: let the sticky create bar fall back into the flow so it never covers the field being typed in */
+{const isText=el=>el&&(el.tagName==='TEXTAREA'||(el.tagName==='INPUT'&&/^(text|search|number|email|url|tel|)$/.test(el.type)));
+ document.addEventListener('focusin',e=>{if(isText(e.target)&&matchMedia('(pointer:coarse)').matches)document.documentElement.classList.add('kbd')});
+ document.addEventListener('focusout',e=>{if(isText(e.target))setTimeout(()=>{if(!isText(document.activeElement))document.documentElement.classList.remove('kbd')},50)})}
 $('lang').addEventListener('click',()=>{lang=lang==='he'?'en':'he';try{localStorage.setItem('snipring-lang',lang)}catch(e){}applyLang();track('language_switched',{to:lang});say(t('sReady0'))});
 $('name').addEventListener('input',()=>{$('name').dataset.touched='1'});
 /* "no file?" — where a legal audio file can come from */
@@ -1478,7 +1571,7 @@ $('nfGo').addEventListener('click',()=>{$('nfClose').click();track('nofile_cta')
 $('file').addEventListener('click',()=>track('file_picker_opened',{editing:$('editor').hidden?'no':'yes'}));
 $('file').addEventListener('cancel',()=>track('file_picker_cancelled'));
 if(window.__meMsg){const d=document.createElement('div');d.className='toast';d.setAttribute('role','status');
-  d.textContent=lang==='he'?(window.__meMsg==='on'?'המדידה הופעלה מחדש במכשיר הזה':'המדידה כבויה במכשיר הזה (מצב בעלים)'):(window.__meMsg==='on'?'Analytics on for this device':'Analytics off for this device (owner mode)');document.body.appendChild(d);setTimeout(()=>d.remove(),4000);
+  d.textContent=lang==='he'?(window.__meMsg==='on'?'המדידה הופעלה מחדש במכשיר הזה':'המדידה כבויה במכשיר הזה (מצב בעלים)'):(window.__meMsg==='on'?'Analytics on for this device':'Analytics off for this device (owner mode)');$('toastzone').appendChild(d);setTimeout(()=>d.remove(),4000);
   try{history.replaceState(null,'',location.pathname)}catch(e){}}
 /* demo video: a 30-second walkthrough recorded from the real site */
 function openDemo(from){const d=$('demo'),v=$('demoVid'),src='media/how-'+lang+'.mp4';
@@ -1494,7 +1587,7 @@ $('demo').addEventListener('click',e=>{if(e.target===$('demo'))closeDemo()});
 $('demoGo').addEventListener('click',()=>{closeDemo();track('demo_video_cta');$('file').click()});
 /* incoming call preview: plays the finished ringtone on a full-screen call screen */
 let callSrc=null,callPrev=null;
-function callInit(){const v=$('callName').value.trim();$('callInit').textContent=v?[...v][0].toUpperCase():'🙂';
+function callInit(){const v=$('callName').value.trim();$('callInit').textContent=v?[...v][0].toUpperCase():'';
   let h=0;for(const ch of v)h=(h*31+ch.codePointAt(0))%360;const o=$('callOv').style;o.setProperty('--cA','hsl('+h+' 55% 45%)');o.setProperty('--cB','hsl('+((h+60)%360)+' 45% 35%)')}
 /* drag to answer: the iPhone-style knob slides sideways, the Android-style button swipes up; a tap also works */
 function dragAnswer(el,axis,limit){let d=null;
@@ -1541,10 +1634,10 @@ const sortMine=()=>mine.sort((a,b)=>(!!b.fav-!!a.fav)||(b.id-a.id));
 async function loadMine(){try{const all=await dbDo('readonly',st=>st.getAll());mine=all||[];sortMine()}catch(e){mine=[]}renderMine()}
 const putRec=r=>dbDo('readwrite',st=>st.put(r));
 async function prune(){const extra=mine.filter(r=>!r.fav).sort((a,b)=>a.id-b.id);while(mine.length>30&&extra.length){const old=extra.shift();mine=mine.filter(x=>x!==old);try{await dbDo('readwrite',st=>st.delete(old.id))}catch(e){}}}
-async function saveMine(file,secs){
+async function saveMine(file,secs,title){
   try{// stored as a plain ArrayBuffer: Safari has been unreliable with Blobs inside IndexedDB
     const data=await file.arrayBuffer();
-    const rec={id:Date.now(),name:file.name.replace(/\.mp3$/i,''),secs:Math.round(secs*10)/10,data,type:S.mode,fav:false};
+    const rec={id:Date.now(),name:title||file.name.replace(/\.mp3$/i,''),secs:Math.round(secs*10)/10,data,type:S.mode,fav:false};
     const last=[...mine].sort((a,b)=>b.id-a.id)[0];
     if(last&&last.name===rec.name&&last.data.byteLength===data.byteLength){say($('status').textContent+' '+t('mineSaved'));return}
     await putRec(rec);mine.push(rec);await prune();sortMine();
@@ -1552,45 +1645,46 @@ async function saveMine(file,secs){
   }catch(e){track('mine_save_failed',{err:String(e&&e.name||e)})}
 }
 const mineBlob=r=>r.blob||new Blob([r.data],{type:'audio/mpeg'});
-function mineFile(r){return new File([mineBlob(r)],r.name+'.mp3',{type:'audio/mpeg'})}
+function mineFile(r){return new File([mineBlob(r)],r.name.replace(/:/g,'.')+'.mp3',{type:'audio/mpeg'})}
 function stopMine(){if(mineAudio){mineAudio.pause();mineAudio=null}if(mineUrl){URL.revokeObjectURL(mineUrl);mineUrl=null}minePlaying=null}
 let mineOpen=null,mineRen=null;
-const TYPE_IC={ring:'🔔',text:'💬',alarm:'⏰'},TYPE_K={ring:'mRing',text:'mText',alarm:'mAlarm'};
+const TYPE_IC={ring:'bell',text:'message',alarm:'alarm'},TYPE_K={ring:'mRing',text:'mText',alarm:'mAlarm'};
 /* "edit again": decode the saved MP3 and open it in the editor like any other song */
 async function editAgain(r){stopMine();mineOpen=null;renderMine();try{const c=ensureCtx(),ab=r.data?r.data.slice(0):await mineBlob(r).arrayBuffer();
   const buf=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
-  if(r.type&&r.type!==S.mode)setMode(r.type,false);await useSong(buf,r.name,'mine',t('mineBadge'));track('mine_edit')}catch(e){say(t('sOpenFail'))}}
+  if(r.type&&r.type!==S.mode)setMode(r.type,false);await useSong(buf,r.name,'mine',()=>t('mineBadge'));track('mine_edit')}catch(e){say(t('sOpenFail'))}}
 function renderMine(){
   const ul=$('mineList');ul.textContent='';$('mine').hidden=false;$('mineEmpty').hidden=!!mine.length;
-  const btn=(txt,cls,fn,aria)=>{const b=document.createElement('button');b.type='button';b.className='mb'+(cls?' '+cls:'');b.textContent=txt;if(aria)b.setAttribute('aria-label',aria);b.addEventListener('click',fn);return b};
+  const btn=(txt,cls,fn,aria,ic)=>{const b=document.createElement('button');b.type='button';b.className=(txt?'btn':'iconbtn sm')+(cls?' '+cls:'');b.innerHTML=(ic?svg(ic,'sm'):'')+(txt?'<span></span>':'');if(txt)b.querySelector('span').textContent=txt;if(aria)b.setAttribute('aria-label',aria);b.addEventListener('click',fn);return b};
   mine.forEach(r=>{
     const type=r.type||'ring',li=document.createElement('li');li.className='snip'+(r.fav?' fav':'');
     const top=document.createElement('div');top.className='stop';
-    const star=btn(r.fav?'★':'☆','star',async()=>{r.fav=!r.fav;try{await putRec(r)}catch(e){}sortMine();renderMine();track('mine_fav',{on:r.fav})},(r.fav?t('mineUnfav'):t('mineFav'))+': '+r.name);
+    const star=btn('','star',async()=>{r.fav=!r.fav;try{await putRec(r)}catch(e){}sortMine();renderMine();track('mine_fav',{on:r.fav})},(r.fav?t('mineUnfav'):t('mineFav'))+': '+r.name,'star');
     star.setAttribute('aria-pressed',String(!!r.fav));top.appendChild(star);
     const nm=document.createElement('span');nm.className='mname';
     if(mineRen===r.id){const inp=document.createElement('input');inp.className='ren';inp.value=r.name;inp.maxLength=40;inp.setAttribute('aria-label',t('mineRename'));
       const done=async ok=>{if(mineRen!==r.id)return;mineRen=null;const v=inp.value.trim().replace(/[\\/:*?"<>|%]/g,'');if(ok&&v&&v!==r.name){r.name=v;try{await putRec(r)}catch(e){}track('mine_renamed')}renderMine()};
       inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();done(true)}else if(e.key==='Escape')done(false)});inp.addEventListener('blur',()=>done(true));
       nm.appendChild(inp);setTimeout(()=>{inp.focus();inp.select()},0)}
-    else{nm.textContent=r.name}
-    const sm=document.createElement('small');sm.textContent=TYPE_IC[type]+' '+t(TYPE_K[type])+' · '+r.secs.toFixed(1)+' '+t('sec')+' · '+new Date(r.id).toLocaleDateString(lang==='he'?'he-IL':'en-US');nm.appendChild(sm);top.appendChild(nm);li.appendChild(top);
+    else{const bd=document.createElement('bdi');bd.textContent=r.name;nm.appendChild(bd)}
+    const sm=document.createElement('small');sm.innerHTML=svg(TYPE_IC[type],'xs')+'<span></span>';sm.querySelector('span').textContent=t(TYPE_K[type])+' · '+r.secs.toFixed(1)+' '+t('sec')+' · '+new Date(r.id).toLocaleDateString(lang==='he'?'he-IL':'en-US');nm.appendChild(sm);top.appendChild(nm);li.appendChild(top);
     const row=document.createElement('div');row.className='srow';
     const playing=minePlaying===r.id;
     row.appendChild(btn(playing?t('mineStop'):t('minePlay'),'',()=>{
       const was=minePlaying===r.id;stopMine();stopPreview();
       if(!was){mineUrl=URL.createObjectURL(mineBlob(r));mineAudio=new Audio(mineUrl);minePlaying=r.id;mineAudio.onended=()=>{stopMine();renderMine()};mineAudio.play().catch(()=>{});track('mine_played')}
-      renderMine()},(playing?t('mineStop'):t('minePlay'))+': '+r.name));
-    if(navigator.share&&!ANDROID)row.appendChild(btn(t('mineSet'),'pri',async()=>{track('mine_set_tapped');try{await navigator.share({files:[mineFile(r)]});track('share_completed',{from:'mine'})}catch(e){}},t('setRt')+': '+r.name));
-    row.appendChild(btn(t('mineDl'),ANDROID||!navigator.share?'pri':'',()=>{const u=URL.createObjectURL(mineBlob(r)),a=document.createElement('a');a.href=u;a.download=r.name+'.mp3';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);track('mp3_downloaded',{from:'mine'})},t('mineDl')+': '+r.name));
-    const more=btn('⋯','more',()=>{mineOpen=mineOpen===r.id?null:r.id;renderMine()},t('mineMore')+': '+r.name);more.setAttribute('aria-expanded',String(mineOpen===r.id));row.appendChild(more);
+      renderMine()},(playing?t('mineStop'):t('minePlay'))+': '+r.name,playing?'pause':'play'));
+    if(navigator.share&&!ANDROID)row.appendChild(btn(t('mineSet'),'primary',async()=>{track('mine_set_tapped');try{await navigator.share({files:[mineFile(r)]});track('share_completed',{from:'mine'})}catch(e){}},t('setRt')+': '+r.name,'phone'));
+    row.appendChild(btn(t('mineDl'),ANDROID||!navigator.share?'primary':'',()=>{const u=URL.createObjectURL(mineBlob(r)),a=document.createElement('a');a.href=u;a.download=r.name.replace(/:/g,'.')+'.mp3';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);track('mp3_downloaded',{from:'mine'})},t('mineDl')+': '+r.name,'download'));
+    if(row.children.length===3)row.classList.add('three');
+    const more=btn('','more',()=>{mineOpen=mineOpen===r.id?null:r.id;renderMine()},t('mineMore')+': '+r.name,'more');more.setAttribute('aria-expanded',String(mineOpen===r.id));row.appendChild(more);
     li.appendChild(row);
     if(mineOpen===r.id){const x=document.createElement('div');x.className='srow extra';
-      x.appendChild(btn('✏️ '+t('mineRename'),'',()=>{mineRen=r.id;mineOpen=null;renderMine()}));
-      x.appendChild(btn('🎚️ '+t('mineEdit'),'',()=>editAgain(r)));
-      x.appendChild(btn('⧉ '+t('mineDup'),'',async()=>{const c={...r,id:Date.now(),name:(r.name+' '+t('mineCopy')).slice(0,40),fav:false};try{await putRec(c)}catch(e){}mine.push(c);await prune();sortMine();mineOpen=null;renderMine();track('mine_dup')}));
-      x.appendChild(btn('🗑️ '+t('mineDel'),'del',async()=>{if(!confirm(t('mineDelQ').replace('{n}',r.name)))return;if(minePlaying===r.id)stopMine();
-        try{await dbDo('readwrite',st=>st.delete(r.id))}catch(e){}mine=mine.filter(z=>z.id!==r.id);mineOpen=null;renderMine();track('mine_deleted')},t('mineDel')+': '+r.name));
+      x.appendChild(btn(t('mineRename'),'',()=>{mineRen=r.id;mineOpen=null;renderMine()},0,'edit'));
+      x.appendChild(btn(t('mineEdit'),'',()=>editAgain(r),0,'sliders'));
+      x.appendChild(btn(t('mineDup'),'',async()=>{const c={...r,id:Date.now(),name:(r.name+' '+t('mineCopy')).slice(0,40),fav:false};try{await putRec(c)}catch(e){}mine.push(c);await prune();sortMine();mineOpen=null;renderMine();track('mine_dup')},0,'copy'));
+      x.appendChild(btn(t('mineDel'),'danger del',async()=>{if(!confirm(t('mineDelQ').replace('{n}',r.name)))return;if(minePlaying===r.id)stopMine();
+        try{await dbDo('readwrite',st=>st.delete(r.id))}catch(e){}mine=mine.filter(z=>z.id!==r.id);mineOpen=null;renderMine();track('mine_deleted')},t('mineDel')+': '+r.name,'trash'));
       li.appendChild(x)}
     ul.appendChild(li);
   });

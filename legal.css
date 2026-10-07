@@ -1,14 +1,15 @@
 @import url("fonts/fonts.css");
-:root{--bg:#EEF1F6;--paper:#F9FAFD;--ink:#121A2B;--muted:#5B6680;--line:#CDD4E2;--accent:#2546F0}
-@media (prefers-color-scheme:dark){:root{--bg:#0B0F1A;--paper:#121828;--ink:#E7ECF6;--muted:#8D98B3;--line:#263049;--accent:#7088FF;color-scheme:dark}}
+:root{--bg:#F4F6FA;--paper:#FFFFFF;--ink:#0F172A;--muted:#5A6478;--line:#DDE2EC;--accent:#2546F0;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B0F19;--paper:#131A29;--ink:#E8ECF5;--muted:#9AA5BC;--line:#26314A;--accent:#7D92FF;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B0F19;--paper:#131A29;--ink:#E8ECF5;--muted:#9AA5BC;--line:#26314A;--accent:#7D92FF;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "IBM Plex Sans Hebrew",system-ui,-apple-system,"Segoe UI",sans-serif;padding:env(safe-area-inset-top,0px) 16px 0}
 .wrap{max-width:720px;margin:0 auto;padding-block:20px 60px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
-.logo{font-weight:800;font-size:32px;letter-spacing:-.5px;color:var(--ink);text-decoration:none}
+.logo{font-family:"Karantina","IBM Plex Sans Hebrew",system-ui,sans-serif;font-weight:700;font-size:40px;line-height:1;letter-spacing:-.5px;color:var(--ink);text-decoration:none}
 .logo span{color:var(--accent)}
-.langbtn{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
+.langbtn{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;min-height:44px;padding:0 14px;cursor:pointer}
 article{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
 h1{font-size:30px;line-height:1.2;margin:0 0 4px}
 h2{font-size:18px;margin:26px 0 6px}
