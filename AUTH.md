@@ -11,7 +11,7 @@ Status: **built, switched off** (`auth.enabled: false` in `config.js`). Visible 
 | Piece | File | Notes |
 |---|---|---|
 | Account page | `account.html` + `auth.js` | Only page that loads the auth library. Strict CSP (meta), `noindex`, frame-busting, **no Meta Pixel ever** |
-| Auth library | `vendor/supabase-2.109.0.js` (MIT, `vendor/LICENSE-supabase.txt`) | Official `@supabase/supabase-js` UMD build, self-hosted. PKCE flow, session in localStorage |
+| Auth library | `vendor/supabase-2.109.0.js` (MIT, `vendor/LICENSE-supabase.txt`) | Official `@supabase/supabase-js` 2.109.0 UMD build, self-hosted. Verified identical to jsDelivr (sha256 `nMtwuZhgu4FZO9gIcI9uHthhRu8TjxlCo37rOFGdWoE=`, 206613 bytes) and pinned with SRI `sha384-QBRYTjAPttRJE6VS+3BZ2pbh2K1WYNBwquAji9CwlJx1Uwk9QxbOQ5GpBhBoj1xg`. PKCE flow, session in localStorage |
 | Header button | `auth-state.js` (all pages) | No library, no network: reads the stored session to show the button / initial; sets `SNIPRING_AUTH.tier` (`guest`/`free`) |
 | Pre-paint | `boot.js` | Theme + language before paint (inline scripts are not allowed by the CSP) |
 | Database | `supabase/auth_1a.sql`, rollback `supabase/auth_1a_rollback.sql`, tests `supabase/tests/auth_1a_test.sql` | Private `profiles` + auto-create trigger |
@@ -40,7 +40,7 @@ Methods: **email one-time code** (6 digits, typed in the same tab — no magic l
 1. **Self-service account deletion** (needs a server function with the service role; must delete auth user + profile + any future data). Email-based deletion is *not* the final implementation.
 2. Supabase plan / backups / limits review (decision by the owner; no paid plan activated).
 3. Legal review of the account sections in Privacy and Terms.
-4. Verify the vendored library against the official jsDelivr SRI hash (and pin it with `integrity=`).
+
 
 ## Rollback
 1. Instant: `auth.enabled: false` (config.js is never cached).
