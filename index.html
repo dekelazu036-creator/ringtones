@@ -26,6 +26,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232546F0'/%3E%3Cpath d='M14 34h4m6-10v20m6-26v32m6-22v12m6-18v24m6-14v4' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="fonts/fonts.css">
+<script src="config.js"></script>
 <script src="vendor/lame.min.js"></script>
 <style>
 /* ============================================================
@@ -336,6 +337,9 @@ html.kbd .export{position:static}
 .tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s1);min-height:72px;padding:var(--s2);border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);color:var(--ink);cursor:pointer;font-size:var(--fs-sm)}
 .tile b{font-size:var(--fs-lg)}
 .tile[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.consent{position:fixed;z-index:160;inset-inline:var(--gutter);bottom:calc(var(--s3) + env(safe-area-inset-bottom,0px));max-width:560px;margin-inline:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);padding:var(--s4);display:flex;flex-direction:column;gap:var(--s3);font-size:var(--fs-sm)}
+.consent[hidden]{display:none}
+.sitefoot .foot-btn{color:var(--muted);font-size:inherit;font-weight:400;padding:0}
 .toastzone{position:fixed;inset-inline:0;bottom:calc(var(--s5) + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none;z-index:150}
 .toast{background:var(--ink);color:var(--bg);padding:var(--s3) var(--s4);border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:600;box-shadow:var(--shadow-lg);max-width:calc(100vw - 2 * var(--gutter))}
 
@@ -773,7 +777,11 @@ html.a-still .ctrack,html.a-still .carrows,html.a-still .callov.and .cbtns>div:l
     <p class="small muted" data-i18n="note"></p>
   </section>
 </main>
-  <footer class="sitefoot"><a href="ringtone-iphone.html" id="guideLink" data-i18n="guideLink"></a><a href="terms.html" data-i18n="terms"></a><a href="privacy.html" data-i18n="privacy"></a><a href="accessibility.html" data-i18n="aStatement"></a><span dir="ltr">hello@snipring.com</span></footer>
+  <footer class="sitefoot"><a href="ringtone-iphone.html" id="guideLink" data-i18n="guideLink"></a><a href="terms.html" data-i18n="terms"></a><a href="privacy.html" data-i18n="privacy"></a><a href="accessibility.html" data-i18n="aStatement"></a><button class="linkbtn foot-btn" id="ckSettings" type="button" data-i18n="ckSettings" hidden></button><span dir="ltr">hello@snipring.com</span></footer>
+  <div class="consent" id="consent" role="region" aria-labelledby="ckH" hidden>
+    <p><b id="ckH" data-i18n="ckH"></b> <span data-i18n="ckP"></span> <a href="privacy.html#cookies" id="ckMore" data-i18n="ckMore"></a></p>
+    <div class="pair"><button class="btn" id="ckNo" type="button" data-i18n="ckNo"></button><button class="btn" id="ckYes" type="button" data-i18n="ckYes"></button></div>
+  </div>
 </div>
 <div class="toastzone" id="toastzone" aria-live="polite"></div>
 
@@ -803,7 +811,68 @@ function say(t){$('status').textContent=t;
   if($('editor').hidden&&t&&t!==T.he.sReady0&&t!==T.en.sReady0)toast(t)}
 let toastT=0;function toast(msg){const z=$('toastzone');z.textContent='';const d=document.createElement('div');d.className='toast';d.textContent=msg;z.appendChild(d);clearTimeout(toastT);toastT=setTimeout(()=>d.remove(),5000)}
 /* analytics: anonymous funnel events, no cookies; no-op until the Umami script is present */
-function track(name,data){try{window.umami&&window.umami.track(name,data)}catch(e){}}
+/* ---------- analytics, attribution & consent (see ANALYTICS.md) ----------
+   One entry point: track(name, props).
+   - Umami (cookieless, no consent needed) receives every event.
+   - Funnel events also carry device / OS / language and campaign attribution.
+   - Meta Pixel receives only the events in META, and only after the visitor accepted ad cookies.
+   Never pass song names, file names, recordings or anything the user typed. */
+const CFG=Object.assign({metaPixelId:'',consentVersion:1},window.SNIPRING_CONFIG||{});
+const OWNER=(()=>{try{return localStorage.getItem('umami.disabled')==='1'}catch(e){return false}})();
+const ENV=(()=>{const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1),and=/Android/i.test(ua);
+  const os=ios?'ios':and?'android':/Windows/.test(ua)?'windows':/Mac OS X/.test(ua)?'macos':/CrOS|Linux/.test(ua)?'linux':'other';
+  const device=(ios&&!/iPhone|iPod/.test(ua))||(and&&!/Mobile/.test(ua))?'tablet':(ios||and||/Mobi/i.test(ua))?'phone':'desktop';
+  return {os,device}})();
+/* attribution: first touch is kept forever, last touch = latest visit that came with a campaign, ref or outside referrer */
+const ATTR=(()=>{const K='snipring-attr',q=new URLSearchParams(location.search);let a={};try{a=JSON.parse(localStorage.getItem(K)||'{}')||{}}catch(e){}
+  const touch={};['utm_source','utm_medium','utm_campaign','utm_content','utm_term','ref'].forEach(k=>{const v=q.get(k);if(v)touch[k]=v.trim().toLowerCase().slice(0,60)});
+  if(!touch.utm_source&&q.has('fbclid'))touch.utm_source='facebook';
+  if(!touch.utm_source&&touch.ref)touch.utm_source='referral';
+  let host='';try{if(document.referrer){const r=new URL(document.referrer);if(r.host!==location.host)host=r.host.replace(/^www\./,'')}}catch(e){}
+  if(host)touch.referrer=host.slice(0,60);
+  const page=location.pathname.replace(/index\.html$/,'')||'/';
+  if(Object.keys(touch).length){touch.landing=page;touch.ts=Date.now();if(!a.first)a.first=touch;a.last=touch}
+  else if(!a.first)a.first={utm_source:'direct',landing:page,ts:Date.now()};
+  try{localStorage.setItem(K,JSON.stringify(a))}catch(e){}
+  return a})();
+function attrProps(){const l=ATTR.last||ATTR.first||{},f=ATTR.first||{};
+  return {source:l.utm_source||l.referrer||'direct',medium:l.utm_medium||'',campaign:l.utm_campaign||'',content:l.utm_content||'',landing:l.landing||'',ref:l.ref||'',first_source:f.utm_source||f.referrer||'direct'}}
+const FUNNEL=new Set(['upload_started','upload_completed','audio_loaded','preview_clicked','smart_cut_used','export_started','ringtone_created','export_completed','installation_guide_opened','share_clicked',
+  'signup_started','signup_completed','pricing_viewed','upgrade_clicked','purchase_started','purchase_completed']);
+/* Meta: funnel milestones only. Custom events become "custom conversions" in Events Manager; paid-plan events use Meta's standard names. */
+const META={upload_completed:['trackCustom','UploadCompleted'],audio_loaded:['trackCustom','AudioLoaded'],ringtone_created:['trackCustom','RingtoneCreated'],
+  export_completed:['trackCustom','ExportCompleted'],share_clicked:['trackCustom','ShareClicked'],signup_completed:['track','CompleteRegistration'],
+  pricing_viewed:['track','ViewContent'],upgrade_clicked:['trackCustom','UpgradeClicked'],purchase_started:['track','InitiateCheckout'],purchase_completed:['track','Purchase']};
+const META_SAFE=['mode','seconds','method','source_type','plan','value','currency'];
+const sentOnce=new Set();
+function track(name,data,opt){
+  if(opt&&opt.once){const k=name+'|'+opt.once;if(sentOnce.has(k))return;sentOnce.add(k)}
+  let d=data||{};
+  if(FUNNEL.has(name)){let lg='',tg='';try{lg=lang;tg=ANDROID?'android':'iphone'}catch(e){}d=Object.assign({os:ENV.os,device:ENV.device,lang:lg,target:tg},attrProps(),d)}
+  try{window.umami&&window.umami.track(name,d)}catch(e){}
+  const m=META[name];
+  if(m&&window.fbq&&adsOk()){const md={};META_SAFE.forEach(k=>{if(d[k]!=null&&d[k]!=='')md[k]=d[k]});
+    try{fbq(m[0],m[1],md,{eventID:name+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)})}catch(e){}}
+}
+/* consent: only asked when a consent-requiring tracker is configured; Accept and Decline are equally easy */
+const CONSENT_K='snipring-consent';
+function readConsent(){try{const c=JSON.parse(localStorage.getItem(CONSENT_K)||'null');return c&&c.v===CFG.consentVersion?c:null}catch(e){return null}}
+function needsConsent(){return !!CFG.metaPixelId&&!OWNER}
+function adsOk(){const c=readConsent();return needsConsent()&&!!(c&&c.ads)}
+function loadMeta(){if(window.fbq||!adsOk())return;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];
+    t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('set','autoConfig',false,String(CFG.metaPixelId)); // no automatic button/form scraping: only the events we send on purpose
+  fbq('init',String(CFG.metaPixelId));fbq('track','PageView')}
+function setConsent(ads){try{localStorage.setItem(CONSENT_K,JSON.stringify({v:CFG.consentVersion,ads:!!ads,ts:Date.now()}))}catch(e){}
+  $('consent').hidden=true;
+  if(ads)loadMeta();
+  else if(window.fbq){try{fbq('consent','revoke')}catch(e){}document.cookie='_fbp=; Max-Age=0; path=/; domain=.'+location.hostname.replace(/^www\./,'')}
+  track('consent_set',{ads:ads?'yes':'no'})}
+function initConsent(){const can=needsConsent();$('ckSettings').hidden=!can;if(!can)return;
+  if(readConsent())loadMeta();else $('consent').hidden=false;
+  $('ckYes').addEventListener('click',()=>setConsent(true));$('ckNo').addEventListener('click',()=>setConsent(false));
+  $('ckSettings').addEventListener('click',()=>{$('consent').hidden=false;$('ckYes').focus()})}
 
 /* ---------- demo song (synthetic, so the page works before a file is chosen) ---------- */
 function demoSong(){
@@ -981,8 +1050,8 @@ function renderCands(){
       +'<div class="bb"><button type="button" class="btn bplay">'+svg('play','sm')+'<span>'+t('bListen')+'</span></button><button type="button" class="btn primary buse">'+svg('check','sm')+'<span>'+t('bUse')+'</span></button></div>';
     card.querySelector('.bplay').setAttribute('aria-label',t('bListen')+': '+t(lk));card.querySelector('.buse').setAttribute('aria-label',t('bUse')+': '+t(lk));
     card.querySelector('.bplay').addEventListener('click',()=>{const on=playing&&mode==='cand'&&candPlaying===i;stopPreview();if(on)return;
-      mode='cand';candPlaying=i;startPlayback(c.t,candLen(c),true);mode='cand';track('best_listen',{kind:c.kind})});
-    card.querySelector('.buse').addEventListener('click',()=>{pickCand(i);invalidate();previewSel();track('best_use',{kind:c.kind})});
+      mode='cand';candPlaying=i;startPlayback(c.t,candLen(c),true);mode='cand';track('preview_clicked',{where:'suggestion',kind:c.kind})});
+    card.querySelector('.buse').addEventListener('click',()=>{pickCand(i);invalidate();previewSel();track('smart_cut_used',{kind:c.kind})});
     box.appendChild(card)});
 }
 let candPlaying=-1;
@@ -1153,15 +1222,15 @@ function preview(){previewSel()}
 function stopPreview(){if(playing&&mode==='full')S.cursor=Math.round(pos()*10)/10;playing=false;try{src&&src.stop()}catch(e){}cancelAnimationFrame(raf);setIcon();$('cursorT').textContent=fmtShort(S.cursor||0);draw()}
 function setIcon(){const on=playing&&mode==='sel';$('playIcon').innerHTML=on?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',on?t('stop'):t('playRt'));
   $('playFromT').textContent=(playing&&mode==='full')?t('stop'):t('playSong')}
-$('play').addEventListener('click',()=>(playing&&mode==='sel')?stopPreview():previewSel());
-$('playFrom').addEventListener('click',()=>(playing&&mode==='full')?stopPreview():playFull(S.cursor||0));
+$('play').addEventListener('click',()=>{if(playing&&mode==='sel')return stopPreview();previewSel();track('preview_clicked',{where:'ringtone'})});
+$('playFrom').addEventListener('click',()=>{if(playing&&mode==='full')return stopPreview();playFull(S.cursor||0);track('preview_clicked',{where:'song'})});
 
 /* ---------- load a file ---------- */
 async function loadFile(f){
   if(!f)return;stopPreview();
   const isVideo=/^video\//.test(f.type)||/\.(mp4|mov|m4v)$/i.test(f.name);
   if(f.size>400*1024*1024){say(t('sTooBig'));track('song_open_failed',{ext:'too_big'});return}
-  say(t('sOpening')+f.name+'…');
+  track('upload_started',{source_type:isVideo?'video':'file'});say(t('sOpening')+f.name+'…');
   try{
     const ab=await f.arrayBuffer();const c=ensureCtx();
     song=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
@@ -1192,7 +1261,7 @@ async function useSong(buf,name,source,badge){
   {const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');
    requestAnimationFrame(()=>$('editor').scrollIntoView({behavior:calm?'auto':'smooth',block:'start'}))}
   previewSel();
-  track('song_loaded',{source,seconds:Math.round(song.duration),lang});
+  track(source==='file'||source==='video'?'upload_completed':'audio_loaded',{source_type:source,seconds:Math.round(song.duration)});
 }
 const closeDlg=d=>{d.close?d.close():d.removeAttribute('open')},openDlg=d=>{d.showModal?d.showModal():d.setAttribute('open','')};
 [['rec','recClose'],['gen','genClose']].forEach(([d,c])=>{$(c).addEventListener('click',()=>closeDlg($(d)));$(d).addEventListener('click',e=>{if(e.target===$(d))closeDlg($(d))})});
@@ -1400,15 +1469,16 @@ function invalidate(){ready=null;$('next').hidden=true;$('share').hidden=true;$(
 document.querySelectorAll('.nudge,#startHere').forEach(b=>b.addEventListener('click',invalidate));
 $('cands').addEventListener('click',invalidate);
 $('file').addEventListener('change',invalidate);
+let exportN=0;
 $('export').addEventListener('click',async()=>{
-  if(!song)return;stopPreview();$('export').disabled=true;$('export').classList.add('loading');$('export').setAttribute('aria-busy','true');say(t('sEncoding'));
+  if(!song)return;stopPreview();track('export_started',{mode:S.mode,seconds:Math.round(outLen())});$('export').disabled=true;$('export').classList.add('loading');$('export').setAttribute('aria-busy','true');say(t('sEncoding'));
   await new Promise(r=>setTimeout(r,30));
   try{
     const mp3=toMp3(renderClip());
     if(!mp3){say(t('sEncFail'));return}
     const title=($('name').value.trim()||t('defName')).replace(/[\\/*?"<>|%]/g,'').trim()||t('defName'),base=title.replace(/:/g,'.');
     ready=new File([id3(title),mp3],base+'.mp3',{type:'audio/mpeg'});
-    track('ringtone_created',{mode:S.mode,voice:S.voice,ded:S.vo?'yes':'no',fx:[S.gain?'vol':'',S.speed!==1?'speed':'',S.loop>1?'loop':''].filter(Boolean).join('+')||'none',seconds:Math.round(outLen()),picked:S.cand>=0?'auto':'manual',renamed:$('name').dataset.touched?'yes':'no',lang});
+    exportN++;track('ringtone_created',{mode:S.mode,voice:S.voice,ded:S.vo?'yes':'no',fx:[S.gain?'vol':'',S.speed!==1?'speed':'',S.loop>1?'loop':''].filter(Boolean).join('+')||'none',seconds:Math.round(outLen()),picked:S.cand>=0?'auto':'manual',renamed:$('name').dataset.touched?'yes':'no',lang});
     if(dlUrl)URL.revokeObjectURL(dlUrl);dlUrl=URL.createObjectURL(ready);
     const a=$('dl');a.href=dlUrl;a.download=ready.name;a.hidden=false;
     const hasShare=!!navigator.share;if(!hasShare)track('share_unsupported');
@@ -1425,7 +1495,7 @@ $('export').addEventListener('click',async()=>{
 $('share').addEventListener('click',async()=>{
   if(!ready)return;
   track('set_ringtone_tapped');
-  try{await navigator.share({files:[ready]});say(t('sShared'));track('share_completed');showInvite()}
+  try{await navigator.share({files:[ready]});say(t('sShared'));track('export_completed',{method:'share',mode:S.mode,seconds:Math.round(outLen())},{once:'share'+exportN});showInvite()}
   catch(e){say(e&&e.name==='AbortError'?t('sCancel'):t('sShareFail'));track(e&&e.name==='AbortError'?'share_cancelled':'share_failed')}
 });
 
@@ -1459,7 +1529,7 @@ g3_A:'לוחצים <b>+</b> (או "הצלילים שלי" ← <b>+</b>), ובו�
 note_A:'באנדרואיד אין מגבלת אורך, אבל רינגטון קצר מ‑30 שניות מתאים לכל טלפון.',
 sReady_A:'הרינגטון מוכן.',
 invText_A:'הפכתי שיר לרינגטון בדקה, בלי אפליקציה. נסו:',guideLink_A:'המדריך לאנדרואיד',
-mineH:'הרינגטונים שלי',theme:'ערכת צבעים',th_system:'לפי המערכת',th_light:'בהירה',th_dark:'כהה',defName:'רינגטון',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',devL:'הצלצול מיועד ל:',fxVoice:'אפקט קולי',vNone:'רגיל',vChip:'צ׳יפמאנק',vRobot:'רובוט',vEcho:'הד',vRev:'הפוך',vBit:'8‑ביט',vBass:'בס',vPhone:'רדיו',dedH:'הקדשה קולית',dedP:'הקליטו משפט קצר, למשל "אמא מתקשרת!", והוא יתנגן בתחילת הצלצול כשהשיר מונמך מתחתיו.',dedRec:'הקליטו הקדשה',dedHas:'הקדשה:',dedListen:'האזנה',dedDel:'מחיקה',dedRecP:'אמרו משפט קצר, עד 12 שניות. הוא יתנגן בתחילת הצלצול.',genNameL:'או: מנגינה מהשם (כל אות הופכת לצליל)',genNamePh:'למשל: אמא',genNameGo:'הלחינו',genOf:'הצלצול של {n}',callBtn:'נסו את זה כשיחה נכנסת',callSlide:'החליקו כדי לענות',callSwipe:'החליקו למעלה כדי לענות',callMobile:'נייד',callIncoming:'שיחה נכנסת…',callNameAria:'שם המתקשר',callEdit:'אפשר לשנות את השם',callDecline:'דחייה',callAccept:'מענה',callShot:'צלמו מסך ושתפו',callDefault:'אמא',altOr:'או',recBtn:'הקליטו',genBtn:'צלצול מקורי',recH:'הקלטה',recP:'הקליטו קול, שירה, משפט או את הצחוק של הילד. עד דקה אחת. ההקלטה נשארת בטלפון ולא נשלחת לשום מקום.',recStart:'התחלת הקלטה',recStop:'עצירת הקלטה',recReady:'לחצו על הכפתור האדום כדי להתחיל.',recOn:'מקליט… לחצו שוב כדי לעצור.',recDenied:'אין גישה למיקרופון. אפשרו גישה בהגדרות הדפדפן ונסו שוב.',recNo:'הדפדפן הזה לא תומך בהקלטה. נסו בספארי או בכרום.',recFail:'ההקלטה לא הצליחה. נסו שוב.',recShort:'ההקלטה קצרה מדי. הקליטו לפחות שנייה.',recName:'הקלטה',recBadge:'הקלטה',genH:'צלצול מקורי',genP:'SnipRing מלחין בשבילכם מנגינה חדשה. היא שלכם, בלי זכויות יוצרים ובלי קובץ.',genStyle:'סגנון',stMarimba:'מרימבה',stPop:'פופ',stRetro:'8‑ביט',stChill:'צ׳יל',stBells:'פעמונים',genTempo:'קצב (BPM)',genNew:'מנגינה אחרת',genPlayL:'השמעה',genUse:'השתמשו בצלצול הזה',genBadge:'צלצול מקורי',modeAria:'סוג הצליל',mRing:'רינגטון',mText:'צליל הודעה',mAlarm:'שעון מעורר',zoomIn:'הגדלת צורת הגל',zoomOut:'הקטנת צורת הגל',fxH:'אפקטים',fxVol:'עוצמה',vol0:'רגיל',vol1:'חזק',vol2:'חזק מאוד',vol3:'מקסימום',fxSpeed:'מהירות וגובה צליל',spd1:'רגיל',fxLoop:'חזרה על הקטע',loop1:'בלי',fxOut:'אורך הצלצול הסופי: {n} שנ׳',fxNone:'בלי אפקטים. אפשר להגביר, להאיץ או לחזור על קטע קצר.',next3_text:'אחר כך: <b>הגדרות</b> ← <b>צלילים</b> ← <b>צליל הודעה</b>, ובחרו את הצליל החדש.',next3_text_A:'בהגדרות בחרו <b>צליל התראה</b> (במקום רינגטון) ← <b>+</b>.',next3_alarm:'אחר כך: אפליקציית <b>שעון</b> ← <b>שעון מעורר</b> ← עריכה ← <b>צליל</b>, ובחרו את הצליל מרשימת הרינגטונים.',next3_alarm_A:'באפליקציית <b>שעון</b> ← המעורר ← <b>צליל</b> ← <b>+</b>, ובחרו את הקובץ.',noFile:'אין לכם קובץ שיר?',nfH:'מאיפה מביאים קובץ?',nfP:'שירים מספוטיפיי ומ‑Apple Music מוגנים ואי אפשר לחתוך אותם. אבל יש הרבה מקורות שכן עובדים:',nf1:'<b>סרטון מהגלריה</b>: הופעה, צחוק של הילד, כל סרטון שצילמתם. הקול שלו הופך לצלצול.',nf2:'<b>קובץ שחבר שלח בוואטסאפ</b>: שומרים אותו ל"קבצים" ובוחרים אותו כאן.',nf3:'<b>הקלטה שלכם</b>: הקליטו באפליקציית ההקלטות ושמרו ל"קבצים".',nf4:'<b>שיר שקניתם</b> ב‑iTunes Store, או MP3 שהורדתם מאתר שמוכר מוזיקה.',nf5:'<b>קובץ מ‑iCloud Drive או Google Drive</b>: כל MP3, M4A או WAV שיש לכם שם.',nfNote:'השתמשו רק בקבצים שיש לכם זכות להשתמש בהם.',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
+mineH:'הרינגטונים שלי',ckH:'עוגיות למדידת פרסום.',ckP:'אם תאשרו, נטען את הפיקסל של Meta כדי לדעת אילו מודעות עובדות. השירים שלכם לא נשלחים לשום מקום.',ckMore:'פרטים',ckYes:'אישור',ckNo:'לא, תודה',ckSettings:'הגדרות עוגיות',theme:'ערכת צבעים',th_system:'לפי המערכת',th_light:'בהירה',th_dark:'כהה',defName:'רינגטון',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',devL:'הצלצול מיועד ל:',fxVoice:'אפקט קולי',vNone:'רגיל',vChip:'צ׳יפמאנק',vRobot:'רובוט',vEcho:'הד',vRev:'הפוך',vBit:'8‑ביט',vBass:'בס',vPhone:'רדיו',dedH:'הקדשה קולית',dedP:'הקליטו משפט קצר, למשל "אמא מתקשרת!", והוא יתנגן בתחילת הצלצול כשהשיר מונמך מתחתיו.',dedRec:'הקליטו הקדשה',dedHas:'הקדשה:',dedListen:'האזנה',dedDel:'מחיקה',dedRecP:'אמרו משפט קצר, עד 12 שניות. הוא יתנגן בתחילת הצלצול.',genNameL:'או: מנגינה מהשם (כל אות הופכת לצליל)',genNamePh:'למשל: אמא',genNameGo:'הלחינו',genOf:'הצלצול של {n}',callBtn:'נסו את זה כשיחה נכנסת',callSlide:'החליקו כדי לענות',callSwipe:'החליקו למעלה כדי לענות',callMobile:'נייד',callIncoming:'שיחה נכנסת…',callNameAria:'שם המתקשר',callEdit:'אפשר לשנות את השם',callDecline:'דחייה',callAccept:'מענה',callShot:'צלמו מסך ושתפו',callDefault:'אמא',altOr:'או',recBtn:'הקליטו',genBtn:'צלצול מקורי',recH:'הקלטה',recP:'הקליטו קול, שירה, משפט או את הצחוק של הילד. עד דקה אחת. ההקלטה נשארת בטלפון ולא נשלחת לשום מקום.',recStart:'התחלת הקלטה',recStop:'עצירת הקלטה',recReady:'לחצו על הכפתור האדום כדי להתחיל.',recOn:'מקליט… לחצו שוב כדי לעצור.',recDenied:'אין גישה למיקרופון. אפשרו גישה בהגדרות הדפדפן ונסו שוב.',recNo:'הדפדפן הזה לא תומך בהקלטה. נסו בספארי או בכרום.',recFail:'ההקלטה לא הצליחה. נסו שוב.',recShort:'ההקלטה קצרה מדי. הקליטו לפחות שנייה.',recName:'הקלטה',recBadge:'הקלטה',genH:'צלצול מקורי',genP:'SnipRing מלחין בשבילכם מנגינה חדשה. היא שלכם, בלי זכויות יוצרים ובלי קובץ.',genStyle:'סגנון',stMarimba:'מרימבה',stPop:'פופ',stRetro:'8‑ביט',stChill:'צ׳יל',stBells:'פעמונים',genTempo:'קצב (BPM)',genNew:'מנגינה אחרת',genPlayL:'השמעה',genUse:'השתמשו בצלצול הזה',genBadge:'צלצול מקורי',modeAria:'סוג הצליל',mRing:'רינגטון',mText:'צליל הודעה',mAlarm:'שעון מעורר',zoomIn:'הגדלת צורת הגל',zoomOut:'הקטנת צורת הגל',fxH:'אפקטים',fxVol:'עוצמה',vol0:'רגיל',vol1:'חזק',vol2:'חזק מאוד',vol3:'מקסימום',fxSpeed:'מהירות וגובה צליל',spd1:'רגיל',fxLoop:'חזרה על הקטע',loop1:'בלי',fxOut:'אורך הצלצול הסופי: {n} שנ׳',fxNone:'בלי אפקטים. אפשר להגביר, להאיץ או לחזור על קטע קצר.',next3_text:'אחר כך: <b>הגדרות</b> ← <b>צלילים</b> ← <b>צליל הודעה</b>, ובחרו את הצליל החדש.',next3_text_A:'בהגדרות בחרו <b>צליל התראה</b> (במקום רינגטון) ← <b>+</b>.',next3_alarm:'אחר כך: אפליקציית <b>שעון</b> ← <b>שעון מעורר</b> ← עריכה ← <b>צליל</b>, ובחרו את הצליל מרשימת הרינגטונים.',next3_alarm_A:'באפליקציית <b>שעון</b> ← המעורר ← <b>צליל</b> ← <b>+</b>, ובחרו את הקובץ.',noFile:'אין לכם קובץ שיר?',nfH:'מאיפה מביאים קובץ?',nfP:'שירים מספוטיפיי ומ‑Apple Music מוגנים ואי אפשר לחתוך אותם. אבל יש הרבה מקורות שכן עובדים:',nf1:'<b>סרטון מהגלריה</b>: הופעה, צחוק של הילד, כל סרטון שצילמתם. הקול שלו הופך לצלצול.',nf2:'<b>קובץ שחבר שלח בוואטסאפ</b>: שומרים אותו ל"קבצים" ובוחרים אותו כאן.',nf3:'<b>הקלטה שלכם</b>: הקליטו באפליקציית ההקלטות ושמרו ל"קבצים".',nf4:'<b>שיר שקניתם</b> ב‑iTunes Store, או MP3 שהורדתם מאתר שמוכר מוזיקה.',nf5:'<b>קובץ מ‑iCloud Drive או Google Drive</b>: כל MP3, M4A או WAV שיש לכם שם.',nfNote:'השתמשו רק בקבצים שיש לכם זכות להשתמש בהם.',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
 nextH:'מה עכשיו?',next1:'לחצו <b>הגדר כרינגטון</b> למטה.',next2:'בתפריט שנפתח <b>גללו למטה</b> ובחרו <b>שימוש כצלצול</b>.',useAs:'שימוש כצלצול',
 next1_A:'לחצו <b>הורד MP3</b> למטה.',next2_A:'<b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>רינגטון</b> ← <b>+</b>, ובחרו את הקובץ מההורדות.',
 mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineFav:'סימון כמועדף',mineUnfav:'הסרה מהמועדפים',mineMore:'עוד אפשרויות',mineRename:'שינוי שם',mineEdit:'עריכה מחדש',mineDup:'שכפול',mineCopy:'(עותק)',mineBadge:'מהרינגטונים שלי',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
@@ -1492,7 +1562,7 @@ g3_A:'Tap <b>+</b> (or My sounds → <b>+</b>) and pick the file from Downloads.
 note_A:'Android has no length limit, but a ringtone under 30 seconds works on every phone.',
 sReady_A:'Your ringtone is ready.',
 invText_A:'I turned a song into a ringtone in a minute, no app needed. Try it:',guideLink_A:'Android guide',
-mineH:'My ringtones',theme:'Colour theme',th_system:'System',th_light:'Light',th_dark:'Dark',defName:'Ringtone',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',devL:'This ringtone is for:',fxVoice:'Voice effect',vNone:'Normal',vChip:'Chipmunk',vRobot:'Robot',vEcho:'Echo',vRev:'Reverse',vBit:'8-bit',vBass:'Bass',vPhone:'Radio',dedH:'Voice dedication',dedP:'Record a short line, like "Mom\'s calling!", and it plays at the start of the ringtone with the music dipped underneath.',dedRec:'Record a dedication',dedHas:'Dedication:',dedListen:'Listen',dedDel:'Delete',dedRecP:'Say a short line, up to 12 seconds. It plays at the start of the ringtone.',genNameL:'Or: a melody from a name (each letter becomes a note)',genNamePh:'e.g. Mom',genNameGo:'Compose',genOf:'{n}\'s ringtone',callBtn:'Try it as an incoming call',callSlide:'slide to answer',callSwipe:'Swipe up to answer',callMobile:'Mobile',callIncoming:'Incoming call…',callNameAria:'Caller name',callEdit:'Tap the name to change it',callDecline:'Decline',callAccept:'Accept',callShot:'Screenshot and share',callDefault:'Mom',altOr:'or',recBtn:'Record',genBtn:'Original tune',recH:'Record',recP:'Record a voice, a song, a line, or your kid laughing. Up to one minute. The recording stays on your phone and is never uploaded.',recStart:'Start recording',recStop:'Stop recording',recReady:'Tap the red button to start.',recOn:'Recording… tap again to stop.',recDenied:'No microphone access. Allow it in your browser settings and try again.',recNo:'This browser can\'t record. Try Safari or Chrome.',recFail:'The recording didn\'t work. Try again.',recShort:'Too short. Record at least a second.',recName:'Recording',recBadge:'Recording',genH:'Original ringtone',genP:'SnipRing composes a brand-new melody for you. It\'s yours: no copyright, no file needed.',genStyle:'Style',stMarimba:'Marimba',stPop:'Pop',stRetro:'8-bit',stChill:'Chill',stBells:'Bells',genTempo:'Tempo (BPM)',genNew:'Another melody',genPlayL:'Play',genUse:'Use this ringtone',genBadge:'Original tune',modeAria:'Sound type',mRing:'Ringtone',mText:'Text tone',mAlarm:'Alarm',zoomIn:'Zoom in on the waveform',zoomOut:'Zoom out',fxH:'Effects',fxVol:'Volume',vol0:'Normal',vol1:'Loud',vol2:'Louder',vol3:'Max',fxSpeed:'Speed and pitch',spd1:'Normal',fxLoop:'Repeat the part',loop1:'Off',fxOut:'Final length: {n} s',fxNone:'No effects. Boost it, speed it up, or repeat a short part.',next3_text:'Then: <b>Settings</b> → <b>Sounds &amp; Haptics</b> → <b>Text Tone</b>, and pick the new sound.',next3_text_A:'In Settings choose <b>Notification sound</b> (instead of Ringtone) → <b>+</b>.',next3_alarm:'Then: <b>Clock</b> app → <b>Alarms</b> → Edit → <b>Sound</b>, and pick it from the Ringtones list.',next3_alarm_A:'In the <b>Clock</b> app → your alarm → <b>Sound</b> → <b>+</b>, and pick the file.',noFile:'No song file?',nfH:'Where to get a file',nfP:'Songs from Spotify and Apple Music are protected and can\'t be trimmed. But plenty of sources do work:',nf1:'<b>A video from your gallery</b>: a concert, your kid laughing, anything you filmed. Its sound becomes the ringtone.',nf2:'<b>A file a friend sent on WhatsApp</b>: save it to Files and pick it here.',nf3:'<b>Your own recording</b>: record in Voice Memos and share it to Files.',nf4:'<b>A song you bought</b> on the iTunes Store, or an MP3 from a store that sells music.',nf5:'<b>A file in iCloud Drive or Google Drive</b>: any MP3, M4A or WAV you keep there.',nfNote:'Only use files you have the right to use.',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
+mineH:'My ringtones',ckH:'Ad measurement cookies.',ckP:'If you agree, we load the Meta Pixel to learn which ads work. Your songs never leave your device.',ckMore:'Details',ckYes:'Accept',ckNo:'No thanks',ckSettings:'Cookie settings',theme:'Colour theme',th_system:'System',th_light:'Light',th_dark:'Dark',defName:'Ringtone',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',devL:'This ringtone is for:',fxVoice:'Voice effect',vNone:'Normal',vChip:'Chipmunk',vRobot:'Robot',vEcho:'Echo',vRev:'Reverse',vBit:'8-bit',vBass:'Bass',vPhone:'Radio',dedH:'Voice dedication',dedP:'Record a short line, like "Mom\'s calling!", and it plays at the start of the ringtone with the music dipped underneath.',dedRec:'Record a dedication',dedHas:'Dedication:',dedListen:'Listen',dedDel:'Delete',dedRecP:'Say a short line, up to 12 seconds. It plays at the start of the ringtone.',genNameL:'Or: a melody from a name (each letter becomes a note)',genNamePh:'e.g. Mom',genNameGo:'Compose',genOf:'{n}\'s ringtone',callBtn:'Try it as an incoming call',callSlide:'slide to answer',callSwipe:'Swipe up to answer',callMobile:'Mobile',callIncoming:'Incoming call…',callNameAria:'Caller name',callEdit:'Tap the name to change it',callDecline:'Decline',callAccept:'Accept',callShot:'Screenshot and share',callDefault:'Mom',altOr:'or',recBtn:'Record',genBtn:'Original tune',recH:'Record',recP:'Record a voice, a song, a line, or your kid laughing. Up to one minute. The recording stays on your phone and is never uploaded.',recStart:'Start recording',recStop:'Stop recording',recReady:'Tap the red button to start.',recOn:'Recording… tap again to stop.',recDenied:'No microphone access. Allow it in your browser settings and try again.',recNo:'This browser can\'t record. Try Safari or Chrome.',recFail:'The recording didn\'t work. Try again.',recShort:'Too short. Record at least a second.',recName:'Recording',recBadge:'Recording',genH:'Original ringtone',genP:'SnipRing composes a brand-new melody for you. It\'s yours: no copyright, no file needed.',genStyle:'Style',stMarimba:'Marimba',stPop:'Pop',stRetro:'8-bit',stChill:'Chill',stBells:'Bells',genTempo:'Tempo (BPM)',genNew:'Another melody',genPlayL:'Play',genUse:'Use this ringtone',genBadge:'Original tune',modeAria:'Sound type',mRing:'Ringtone',mText:'Text tone',mAlarm:'Alarm',zoomIn:'Zoom in on the waveform',zoomOut:'Zoom out',fxH:'Effects',fxVol:'Volume',vol0:'Normal',vol1:'Loud',vol2:'Louder',vol3:'Max',fxSpeed:'Speed and pitch',spd1:'Normal',fxLoop:'Repeat the part',loop1:'Off',fxOut:'Final length: {n} s',fxNone:'No effects. Boost it, speed it up, or repeat a short part.',next3_text:'Then: <b>Settings</b> → <b>Sounds &amp; Haptics</b> → <b>Text Tone</b>, and pick the new sound.',next3_text_A:'In Settings choose <b>Notification sound</b> (instead of Ringtone) → <b>+</b>.',next3_alarm:'Then: <b>Clock</b> app → <b>Alarms</b> → Edit → <b>Sound</b>, and pick it from the Ringtones list.',next3_alarm_A:'In the <b>Clock</b> app → your alarm → <b>Sound</b> → <b>+</b>, and pick the file.',noFile:'No song file?',nfH:'Where to get a file',nfP:'Songs from Spotify and Apple Music are protected and can\'t be trimmed. But plenty of sources do work:',nf1:'<b>A video from your gallery</b>: a concert, your kid laughing, anything you filmed. Its sound becomes the ringtone.',nf2:'<b>A file a friend sent on WhatsApp</b>: save it to Files and pick it here.',nf3:'<b>Your own recording</b>: record in Voice Memos and share it to Files.',nf4:'<b>A song you bought</b> on the iTunes Store, or an MP3 from a store that sells music.',nf5:'<b>A file in iCloud Drive or Google Drive</b>: any MP3, M4A or WAV you keep there.',nfNote:'Only use files you have the right to use.',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
 nextH:'What now?',next1:'Tap <b>Set as ringtone</b> below.',next2:'In the menu that opens, <b>scroll down</b> and choose <b>Use as Ringtone</b>.',useAs:'Use as Ringtone',
 next1_A:'Tap <b>Download MP3</b> below.',next2_A:'<b>Settings</b> → <b>Sound &amp; vibration</b> → <b>Ringtone</b> → <b>+</b>, and pick the file from Downloads.',
 mineSaved:'Also saved in "My ringtones" below.',mineFav:'Add to favourites',mineUnfav:'Remove from favourites',mineMore:'More options',mineRename:'Rename',mineEdit:'Edit again',mineDup:'Duplicate',mineCopy:'(copy)',mineBadge:'From My ringtones',mineEmpty:'No ringtones yet. Every ringtone you create is saved here automatically.'}};
@@ -1504,7 +1574,7 @@ function applyLang(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=t(el.dataset.i18n)});
   document.querySelectorAll('[data-i18n-aria]').forEach(el=>el.setAttribute('aria-label',t(el.dataset.i18nAria)));
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>el.setAttribute('placeholder',t(el.dataset.i18nPh)));
-  $('lang').textContent=t('langBtn');{const he=lang==='he',ios=he?'ringtone-iphone.html':'iphone-ringtone.html',and=he?'ringtone-android.html':'android-ringtone.html';
+  $('lang').textContent=t('langBtn');$('ckMore').href='privacy.html#cookies'+(lang==='en'?'-en':'');{const he=lang==='he',ios=he?'ringtone-iphone.html':'iphone-ringtone.html',and=he?'ringtone-android.html':'android-ringtone.html';
     $('helpGuide').href=ANDROID?and:ios;$('helpOther').href=ANDROID?ios:and;$('helpVideo').href=he?'ringtone-video.html':'video-ringtone.html'}$('guideLink').href=ANDROID?(lang==='he'?'ringtone-android.html':'android-ringtone.html'):(lang==='he'?'ringtone-iphone.html':'iphone-ringtone.html');
   if(song&&song._demo){$('songTitle').textContent=t('sample');$('badge').textContent=t('sampleBadge');if(!$('name').dataset.touched)$('name').value=t('sample')}
   else if(song&&songAuto){if(songAuto.nf){const n=songAuto.nf();$('songTitle').textContent=n;if(!$('name').dataset.touched)$('name').value=n.slice(0,40)}if(songAuto.bf)$('badge').textContent=songAuto.bf()}
@@ -1515,11 +1585,11 @@ function renderNext(){$('nx1').innerHTML=t('next1');$('nx2').innerHTML=t('next2'
   const x=S.mode==='ring'?'':t('next3_'+S.mode);$('nx3').innerHTML=x;$('nx3').hidden=!x}
 function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('toastzone').textContent='';$('steps').hidden=true;$('main').classList.add('editing');$('a2hs').hidden=true;
   requestAnimationFrame(()=>{draw();if(was){const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');ed.scrollIntoView({behavior:calm?'auto':'smooth',block:'start'});$('main').focus({preventScroll:true})}})}
-$('dl').addEventListener('click',()=>{track('mp3_downloaded');setTimeout(showInvite,1500)});
+$('dl').addEventListener('click',()=>{track('export_completed',{method:'download',mode:S.mode,seconds:Math.round(outLen())},{once:'dl'+exportN});setTimeout(showInvite,1500)});
 function showInvite(){let seen=false;try{seen=sessionStorage.getItem('snipring-inv')==='1'}catch(e){}
   if(seen)return;$('invite').hidden=false;track('invite_shown');try{sessionStorage.setItem('snipring-inv','1')}catch(e){}}
 $('inviteBtn').addEventListener('click',async()=>{
-  const url='https://snipring.com/?ref=invite',text=t('invText');track('invite_tapped');
+  const url='https://snipring.com/?ref=invite',text=t('invText');track('share_clicked',{where:'invite'});
   if(navigator.share){try{await navigator.share({title:'SnipRing',text,url});track('invite_shared');$('invite').hidden=true}catch(e){}return}
   try{await navigator.clipboard.writeText(text+' '+url);say(t('invCopied'))}catch(e){location.href='https://wa.me/?text='+encodeURIComponent(text+' '+url)}
 });
@@ -1545,7 +1615,7 @@ $('inviteBtn').addEventListener('click',async()=>{
   $('a11yReset').addEventListener('click',()=>{on={};paint()});
   paint();
 })();
-$('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('song_loaded',{source:'demo',lang})});
+$('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('audio_loaded',{source_type:'demo',seconds:Math.round(song.duration)})});
 /* theme: system → light → dark; stored per device, applied before paint by the head script */
 const THEMES=['system','light','dark'];let theme='system';try{theme=localStorage.getItem('snipring-theme')||'system'}catch(e){}if(!THEMES.includes(theme))theme='system';
 function paintTheme(){const r=document.documentElement;if(theme==='system')delete r.dataset.theme;else r.dataset.theme=theme;
@@ -1619,7 +1689,7 @@ $('callOv').addEventListener('keydown',e=>{if(e.key==='Escape'){closeCall('esc')
   if(e.key==='Tab'){const f=ANDROID?[$('callName'),$('callNo'),$('callYes')]:[$('callName'),$('cKnob'),$('cDecl')],i=f.indexOf(document.activeElement);e.preventDefault();f[(i+(e.shiftKey?f.length-1:1))%f.length].focus()}});
 /* help: the full how-to in a popup, reachable from anywhere */
 $('helpBtn').addEventListener('click',()=>{const d=$('help');
-  if(d.showModal){d.showModal()}else{d.setAttribute('open','')}track('help_opened',{editor:$('editor').hidden?'no':'yes'})});
+  if(d.showModal){d.showModal()}else{d.setAttribute('open','')}track('installation_guide_opened',{where:'help',editor:$('editor').hidden?'no':'yes'})});
 $('helpClose').addEventListener('click',()=>{const d=$('help');d.close?d.close():d.removeAttribute('open');$('helpBtn').focus()});
 $('help').addEventListener('click',e=>{if(e.target===$('help'))$('helpClose').click()});
 /* ---------- my ringtones: kept in IndexedDB on this device only ---------- */
@@ -1674,8 +1744,8 @@ function renderMine(){
       const was=minePlaying===r.id;stopMine();stopPreview();
       if(!was){mineUrl=URL.createObjectURL(mineBlob(r));mineAudio=new Audio(mineUrl);minePlaying=r.id;mineAudio.onended=()=>{stopMine();renderMine()};mineAudio.play().catch(()=>{});track('mine_played')}
       renderMine()},(playing?t('mineStop'):t('minePlay'))+': '+r.name,playing?'pause':'play'));
-    if(navigator.share&&!ANDROID)row.appendChild(btn(t('mineSet'),'primary',async()=>{track('mine_set_tapped');try{await navigator.share({files:[mineFile(r)]});track('share_completed',{from:'mine'})}catch(e){}},t('setRt')+': '+r.name,'phone'));
-    row.appendChild(btn(t('mineDl'),ANDROID||!navigator.share?'primary':'',()=>{const u=URL.createObjectURL(mineBlob(r)),a=document.createElement('a');a.href=u;a.download=r.name.replace(/:/g,'.')+'.mp3';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);track('mp3_downloaded',{from:'mine'})},t('mineDl')+': '+r.name,'download'));
+    if(navigator.share&&!ANDROID)row.appendChild(btn(t('mineSet'),'primary',async()=>{track('mine_set_tapped');try{await navigator.share({files:[mineFile(r)]});track('export_completed',{method:'share',from:'mine',mode:r.type||'ring',seconds:Math.round(r.secs)})}catch(e){}},t('setRt')+': '+r.name,'phone'));
+    row.appendChild(btn(t('mineDl'),ANDROID||!navigator.share?'primary':'',()=>{const u=URL.createObjectURL(mineBlob(r)),a=document.createElement('a');a.href=u;a.download=r.name.replace(/:/g,'.')+'.mp3';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);track('export_completed',{method:'download',mode:r.type||'ring',seconds:Math.round(r.secs),from:'mine'})},t('mineDl')+': '+r.name,'download'));
     if(row.children.length===3)row.classList.add('three');
     const more=btn('','more',()=>{mineOpen=mineOpen===r.id?null:r.id;renderMine()},t('mineMore')+': '+r.name,'more');more.setAttribute('aria-expanded',String(mineOpen===r.id));row.appendChild(more);
     li.appendChild(row);
@@ -1694,6 +1764,8 @@ loadMine();
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 window.addEventListener('offline',()=>track('went_offline'));
 /* ---------- start with the demo ---------- */
+initConsent();
+['guideLink','helpGuide','helpOther','helpVideo'].forEach(id=>$(id).addEventListener('click',()=>track('installation_guide_opened',{where:id})));
 song=demoSong();song._demo=true;$('songLen').textContent=fmtShort(song.duration);analyse();ruler();applyLang();setMode('ring');setDevice(ANDROID?'android':'iphone',false);say(t('sReady0'));
 })();
 </script>
