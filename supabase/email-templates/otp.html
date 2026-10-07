@@ -1,0 +1,17 @@
+<!-- SnipRing sign-in code email. Paste into Supabase → Authentication → Emails → "Magic Link" AND "Confirm signup".
+     Subject for both:  קוד ההתחברות שלך ל-SnipRing · Your SnipRing code: {{ .Token }}
+     Shows only the 6-digit code (no sign-in link), so the code is typed in the same browser where the user started. -->
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#0F172A">
+  <p style="font-size:28px;font-weight:700;margin:0 0 24px" dir="ltr">Snip<span style="color:#2546F0">Ring</span></p>
+  <div dir="rtl" style="text-align:right">
+    <p style="font-size:16px;margin:0 0 8px">קוד ההתחברות שלך:</p>
+    <p style="font-size:34px;font-weight:700;letter-spacing:6px;margin:0 0 8px;direction:ltr;text-align:right">{{ .Token }}</p>
+    <p style="font-size:14px;color:#5A6478;margin:0 0 24px">הקוד תקף ל‑10 דקות. אם לא ביקשת להתחבר ל‑SnipRing, אפשר להתעלם מהמייל הזה.</p>
+  </div>
+  <hr style="border:0;border-top:1px solid #DDE2EC;margin:0 0 24px">
+  <div dir="ltr" style="text-align:left">
+    <p style="font-size:16px;margin:0 0 8px">Your sign-in code:</p>
+    <p style="font-size:34px;font-weight:700;letter-spacing:6px;margin:0 0 8px">{{ .Token }}</p>
+    <p style="font-size:14px;color:#5A6478;margin:0">The code is valid for 10 minutes. If you didn't try to sign in to SnipRing, you can ignore this email.</p>
+  </div>
+</div>

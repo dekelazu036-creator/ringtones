@@ -27,6 +27,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="fonts/fonts.css">
 <script src="config.js"></script>
+<script src="auth-state.js" defer></script>
 <script src="vendor/lame.min.js"></script>
 <link rel="stylesheet" href="app.css">
 
@@ -34,6 +35,7 @@
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
     <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></symbol>
     <symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></symbol>
@@ -103,6 +105,7 @@
       <button class="iconbtn" id="helpBtn" type="button" aria-haspopup="dialog" data-i18n-aria="help"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg></button>
       <button class="iconbtn" id="a11yBtn" type="button" aria-haspopup="dialog" aria-controls="a11yPanel" aria-expanded="false" data-i18n-aria="a11y"><svg class="ic" aria-hidden="true"><use href="#i-a11y"/></svg></button>
       <button class="textbtn" id="lang" type="button" lang="en">English</button>
+      <a class="iconbtn acctbtn" href="/account.html" aria-label="חשבון · Account" hidden><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="acct-init" hidden></span></a>
     </div>
   </header>
   <p class="tagline" data-i18n="tagline"></p>
@@ -470,7 +473,7 @@ const sentOnce=new Set();
 function track(name,data,opt){
   if(opt&&opt.once){const k=name+'|'+opt.once;if(sentOnce.has(k))return;sentOnce.add(k)}
   let d=data||{};
-  if(FUNNEL.has(name)){let lg='',tg='';try{lg=lang;tg=ANDROID?'android':'iphone'}catch(e){}d=Object.assign({os:ENV.os,device:ENV.device,lang:lg,target:tg},attrProps(),d)}
+  if(FUNNEL.has(name)){let lg='',tg='';try{lg=lang;tg=ANDROID?'android':'iphone'}catch(e){}d=Object.assign({os:ENV.os,device:ENV.device,lang:lg,target:tg,tier:(window.SNIPRING_AUTH&&window.SNIPRING_AUTH.tier)||'guest'},attrProps(),d)}
   try{window.umami&&window.umami.track(name,d)}catch(e){}
   const m=META[name];
   if(m&&window.fbq&&adsOk()){const md={};META_SAFE.forEach(k=>{if(d[k]!=null&&d[k]!=='')md[k]=d[k]});

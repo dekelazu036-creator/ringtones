@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Strict policy: only our own scripts, the auth API, Cloudflare Turnstile and Umami. No Meta Pixel, no inline scripts. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://cloud.umami.is; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://challenges.cloudflare.com https://cloud.umami.is https://api-gateway.umami.dev; frame-src https://challenges.cloudflare.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex,nofollow">
+<title>SnipRing · Account</title>
+<meta name="theme-color" content="#F4F6FA">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="/boot.js"></script>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/app.css">
+<script src="/config.js"></script>
+<script src="/vendor/supabase-2.109.0.js"></script>
+<!-- Umami with automatic page views off: the page view is sent only after the sign-in code is removed from the address -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="db897ad6-80a9-43c7-9b29-d7474d5f4b73" data-domains="snipring.com,www.snipring.com" data-auto-track="false"></script>
+</head>
+<body data-page="account">
+<a class="skip" href="#main" data-i18n="skip"></a>
+<div class="wrap acct-wrap">
+  <header class="top">
+    <a class="logo" href="/" aria-label="SnipRing" dir="ltr">Snip<span class="ring">Ring</span></a>
+    <div class="hbtns"><button class="textbtn" id="lang" type="button">English</button></div>
+  </header>
+
+  <main id="main" tabindex="-1" class="acct">
+    <a class="linkbtn back" id="backLink" href="/"><svg class="ic sm back-ic" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg><span data-i18n="back"></span></a>
+
+    <!-- accounts switched off -->
+    <section class="card acct-card" id="vOff" hidden>
+      <h1 data-i18n="offH"></h1>
+      <p class="muted" data-i18n="offP"></p>
+      <a class="btn primary block" href="/" data-i18n="toHome"></a>
+    </section>
+
+    <!-- loading / finishing sign-in -->
+    <section class="card acct-card" id="vBusy" aria-live="polite">
+      <span class="spin big" aria-hidden="true"></span>
+      <p class="muted" id="busyTxt" data-i18n="busy"></p>
+    </section>
+
+    <!-- step 1: choose a method -->
+    <section class="card acct-card" id="vStart" hidden>
+      <h1 data-i18n="h1"></h1>
+      <p class="muted" data-i18n="sub"></p>
+      <ul class="acct-perks">
+        <li><svg class="ic sm" aria-hidden="true"><use href="/icons.svg#i-check"/></svg><span data-i18n="perk1"></span></li>
+        <li><svg class="ic sm" aria-hidden="true"><use href="/icons.svg#i-check"/></svg><span data-i18n="perk2"></span></li>
+        <li><svg class="ic sm" aria-hidden="true"><use href="/icons.svg#i-check"/></svg><span data-i18n="perk3"></span></li>
+      </ul>
+      <div class="notice-txt" id="inApp" hidden>
+        <p data-i18n="inAppP"></p>
+        <button class="btn block" id="copyLink" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-copy"/></svg><span data-i18n="copyLink"></span></button>
+      </div>
+      <div class="acct-methods" id="methods">
+        <button class="btn block gbtn" id="google" type="button">
+          <svg class="gmark" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          <span data-i18n="google"></span>
+        </button>
+        <div class="acct-or" id="orRow"><span data-i18n="or"></span></div>
+        <form class="acct-form" id="emailForm" novalidate>
+          <label class="field"><span class="lbl" data-i18n="emailL"></span>
+            <input class="input" id="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="send" dir="ltr" required maxlength="254">
+          </label>
+          <div class="cf-box" id="captcha" hidden></div>
+          <button class="btn primary lg block" id="sendCode" type="submit"><span class="spin" aria-hidden="true"></span><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-mail"/></svg><span data-i18n="sendCode"></span></button>
+        </form>
+      </div>
+      <p class="hint small" id="startMsg" role="alert"></p>
+      <p class="hint small acct-legal"><span data-i18n="legal1"></span> <a href="/terms.html" data-i18n="termsL"></a> <span data-i18n="legal2"></span> <a href="/privacy.html" data-i18n="privacyL"></a>.</p>
+    </section>
+
+    <!-- step 2: enter the code -->
+    <section class="card acct-card" id="vCode" hidden>
+      <h1 data-i18n="codeH"></h1>
+      <p class="muted"><span data-i18n="codeP"></span> <bdi class="acct-email" id="sentTo"></bdi></p>
+      <form class="acct-form" id="codeForm" novalidate>
+        <label class="field"><span class="lbl" data-i18n="codeL"></span>
+          <input class="input code-in" id="code" type="text" inputmode="numeric" autocomplete="one-time-code" enterkeyhint="done" dir="ltr" required>
+        </label>
+        <button class="btn primary lg block" id="verify" type="submit"><span class="spin" aria-hidden="true"></span><span data-i18n="verify"></span></button>
+      </form>
+      <p class="hint small" id="codeMsg" role="alert"></p>
+      <div class="pair">
+        <button class="btn" id="resend" type="button" disabled><span id="resendL" data-i18n="resend"></span></button>
+        <button class="btn" id="changeEmail" type="button" data-i18n="changeEmail"></button>
+      </div>
+      <p class="hint small" data-i18n="spamHint"></p>
+    </section>
+
+    <!-- signed in -->
+    <section class="card acct-card" id="vIn" hidden>
+      <div class="acct-who"><span class="acct-avatar" id="avatar" aria-hidden="true"></span><div><h1 data-i18n="inH"></h1><p class="muted"><bdi id="whoEmail" dir="ltr"></bdi></p></div></div>
+      <dl class="spfacts acct-facts">
+        <div><dt data-i18n="viaL"></dt><dd id="via"></dd></div>
+        <div><dt data-i18n="planL"></dt><dd data-i18n="planFree"></dd></div>
+      </dl>
+      <p class="hint" data-i18n="inNote"></p>
+      <a class="btn primary lg block" id="continue" href="/"><span data-i18n="continue"></span></a>
+      <div class="pair">
+        <button class="btn" id="logout" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-logout"/></svg><span data-i18n="logout"></span></button>
+        <button class="btn" id="logoutAll" type="button"><span data-i18n="logoutAll"></span></button>
+      </div>
+      <p class="hint small" id="inMsg" role="status"></p>
+    </section>
+  </main>
+
+  <footer class="sitefoot"><a href="/terms.html" data-i18n="terms"></a><a href="/privacy.html" data-i18n="privacy"></a><a href="/accessibility.html" data-i18n="aStatement"></a><span dir="ltr">hello@snipring.com</span></footer>
+</div>
+<script src="/auth.js"></script>
+</body>
+</html>

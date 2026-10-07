@@ -83,3 +83,9 @@ utm_source=meta&utm_medium=paid_social&utm_campaign={{campaign.name}}&utm_conten
 - **Funnel**: `upload_completed` or `audio_loaded` → `ringtone_created` → `export_completed`, window 1 day.
 - **UTM** report, plus **Breakdown** of `ringtone_created` by `campaign`, `source`, `target` and `device`.
 - **Goals**: `export_completed` (count).
+
+## Accounts (Phase 1A)
+
+Funnel events also carry `tier`: `guest` (not signed in) or `free` (signed in). No email, user id or name is ever sent to Umami or Meta.
+Account events are sent from `account.html` to **Umami only** (that page never loads the Meta Pixel):
+`auth_viewed`, `signup_started{method}`, `otp_sent`, `otp_failed{reason,step}`, `signup_completed{method}`, `login_completed{method}`, `logout{scope}`. See AUTH.md.

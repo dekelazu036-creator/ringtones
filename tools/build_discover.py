@@ -47,6 +47,7 @@ def head(title, desc, url, extra=''):
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/app.css">
 <script src="/config.js"></script>
+<script src="/auth-state.js" defer></script>
 {UMAMI}
 {extra}</head>'''
 
@@ -60,6 +61,7 @@ def shell_top(active):
     <div class="hbtns">
       <button class="iconbtn" id="themeBtn" type="button">{ic('system')}</button>
       <button class="textbtn" id="lang" type="button">English</button>
+      <a class="iconbtn acctbtn" href="/account.html" aria-label="חשבון · Account" hidden><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-user"/></svg><span class="acct-init" hidden></span></a>
     </div>
   </header>
   <nav class="tabs" data-i18n-aria="navAria" aria-label="ניווט ראשי">{nav}</nav>

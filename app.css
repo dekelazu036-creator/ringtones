@@ -525,3 +525,44 @@ html[dir=rtl] .back-ic{transform:rotate(-90deg)}
 .notice-txt{background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:var(--r-md);padding:var(--s2) var(--s3);font-size:var(--fs-sm)}
 .st-done{display:flex;flex-direction:column;gap:var(--s2)}
 .studio .export{margin-top:var(--s1)}
+
+/* ---------- account (Phase 1A) ---------- */
+.acctbtn{position:relative;text-decoration:none}
+.acctbtn.in{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.acct-init{font-weight:700;font-size:var(--fs-md);line-height:1}
+@media (max-width:374px){html.auth-on .hbtns #helpBtn{display:none}html.auth-on .top .logo{font-size:32px}}
+/* with the account button the home header has one more button: tighten it on phones (only when accounts are on) */
+@media (max-width:429px){html.auth-on .top{gap:var(--s2)}html.auth-on .hbtns{gap:var(--s1)}html.auth-on .logo{font-size:35px}html.auth-on .textbtn{padding:0 var(--s2)}}
+.acct-wrap{max-width:520px}
+.acct{gap:var(--s3)}
+.acct-card{display:flex;flex-direction:column;gap:var(--s4)}
+.acct-card h1{font-size:var(--fs-2xl);line-height:1.2}
+.acct-card h1:focus{outline:none}
+#vBusy{align-items:center;text-align:center;padding-block:var(--s8)}
+.spin.big{display:inline-block;width:32px;height:32px;border-width:3px;color:var(--accent)}
+.acct-perks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2)}
+.acct-perks li{display:flex;align-items:center;gap:var(--s2);font-weight:500}
+.acct-perks .ic{color:var(--ok)}
+.acct-methods{display:flex;flex-direction:column;gap:var(--s3)}
+.acct-methods.inapp{flex-direction:column-reverse}
+.gbtn{min-height:var(--h-lg);background:#fff;color:#1F1F1F;border:1px solid #747775;font-weight:600}
+.gbtn:hover{background:#F2F2F2;border-color:#747775}
+:root[data-theme="dark"] .gbtn{background:#131314;color:#E3E3E3;border-color:#8E918F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .gbtn{background:#131314;color:#E3E3E3;border-color:#8E918F}}
+.gmark{width:20px;height:20px;flex:none}
+.acct-or{display:flex;align-items:center;gap:var(--s3);color:var(--muted);font-size:var(--fs-sm)}
+.acct-or::before,.acct-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.acct-form{display:flex;flex-direction:column;gap:var(--s3)}
+.acct-form .input{min-height:var(--h-lg);font-size:17px}
+.code-in{letter-spacing:.5em;text-align:center;font-variant-numeric:tabular-nums;font-size:24px!important;font-weight:600}
+.cf-box{min-height:65px;display:flex;justify-content:center}
+.cf-box[hidden]{display:none}
+.acct-email{font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.acct-legal a{color:var(--muted)}
+.acct-who{display:flex;align-items:center;gap:var(--s3)}
+.acct-avatar{width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:24px;font-weight:700;flex:none}
+.acct-who > div{min-width:0}
+.acct-who bdi{overflow-wrap:anywhere}
+.acct-facts{grid-template-columns:1fr 1fr}
+#startMsg:empty,#codeMsg:empty,#inMsg:empty{display:none}
+#startMsg,#codeMsg{color:var(--ink);font-weight:500}
