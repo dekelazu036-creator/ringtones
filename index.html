@@ -1097,12 +1097,23 @@ async function loadFile(f){
 }
 $('file').addEventListener('change',e=>loadFile(e.target.files[0]));
 /* any decoded/generated audio → editor (recordings and original ringtones use this too) */
+/* effects belong to one ringtone: a new source starts clean (otherwise "edit again" would apply them twice) */
+function resetFx(){S.voice='none';S.gain=0;S.speed=1;S.loop=1;S.vo=null;refreshOut();refreshDed()}
 async function useSong(buf,name,source,badge){
-  stopPreview();song=buf;invalidate();
+  stopPreview();song=buf;resetFx();invalidate();
   $('songTitle').textContent=name;$('name').value=name.slice(0,40);delete $('name').dataset.touched;$('badge').textContent=badge||'';
   $('songLen').textContent=fmtShort(song.duration);S.cursor=0;$('cursorT').textContent='0:00';
   say(t('sFinding'));await new Promise(r=>setTimeout(r,30));
-  analyse();ruler();openEditor();say(t('sLoaded'));previewSel();
+  analyse();ruler();openEditor();
+  if(source==='mine'){
+    // a saved ringtone is already cut and faded: select all of it and don't fade it again
+    S.fin=0;S.fout=0;$('fin').value=0;$('fout').value=0;$('finV').textContent='0.0 '+t('sec');$('foutV').textContent='0.0 '+t('sec');
+    S.cand=-1;setRange(0,Math.min(song.duration,CAP()),'start');markCand();say(t('sMineLoaded'));
+  }else{S.fin=M().fin;S.fout=M().fout;$('fin').value=S.fin;$('fout').value=S.fout;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');say(t('sLoaded'))}
+  // always bring the editor into view, also when it was already open (e.g. "edit again" from the bottom of the page)
+  {const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');
+   requestAnimationFrame(()=>$('editor').scrollIntoView({behavior:calm?'auto':'smooth',block:'start'}))}
+  previewSel();
   track('song_loaded',{source,seconds:Math.round(song.duration),lang});
 }
 const closeDlg=d=>{d.close?d.close():d.removeAttribute('open')},openDlg=d=>{d.showModal?d.showModal():d.setAttribute('open','')};
@@ -1353,7 +1364,7 @@ create:'צור רינגטון',setRt:'הגדר כרינגטון',dl:'הורד MP
 g1:'לוחצים <b>צור רינגטון</b>, ואז <b>הגדר כרינגטון</b>.',g2:'בתפריט השיתוף גוללים למטה ובוחרים <b>שימוש כצלצול</b>. זהו.',
 g3:'אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים לחיצה ארוכה ← שתף ← שימוש כצלצול.',
 note:'באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29.5 שניות.',
-sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח את ',sFinding:'מחפש את הפזמון…',sLoaded:'השיר נטען. הקטע המסומן הוא ההצעה לפזמון.',
+sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח את ',sFinding:'מחפש את הפזמון…',sMineLoaded:'הצלצול נפתח לעריכה. כל הקטע מסומן, והאפקטים אופסו כדי שלא יוכפלו.',sLoaded:'השיר נטען. הקטע המסומן הוא ההצעה לפזמון.',
 sVideoFail:'לא הצלחנו לחלץ קול מהסרטון. נסו סרטון אחר, או קובץ MP3.',sTooBig:'הקובץ גדול מדי (מעל 400MB). נסו סרטון קצר יותר.',sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
 sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'הרינגטון מוכן.',
 sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
@@ -1386,7 +1397,7 @@ create:'Create ringtone',setRt:'Set as ringtone',dl:'Download MP3',guideH:'From 
 g1:'Tap <b>Create ringtone</b>, then <b>Set as ringtone</b>.',g2:'In the share sheet, scroll down and choose <b>Use as Ringtone</b>. Done.',
 g3:'If the share sheet doesn\'t open: <b>Download MP3</b>, then in Files long-press it → Share → Use as Ringtone.',
 note:'iPhone ringtones must be shorter than 30 seconds, so the maximum here is 29.5 seconds.',
-sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:'Finding the chorus…',sLoaded:'Song loaded. The highlighted part is our chorus pick.',
+sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:'Finding the chorus…',sMineLoaded:'Your ringtone is open for editing. The whole clip is selected, and effects were reset so they don\'t apply twice.',sLoaded:'Song loaded. The highlighted part is our chorus pick.',
 sVideoFail:'Couldn\'t get the sound from this video. Try another video, or an MP3 file.',sTooBig:'This file is too large (over 400MB). Try a shorter video.',sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
 sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Your ringtone is ready.',
 sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
@@ -1546,7 +1557,8 @@ function stopMine(){if(mineAudio){mineAudio.pause();mineAudio=null}if(mineUrl){U
 let mineOpen=null,mineRen=null;
 const TYPE_IC={ring:'🔔',text:'💬',alarm:'⏰'},TYPE_K={ring:'mRing',text:'mText',alarm:'mAlarm'};
 /* "edit again": decode the saved MP3 and open it in the editor like any other song */
-async function editAgain(r){stopMine();try{const c=ensureCtx(),buf=await new Promise((res,rej)=>{const p=c.decodeAudioData(r.data.slice(0),res,rej);if(p&&p.then)p.then(res,rej)});
+async function editAgain(r){stopMine();mineOpen=null;renderMine();try{const c=ensureCtx(),ab=r.data?r.data.slice(0):await mineBlob(r).arrayBuffer();
+  const buf=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
   if(r.type&&r.type!==S.mode)setMode(r.type,false);await useSong(buf,r.name,'mine',t('mineBadge'));track('mine_edit')}catch(e){say(t('sOpenFail'))}}
 function renderMine(){
   const ul=$('mineList');ul.textContent='';$('mine').hidden=false;$('mineEmpty').hidden=!!mine.length;
