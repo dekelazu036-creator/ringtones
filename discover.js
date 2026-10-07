@@ -27,7 +27,7 @@ const T = {
     t_ring: 'רינגטון', t_text: 'צליל הודעה', t_alarm: 'שעון מעורר', t_sfx: 'אפקט קולי', t_intro: 'פתיח', t_outro: 'סגיר', t_custom: 'קובץ שמע',
     m_calm: 'רגוע', m_happy: 'שמח', m_dark: 'אפל', m_cinematic: 'קולנועי', m_luxury: 'יוקרתי', m_futuristic: 'עתידני', m_funny: 'מצחיק', m_energetic: 'אנרגטי', m_minimal: 'מינימליסטי', m_relaxing: 'מרגיע',
     share: 'שיתוף', copied: 'הקישור הועתק', similar: 'צלילים דומים', back: 'לכל הצלילים', creator: 'יוצר', duration: 'אורך', category: 'קטגוריה', tags: 'תגיות',
-    useBig: 'השתמש בצליל הזה', useHint: 'הצליל ייפתח בעורך: אפשר לקצר, להוסיף אפקטים ולהוריד כרינגטון, כשעון או כצליל הודעה.',
+    useBig: 'השתמש בצליל הזה', studioBtn: 'ערוך בסטודיו (שכבות ומיקס)', useHint: 'הצליל ייפתח בעורך: אפשר לקצר, להוסיף אפקטים ולהוריד כרינגטון, כשעון או כצליל הודעה.',
     license: 'צליל מקורי של SnipRing. מותר לשימוש אישי, גם כרינגטון וגם בסרטונים שלכם.',
     report: 'דיווח על בעיה', langBtn: 'English', theme: 'ערכת צבעים', th_system: 'לפי המערכת', th_light: 'בהירה', th_dark: 'כהה',
     terms: 'תנאי שימוש', privacy: 'מדיניות פרטיות', aStatement: 'הצהרת נגישות', guide: 'המדריך המלא'
@@ -46,7 +46,7 @@ const T = {
     t_ring: 'Ringtone', t_text: 'Text tone', t_alarm: 'Alarm', t_sfx: 'Sound effect', t_intro: 'Intro', t_outro: 'Outro', t_custom: 'Audio file',
     m_calm: 'Calm', m_happy: 'Happy', m_dark: 'Dark', m_cinematic: 'Cinematic', m_luxury: 'Luxury', m_futuristic: 'Futuristic', m_funny: 'Funny', m_energetic: 'Energetic', m_minimal: 'Minimal', m_relaxing: 'Relaxing',
     share: 'Share', copied: 'Link copied', similar: 'Similar sounds', back: 'All sounds', creator: 'Creator', duration: 'Length', category: 'Category', tags: 'Tags',
-    useBig: 'Use this sound', useHint: 'It opens in the editor: trim it, add effects, and download it as a ringtone, alarm or text tone.',
+    useBig: 'Use this sound', studioBtn: 'Edit in Studio (layers and mixing)', useHint: 'It opens in the editor: trim it, add effects, and download it as a ringtone, alarm or text tone.',
     license: 'An original SnipRing sound. Free for personal use, as a ringtone or in your own videos.',
     report: 'Report a problem', langBtn: 'עברית', theme: 'Colour theme', th_system: 'System', th_light: 'Light', th_dark: 'Dark',
     terms: 'Terms of Use', privacy: 'Privacy Policy', aStatement: 'Accessibility statement', guide: 'Full guide'

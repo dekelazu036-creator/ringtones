@@ -137,6 +137,7 @@ for s in cat:
       <p class="muted small" id="spUses" hidden></p>
       <div class="pills sptags">{moods}</div>
       <a class="btn primary lg block" id="spUse" href="/?sound={s['slug']}">{ic('sliders')}<span data-i18n="useBig">השתמש בצליל הזה</span></a>
+      <a class="btn block" href="/studio.html?sound={s['slug']}">{ic('layers')}<span data-i18n="studioBtn">ערוך בסטודיו</span></a>
       <p class="hint" data-i18n="useHint"></p>
       <div class="pair">
         <button class="btn spfav" id="spFav" type="button" aria-pressed="false">{ic('star')}<span data-i18n="cFav">מועדפים</span></button>
@@ -173,7 +174,7 @@ open(os.path.join(ROOT, 'supabase', 'seed.sql'), 'w', encoding='utf-8').write(se
 # ---------------------------------------------------------------- sitemap
 sm_path = os.path.join(ROOT, 'sitemap.xml'); sm = open(sm_path, encoding='utf-8').read()
 sm = re.sub(r'\s*<!-- discover:start -->.*?<!-- discover:end -->', '', sm, flags=re.S)
-urls = [f'{SITE}/discover.html'] + [f"{SITE}/sound/{s['slug']}.html" for s in cat]
+urls = [f'{SITE}/discover.html', f'{SITE}/studio.html'] + [f"{SITE}/sound/{s['slug']}.html" for s in cat]
 block = '\n  <!-- discover:start -->\n' + '\n'.join(f'  <url><loc>{u}</loc></url>' for u in urls) + '\n  <!-- discover:end -->\n'
 sm = sm.replace('</urlset>', block + '</urlset>')
 open(sm_path, 'w', encoding='utf-8').write(sm)

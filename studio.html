@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>סטודיו צליל: חיבור צלילים, שכבות ואפקטים | SnipRing</title>
+<meta name="description" content="סטודיו צליל פשוט בדפדפן: מחברים שירים, הקלטות וצלילים בשכבות, חותכים, מוסיפים אפקטים ומורידים כרינגטון או כקובץ MP3. הכול קורה בטלפון.">
+<link rel="canonical" href="https://snipring.com/studio.html">
+<meta property="og:title" content="SnipRing Sound Studio">
+<meta property="og:description" content="Layer, trim and mix sounds into your own ringtone or MP3, right in your browser.">
+<meta property="og:image" content="https://snipring.com/og.png">
+<meta name="theme-color" content="#F4F6FA">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<script>(()=>{try{const v=localStorage.getItem('snipring-theme');if(v==='light'||v==='dark')document.documentElement.dataset.theme=v;const l=localStorage.getItem('snipring-lang');if(l==='en'){document.documentElement.lang='en';document.documentElement.dir='ltr'}}catch(e){}})();</script>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/app.css">
+<script src="/config.js"></script>
+<script src="/vendor/lame.min.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="db897ad6-80a9-43c7-9b29-d7474d5f4b73" data-domains="snipring.com,www.snipring.com"></script>
+</head>
+<body data-page="studio">
+<a class="skip" href="#main" data-i18n="skip">דלגו לתוכן</a>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="/" aria-label="SnipRing" dir="ltr">Snip<span class="ring">Ring</span></a>
+    <div class="hbtns">
+      <button class="iconbtn" id="themeBtn" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-system"/></svg></button>
+      <button class="textbtn" id="lang" type="button">English</button>
+    </div>
+  </header>
+  <nav class="tabs" data-i18n-aria="navAria"><a href="/" aria-current="page" data-i18n="navCreate">יצירה</a><a href="/discover.html" data-i18n="navDiscover">גילוי</a><a href="/#mine" data-i18n="navMine">הצלילים שלי</a></nav>
+
+  <main id="main" tabindex="-1" class="studio">
+    <section class="card st-head">
+      <div class="row-between"><h1 data-i18n="h1">סטודיו צליל</h1><button class="btn" id="projBtn" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-layers"/></svg><span data-i18n="projects"></span></button></div>
+      <p class="muted" data-i18n="sub"></p>
+      <label class="field"><span class="lbl" data-i18n="projName"></span><input class="input" id="projName" maxlength="40" autocomplete="off" dir="auto"></label>
+    </section>
+
+    <section class="card st-main">
+      <div class="transport">
+        <button class="play" id="playBtn" type="button" aria-pressed="false"><svg class="ic" aria-hidden="true"><use id="playIc" href="/icons.svg#i-play"/></svg></button>
+        <div class="tinfo"><b class="num" id="tNow" dir="ltr">0:00.0</b><span class="muted small"><span data-i18n="total"></span> <bdi class="num" id="tLen" dir="ltr">0:00.0</bdi></span></div>
+        <div class="tbtns">
+          <button class="iconbtn sm" id="startBtn" type="button" data-i18n-title="toStart"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-skipback"/></svg></button>
+          <button class="iconbtn sm" id="undoBtn" type="button" data-i18n-title="undo"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-undo"/></svg></button>
+          <button class="iconbtn sm" id="redoBtn" type="button" data-i18n-title="redo"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-redo"/></svg></button>
+          <button class="iconbtn sm" id="zOut" type="button" data-i18n-title="zoomOut"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-minus"/></svg></button>
+          <button class="iconbtn sm" id="zIn" type="button" data-i18n-title="zoomIn"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-plus"/></svg></button>
+        </div>
+      </div>
+
+      <div class="tl" id="tl" dir="ltr">
+        <div class="tl-inner" id="tlInner">
+          <div class="st-ruler num" id="ruler" aria-hidden="true"></div>
+          <div class="lanes" id="lanes"></div>
+          <div class="ph" id="ph" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="st-empty" id="emptyNote"><p class="muted" data-i18n="empty"></p><button class="btn primary" id="emptyAdd" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-plus"/></svg><span data-i18n="add"></span></button></div>
+
+      <button class="btn block" id="addBtn" type="button" aria-haspopup="dialog"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-plus"/></svg><span data-i18n="add"></span></button>
+
+      <p class="hint" id="noSel" data-i18n="noSel"></p>
+      <div class="st-panel" id="panel" hidden>
+        <div class="row-between"><h2 class="pname"><bdi id="pName"></bdi></h2><span class="muted small"><span data-i18n="len"></span> <bdi class="num" id="pLen" dir="ltr"></bdi></span></div>
+        <div class="st-actions">
+          <button class="btn" id="splitBtn" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-scissors"/></svg><span data-i18n="split"></span></button>
+          <button class="btn" id="dupBtn" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-copy"/></svg><span data-i18n="dup"></span></button>
+          <button class="btn" id="joinBtn" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-link"/></svg><span data-i18n="join"></span></button>
+          <button class="btn" id="upBtn" type="button"><svg class="ic up-ic" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg><span data-i18n="up"></span></button>
+          <button class="btn" id="downBtn" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg><span data-i18n="down"></span></button>
+          <button class="btn danger" id="delBtn" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-trash"/></svg><span data-i18n="remove"></span></button>
+        </div>
+        <div class="field"><div class="row-between"><label class="lbl" for="vol" data-i18n="vol"></label><b class="val num" id="volV" dir="ltr"></b></div><input type="range" id="vol" min="0" max="200" step="5"></div>
+        <div class="field"><div class="row-between"><label class="lbl" for="fin" data-i18n="fin"></label><b class="val num" id="finV"></b></div><input type="range" id="fin" min="0" max="5" step="0.1"></div>
+        <div class="field"><div class="row-between"><label class="lbl" for="fout" data-i18n="fout"></label><b class="val num" id="foutV"></b></div><input type="range" id="fout" min="0" max="5" step="0.1"></div>
+        <div class="field"><span class="lbl" id="speedL" data-i18n="speed"></span><div class="seg seg-wrap" id="speeds" role="group" aria-labelledby="speedL"></div></div>
+        <div class="field"><span class="lbl" id="loopL" data-i18n="loop"></span><div class="seg" id="loops" role="group" aria-labelledby="loopL"></div></div>
+        <div class="field"><span class="lbl" id="fxL" data-i18n="fx"></span><div class="seg seg-wrap" id="fxs" role="group" aria-labelledby="fxL"></div></div>
+        <label class="switch"><input type="checkbox" id="rev"><span data-i18n="rev"></span></label>
+        <label class="switch"><input type="checkbox" id="norm"><span data-i18n="norm"></span></label>
+        <details class="disclosure">
+          <summary><span data-i18n="fine"></span><svg class="ic chev" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></summary>
+          <div class="dbody">
+            <div class="trow"><span class="tlabel" data-i18n="pos"></span><span class="tgroup" dir="ltr"><button class="nudge" type="button" data-nudge="pos:-1">−1</button><button class="nudge" type="button" data-nudge="pos:-0.1">−0.1</button><span class="time num" id="posV"></span><button class="nudge" type="button" data-nudge="pos:0.1">+0.1</button><button class="nudge" type="button" data-nudge="pos:1">+1</button></span></div>
+            <div class="trow"><span class="tlabel" data-i18n="trimS"></span><span class="tgroup" dir="ltr"><button class="nudge" type="button" data-nudge="in:-1">−1</button><button class="nudge" type="button" data-nudge="in:-0.1">−0.1</button><span class="time num" id="inV"></span><button class="nudge" type="button" data-nudge="in:0.1">+0.1</button><button class="nudge" type="button" data-nudge="in:1">+1</button></span></div>
+            <div class="trow"><span class="tlabel" data-i18n="trimE"></span><span class="tgroup" dir="ltr"><button class="nudge" type="button" data-nudge="out:-1">−1</button><button class="nudge" type="button" data-nudge="out:-0.1">−0.1</button><span class="time num" id="outV"></span><button class="nudge" type="button" data-nudge="out:0.1">+0.1</button><button class="nudge" type="button" data-nudge="out:1">+1</button></span></div>
+          </div>
+        </details>
+      </div>
+
+      <div class="export">
+        <div class="xbtns"><button class="btn primary lg" id="exportBtn" type="button" aria-haspopup="dialog"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-download"/></svg><span data-i18n="exportBtn"></span></button></div>
+        <p class="status" role="status"><span id="status"></span> <span class="muted" id="saveSt"></span></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="sitefoot"><a href="/ringtone-iphone.html" data-i18n="guide"></a><a href="/terms.html" data-i18n="terms"></a><a href="/privacy.html" data-i18n="privacy"></a><a href="/accessibility.html" data-i18n="aStatement"></a><span dir="ltr">hello@snipring.com</span></footer>
+</div>
+
+<dialog class="dlg" id="addDlg" aria-labelledby="addH">
+  <div class="dlg-head"><h2 id="addH" data-i18n="addH"></h2><button class="iconbtn" type="button" data-close data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-x"/></svg></button></div>
+  <p class="hint" id="addTo"></p>
+  <label class="btn primary block file"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-upload"/></svg><span data-i18n="fromFile"></span><input type="file" id="addFile" accept="audio/*,video/*,.mp3,.m4a,.wav,.aac,.mp4,.mov"></label>
+  <p class="hint small" data-i18n="fileTypes"></p>
+  <div class="recbox st-rec">
+    <div class="st-lv" aria-hidden="true"><span id="recLv"></span></div>
+    <span class="rect num" id="recT" dir="ltr">0:00</span>
+    <button class="btn block" id="recGo" type="button" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-mic"/></svg><span id="recGoL" data-i18n="recStart"></span></button>
+    <p class="status" id="recSt" role="status"></p>
+  </div>
+  <details class="disclosure"><summary><span data-i18n="fromMine"></span><svg class="ic chev" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></summary><ul class="picklist" id="mineList"></ul></details>
+  <details class="disclosure"><summary><span data-i18n="fromDisc"></span><svg class="ic chev" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg></summary><ul class="picklist" id="discList"></ul></details>
+</dialog>
+
+<dialog class="dlg" id="projDlg" aria-labelledby="projH">
+  <div class="dlg-head"><h2 id="projH" data-i18n="projects"></h2><button class="iconbtn" type="button" data-close data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-x"/></svg></button></div>
+  <button class="btn primary block" id="newProj" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-plus"/></svg><span data-i18n="newProj"></span></button>
+  <p class="muted" id="noProj" data-i18n="noProj"></p>
+  <ul class="picklist" id="projList"></ul>
+</dialog>
+
+<dialog class="dlg" id="exDlg" aria-labelledby="exH">
+  <div class="dlg-head"><h2 id="exH" data-i18n="exportH"></h2><button class="iconbtn" type="button" data-close data-i18n-aria="close"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-x"/></svg></button></div>
+  <label class="field"><span class="lbl" data-i18n="fileName"></span><input class="input" id="exName" maxlength="40" autocomplete="off" dir="auto"></label>
+  <div class="field"><span class="lbl" id="exTypeL" data-i18n="type"></span><div class="seg seg-wrap" id="exTypes" role="group" aria-labelledby="exTypeL"></div></div>
+  <p class="muted small"><span data-i18n="len"></span>: <bdi class="num" id="exLen" dir="ltr"></bdi></p>
+  <p class="notice-txt" id="exCap" hidden></p>
+  <label class="switch"><input type="checkbox" id="exNorm" checked><span data-i18n="masterNorm"></span></label>
+  <button class="btn primary lg block" id="exGo" type="button"><span class="spin" aria-hidden="true"></span><span data-i18n="create"></span></button>
+  <p class="status" id="exSt" role="status"></p>
+  <div class="st-done" id="exDone" hidden>
+    <div class="pair"><a class="btn primary" id="exDl"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-download"/></svg><span data-i18n="dl"></span></a><button class="btn" id="exShare" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-share"/></svg><span id="exShareL" data-i18n="share"></span></button></div>
+    <p class="hint" id="exRt" data-i18n="rtHint"></p>
+  </div>
+</dialog>
+
+<script src="/studio.js"></script>
+</body>
+</html>
