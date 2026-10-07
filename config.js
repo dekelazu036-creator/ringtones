@@ -9,6 +9,6 @@ window.SNIPRING_CONFIG = {
   supabaseKey: 'sb_publishable_t3dVqGlMKrpi_SeLMwiM2g_Y12HoRSp',
   // Accounts (Phase 1A). Ships switched OFF: only owner test mode (snipring.com/?me) can see it.
   // turnstileSiteKey is the PUBLIC site key; the secret lives only in Supabase.
-  auth: { enabled: false, google: true, email: true, turnstileSiteKey: '' },
+  auth: { enabled: false, google: true, email: true, turnstileSiteKey: '0x4AAAAAAFQ0O8x3Ke3kRuTq' },
   consentVersion: 1     // raise by 1 after a material privacy change, to ask everyone again
 };
