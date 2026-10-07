@@ -339,20 +339,21 @@ main.editing .drop .altbtn{padding:8px 12px;font-size:13.5px}
 /* Android-style: tonal surface, coloured initial, swipe up on the centre button (generic look, no Google assets) */
 .callov.and .cbg{background:linear-gradient(180deg,#1E2A3A 0,#121722 60%,#0E1118 100%);filter:none;inset:0;animation:none}
 .callov.and .ckind{display:block;font-size:14px;opacity:.7}
-.callov.and .cname{font-weight:500;font-size:36px}
+.callov.and .cname{font-weight:500;font-size:36px;border-bottom-color:transparent}
+.callov.and .cname:focus{border-bottom-color:rgba(255,255,255,.4)}
 .callov.and .cinit{background:var(--cA);backdrop-filter:none;border-radius:50%}
 .callov.and .cring{border-color:rgba(255,255,255,.25)}
-.callov.and .cbtns{width:min(100%,360px);align-items:flex-end;justify-content:flex-start;padding-inline:8px}
-html[dir=ltr] .callov.and .cbtns{justify-content:flex-start}
-.callov.and .cb{width:64px;height:64px;border-radius:22px}
-.callov.and .cb.yes{animation:none}
-.callov.and .cbtns>div:last-child{display:none}
-.callov.and .cswipe{display:flex;flex-direction:column;align-items:center;gap:6px;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(64px + env(safe-area-inset-bottom,0px))}
-.callov.and .carrows{line-height:.6;font-size:20px;opacity:.7;animation:up 1.4s ease-in-out infinite}
+.chintA{display:none}
+.callov.and .chintA{display:block;margin-top:auto;font-size:13px;opacity:.75;text-align:center}
+.callov.and .cbtns{margin-top:14px;width:min(100%,320px);display:grid;grid-template-columns:1fr 1fr;justify-items:center;align-items:end}
+.callov.and .cbtns>div{display:flex;flex-direction:column;align-items:center;gap:8px}
+.callov.and .cb{width:68px;height:68px;border-radius:50%}
+.callov.and .cb.yes{animation:none;touch-action:none;cursor:grab;box-shadow:0 8px 24px -8px #34C759;position:relative}
+.callov.and .cbtns>div:last-child::before{content:"︿";display:block;font-size:20px;line-height:.5;opacity:.7;animation:up 1.4s ease-in-out infinite}
 @keyframes up{0%,100%{transform:translateY(4px);opacity:.3}50%{transform:translateY(-4px);opacity:.9}}
-.callov.and .cpill{width:72px;height:72px;border-radius:50%;border:0;background:#34C759;color:#fff;display:grid;place-items:center;cursor:grab;touch-action:none;box-shadow:0 8px 24px -8px #34C759}
-.callov.and .chint{font-size:13px;opacity:.75}
-html.a-still .ctrack,html.a-still .carrows,html.a-still .cbg,html.a-still .cring,html.a-still .cb.yes{animation:none}
+.callov.and .cbtns>div:first-child::before{content:"";display:block;height:10px}
+.callov.and .cswipe{display:none}
+html.a-still .ctrack,html.a-still .carrows,html.a-still .callov.and .cbtns>div:last-child::before,html.a-still .cbg,html.a-still .cring,html.a-still .cb.yes{animation:none}
 @media (prefers-reduced-motion:reduce){.ctrack,.carrows,.cbg,.cring,.cb.yes{animation:none}}
 .bests{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin-inline:-14px;padding:2px 14px 4px;scroll-snap-type:x proximity}
 .bests::-webkit-scrollbar{display:none}
@@ -437,6 +438,7 @@ code{font-family:var(--mono);font-size:.9em;direction:ltr;unicode-bidi:embed}
   </div>
   <div class="cav" aria-hidden="true"><span class="cring r1"></span><span class="cring r2"></span><span class="cring r3"></span><span class="cinit" id="callInit"></span></div>
   <div class="cnow"><span aria-hidden="true">🎵</span> <span id="callTune"></span></div>
+  <span class="chintA" data-i18n="callSwipe"></span>
   <div class="cbtns">
     <div><button class="cb no" id="callNo" type="button" data-i18n-aria="callDecline"><svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M3 15.5c5-4.6 13-4.6 18 0l-2.4 2.4-3.2-1.5v-2.6c-2.2-.8-4.6-.8-6.8 0v2.6l-3.2 1.5z" fill="#fff"/></svg></button><span data-i18n="callDecline"></span></div>
     <div><button class="cb yes" id="callYes" type="button" data-i18n-aria="callAccept"><svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z" fill="#fff"/></svg></button><span data-i18n="callAccept"></span></div>
@@ -1493,6 +1495,7 @@ function dragAnswer(el,axis,limit){let d=null;
   el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();closeCall('accept')}})}
 dragAnswer($('cKnob'),'x',()=>$('cSlide').clientWidth-72);
 dragAnswer($('cPill'),'y',()=>120);
+dragAnswer($('callYes'),'y',()=>110);
 $('cDecl').addEventListener('click',()=>closeCall('decline'));
 function openCall(){if(!song)return;stopPreview();callPrev=document.activeElement;
   let nm='';try{nm=localStorage.getItem('snipring-callname')||''}catch(e){}$('callName').value=nm||t('callDefault');callInit();
@@ -1501,7 +1504,7 @@ function openCall(){if(!song)return;stopPreview();callPrev=document.activeElemen
   $('callOv').hidden=false;document.body.style.overflow='hidden';document.querySelector('.wrap').setAttribute('aria-hidden','true');
   try{const c=ensureCtx(),clip=processClip(),b=c.createBuffer(2,clip.n,clip.sr);b.copyToChannel(clip.chans[0],0);b.copyToChannel(clip.chans[1],1);
     callSrc=c.createBufferSource();callSrc.buffer=b;callSrc.loop=true;callSrc.connect(c.destination);callSrc.start()}catch(e){}
-  (ANDROID?$('cPill'):$('cKnob')).focus();track('call_preview',{mode:S.mode,style:ANDROID?'android':'iphone'})}
+  (ANDROID?$('callYes'):$('cKnob')).focus();track('call_preview',{mode:S.mode,style:ANDROID?'android':'iphone'})}
 function closeCall(how){if($('callOv').hidden)return;try{callSrc&&callSrc.stop()}catch(e){}callSrc=null;$('callOv').hidden=true;document.body.style.overflow='';document.querySelector('.wrap').removeAttribute('aria-hidden');
   try{localStorage.setItem('snipring-callname',$('callName').value.trim())}catch(e){}callPrev&&callPrev.focus&&callPrev.focus();track('call_closed',{how})}
 $('callBtn').addEventListener('click',openCall);
@@ -1509,7 +1512,7 @@ $('callYes').addEventListener('click',()=>closeCall('accept'));
 $('callNo').addEventListener('click',()=>closeCall('decline'));
 $('callName').addEventListener('input',callInit);
 $('callOv').addEventListener('keydown',e=>{if(e.key==='Escape'){closeCall('esc');return}
-  if(e.key==='Tab'){const f=ANDROID?[$('callName'),$('callNo'),$('cPill')]:[$('callName'),$('cKnob'),$('cDecl')],i=f.indexOf(document.activeElement);e.preventDefault();f[(i+(e.shiftKey?f.length-1:1))%f.length].focus()}});
+  if(e.key==='Tab'){const f=ANDROID?[$('callName'),$('callNo'),$('callYes')]:[$('callName'),$('cKnob'),$('cDecl')],i=f.indexOf(document.activeElement);e.preventDefault();f[(i+(e.shiftKey?f.length-1:1))%f.length].focus()}});
 /* help: the full how-to in a popup, reachable from anywhere */
 $('helpBtn').addEventListener('click',()=>{const d=$('help');
   if(d.showModal){d.showModal()}else{d.setAttribute('open','')}track('help_opened',{editor:$('editor').hidden?'no':'yes'})});
