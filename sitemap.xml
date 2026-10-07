@@ -28,4 +28,34 @@
   <url><loc>https://snipring.com/privacy.html</loc><lastmod>2026-10-06</lastmod><priority>0.3</priority></url>
   <url><loc>https://snipring.com/terms.html</loc><lastmod>2026-10-06</lastmod><priority>0.3</priority></url>
   <url><loc>https://snipring.com/accessibility.html</loc><lastmod>2026-10-06</lastmod><priority>0.3</priority></url>
+
+  <!-- discover:start -->
+  <url><loc>https://snipring.com/discover.html</loc></url>
+  <url><loc>https://snipring.com/sound/glass-ping.html</loc></url>
+  <url><loc>https://snipring.com/sound/soft-pop.html</loc></url>
+  <url><loc>https://snipring.com/sound/twin-chime.html</loc></url>
+  <url><loc>https://snipring.com/sound/neon-blip.html</loc></url>
+  <url><loc>https://snipring.com/sound/coin-up.html</loc></url>
+  <url><loc>https://snipring.com/sound/wood-knock.html</loc></url>
+  <url><loc>https://snipring.com/sound/rising-spark.html</loc></url>
+  <url><loc>https://snipring.com/sound/velvet-drop.html</loc></url>
+  <url><loc>https://snipring.com/sound/marimba-morning.html</loc></url>
+  <url><loc>https://snipring.com/sound/city-pulse.html</loc></url>
+  <url><loc>https://snipring.com/sound/golden-hour.html</loc></url>
+  <url><loc>https://snipring.com/sound/retro-arcade.html</loc></url>
+  <url><loc>https://snipring.com/sound/lofi-call.html</loc></url>
+  <url><loc>https://snipring.com/sound/classic-ring.html</loc></url>
+  <url><loc>https://snipring.com/sound/sunrise.html</loc></url>
+  <url><loc>https://snipring.com/sound/wake-beeps.html</loc></url>
+  <url><loc>https://snipring.com/sound/morning-chirps.html</loc></url>
+  <url><loc>https://snipring.com/sound/deep-alert.html</loc></url>
+  <url><loc>https://snipring.com/sound/whoosh.html</loc></url>
+  <url><loc>https://snipring.com/sound/laser-zap.html</loc></url>
+  <url><loc>https://snipring.com/sound/success.html</loc></url>
+  <url><loc>https://snipring.com/sound/error-buzz.html</loc></url>
+  <url><loc>https://snipring.com/sound/drum-roll.html</loc></url>
+  <url><loc>https://snipring.com/sound/boing.html</loc></url>
+  <url><loc>https://snipring.com/sound/logo-sting.html</loc></url>
+  <url><loc>https://snipring.com/sound/podcast-outro.html</loc></url>
+  <!-- discover:end -->
 </urlset>

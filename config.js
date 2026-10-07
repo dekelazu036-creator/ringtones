@@ -4,5 +4,8 @@
    Empty value = that integration is off, and no cookie notice is shown. */
 window.SNIPRING_CONFIG = {
   metaPixelId: '',      // Meta Events Manager → Data sources → your pixel → "Pixel ID" (digits only)
+  // Supabase (Discover library). The publishable key is designed to be public; access is limited by row-level security.
+  supabaseUrl: 'https://gtjtvfogqrnuiducvoqm.supabase.co',
+  supabaseKey: 'sb_publishable_t3dVqGlMKrpi_SeLMwiM2g_Y12HoRSp',
   consentVersion: 1     // raise by 1 after a material privacy change, to ask everyone again
 };

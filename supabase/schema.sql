@@ -73,7 +73,9 @@ language plpgsql set search_path = public as $$
 begin
   new.search :=
     setweight(to_tsvector('simple', coalesce(new.title_he,'') || ' ' || coalesce(new.title_en,'')), 'A') ||
-    setweight(to_tsvector('simple', array_to_string(new.tags,' ') || ' ' || array_to_string(new.moods,' ')), 'B') ||
+    setweight(to_tsvector('simple', array_to_string(new.tags,' ') || ' ' || array_to_string(new.moods,' ') || ' ' || new.type::text || ' ' ||
+      case new.type when 'ring' then 'ringtone רינגטון צלצול' when 'text' then 'notification text התראה הודעה' when 'alarm' then 'alarm wake שעון מעורר השכמה'
+                    when 'sfx' then 'effect sfx אפקט' when 'intro' then 'intro פתיח' when 'outro' then 'outro סיום סגיר' else '' end), 'B') ||
     setweight(to_tsvector('simple', coalesce(new.description_he,'') || ' ' || coalesce(new.description_en,'')), 'C');
   return new;
 end $$;
@@ -234,16 +236,17 @@ end $$;
 -- search public sounds by words (Hebrew or English), with typo tolerance on titles
 create or replace function public.search_sounds(q text default '', p_type sound_type default null, p_limit int default 48)
 returns setof public.sounds language sql stable set search_path = public as $$
-  select s.* from public.sounds s
+  -- any word may match (OR); results with more matching words rank first
+  with qq as (select nullif(replace(plainto_tsquery('simple', coalesce(q,''))::text, '&', '|'), '')::tsquery as tq)
+  select s.* from public.sounds s, qq
   where s.status = 'published' and s.visibility = 'public'
     and (p_type is null or s.type = p_type)
     and (coalesce(trim(q),'') = ''
-         or s.search @@ websearch_to_tsquery('simple', q)
-         or s.title_he % q or s.title_en % q
-         or q = any(s.tags) or q = any(s.moods))
+         or (qq.tq is not null and s.search @@ qq.tq)
+         or s.title_he % q or s.title_en % q)
   order by
-    case when coalesce(trim(q),'') = '' then 0
-         else ts_rank(s.search, websearch_to_tsquery('simple', q)) + greatest(similarity(s.title_he,q), similarity(s.title_en,q)) end desc,
+    case when coalesce(trim(q),'') = '' or qq.tq is null then 0
+         else ts_rank(s.search, qq.tq) + greatest(similarity(s.title_he,q), similarity(s.title_en,q)) end desc,
     s.uses desc, s.published_at desc nulls last
   limit least(greatest(p_limit,1),100);
 $$;
