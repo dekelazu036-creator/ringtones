@@ -28,407 +28,7 @@
 <link rel="stylesheet" href="fonts/fonts.css">
 <script src="config.js"></script>
 <script src="vendor/lame.min.js"></script>
-<style>
-/* ============================================================
-   SnipRing design system
-   One font (IBM Plex Sans Hebrew), one icon family (SVG sprite),
-   semantic colour tokens for light/dark, a 4px spacing scale.
-   ============================================================ */
-:root{
-  /* colour — light */
-  --bg:#F4F6FA; --surface:#FFFFFF; --surface-2:#F0F2F7; --surface-3:#E6EAF2;
-  --line:#DDE2EC; --line-strong:#C3CAD9;
-  --ink:#0F172A; --ink-2:#334155; --muted:#5A6478;
-  --accent:#2546F0; --accent-hover:#1B38D6; --accent-ink:#FFFFFF; --accent-soft:#E8ECFE; --accent-line:#B9C4FB;
-  --danger:#C62E25; --danger-soft:#FDECEA; --ok:#12805C;
-  --wave:#A6B0C5; --focus:#2546F0;
-  --shadow-sm:0 1px 2px rgba(15,23,42,.06); --shadow-md:0 4px 16px -6px rgba(15,23,42,.14); --shadow-lg:0 18px 48px -18px rgba(15,23,42,.32);
-  /* type */
-  --font:"IBM Plex Sans Hebrew",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-  --logo:"Karantina","IBM Plex Sans Hebrew",system-ui,sans-serif;
-  --fs-xs:12px; --fs-sm:13.5px; --fs-md:15px; --fs-lg:17px; --fs-xl:20px; --fs-2xl:26px; --fs-3xl:clamp(28px,7vw,36px);
-  /* space, radius, controls */
-  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
-  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px; --r-pill:999px;
-  --h-sm:36px; --h-md:44px; --h-lg:52px;
-  --gutter:16px;
-  color-scheme:light;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0B0F19; --surface:#131A29; --surface-2:#1A2234; --surface-3:#222C42;
-  --line:#26314A; --line-strong:#36435F;
-  --ink:#E8ECF5; --ink-2:#C5CCDB; --muted:#9AA5BC;
-  --accent:#7D92FF; --accent-hover:#93A4FF; --accent-ink:#0B0F19; --accent-soft:#1E2747; --accent-line:#3A4A85;
-  --danger:#FF8A80; --danger-soft:#3A1E22; --ok:#5BD3A2;
-  --wave:#46536F; --focus:#93A4FF;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-md:0 6px 18px -8px rgba(0,0,0,.6); --shadow-lg:0 20px 50px -20px rgba(0,0,0,.8);
-  color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0B0F19; --surface:#131A29; --surface-2:#1A2234; --surface-3:#222C42;
-  --line:#26314A; --line-strong:#36435F;
-  --ink:#E8ECF5; --ink-2:#C5CCDB; --muted:#9AA5BC;
-  --accent:#7D92FF; --accent-hover:#93A4FF; --accent-ink:#0B0F19; --accent-soft:#1E2747; --accent-line:#3A4A85;
-  --danger:#FF8A80; --danger-soft:#3A1E22; --ok:#5BD3A2;
-  --wave:#46536F; --focus:#93A4FF;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-md:0 6px 18px -8px rgba(0,0,0,.6); --shadow-lg:0 20px 50px -20px rgba(0,0,0,.8);
-  color-scheme:dark}
-/* legacy names still read by the waveform code */
-:root{--paper:var(--surface);--well:var(--surface-2)}
-
-/* ---------- base ---------- */
-*,*::before,*::after{box-sizing:border-box}
-[hidden]{display:none!important}
-html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--fs-md);line-height:1.55;
-  padding:env(safe-area-inset-top,0px) 0 0}
-button,input,select,textarea{font:inherit;color:inherit}
-h1,h2,h3{margin:0;font-weight:600;line-height:1.25;color:var(--ink)}
-h2{font-size:var(--fs-xl)} h3{font-size:var(--fs-md)}
-p{margin:0}
-a{color:var(--accent);text-underline-offset:3px}
-.num{font-variant-numeric:tabular-nums;unicode-bidi:isolate}
-bdi{unicode-bidi:isolate}
-.lbl{font-size:var(--fs-sm);font-weight:500;color:var(--muted)}
-.hint,.muted{color:var(--muted);font-size:var(--fs-sm);line-height:1.5}
-.small{font-size:var(--fs-sm)}
-.val{font-weight:600;color:var(--ink)}
-.sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.tagline{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-.skip{position:absolute;inset-inline-start:var(--s3);top:-80px;z-index:200;background:var(--accent);color:var(--accent-ink);padding:var(--s3) var(--s4);border-radius:var(--r-md);font-weight:600;text-decoration:none}
-.skip:focus{top:calc(var(--s3) + env(safe-area-inset-top,0px))}
-:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-.ic{width:20px;height:20px;flex:none;display:block}
-.ic.sm{width:16px;height:16px}.ic.xs{width:11px;height:11px}.ic.xl{width:30px;height:30px}
-
-/* ---------- layout ---------- */
-.wrap{max-width:760px;margin:0 auto;padding:var(--s3) var(--gutter) var(--s8);display:flex;flex-direction:column;gap:var(--s4)}
-main{display:flex;flex-direction:column;gap:var(--s4)}
-main:focus{outline:none}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--shadow-sm);padding:var(--s4)}
-@media (min-width:600px){.card{padding:var(--s6)} :root{--gutter:24px}}
-
-/* ---------- header ---------- */
-.top{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:56px}
-.logo{font-family:var(--logo);font-weight:700;font-size:44px;line-height:1;letter-spacing:-.5px;color:var(--ink);text-decoration:none}
-.logo .ring{color:var(--accent)}
-.hbtns{display:flex;align-items:center;gap:var(--s2)}
-
-/* ---------- buttons ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);min-height:var(--h-md);padding:0 var(--s4);
-  border-radius:var(--r-md);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-size:var(--fs-md);font-weight:600;
-  line-height:1.2;text-align:center;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent;
-  transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s}
-.btn:hover{border-color:var(--accent-line);background:var(--surface-2)}
-.btn:active{transform:translateY(1px)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
-.btn.lg{min-height:var(--h-lg);font-size:var(--fs-lg);border-radius:var(--r-md)}
-.btn.block{display:flex;width:100%}
-.btn:disabled,.btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed;transform:none}
-.btn .num{font-weight:600}
-.iconbtn{display:inline-grid;place-items:center;width:var(--h-md);height:var(--h-md);border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;flex:none}
-.iconbtn:hover{background:var(--surface-2)}
-.iconbtn.sm{width:var(--h-md);height:var(--h-md);border-radius:var(--r-sm)}
-.textbtn{min-height:var(--h-md);padding:0 var(--s3);border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:var(--fs-sm);cursor:pointer}
-.textbtn:hover{background:var(--surface-2)}
-.linkbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--h-md);padding:0 var(--s2);background:none;border:0;color:var(--accent);font-weight:600;font-size:var(--fs-md);cursor:pointer;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
-.file{position:relative;overflow:hidden}
-.file input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
-.file:focus-within{outline:3px solid var(--focus);outline-offset:2px}
-.pair{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
-.pair>.btn{min-width:0;padding-inline:var(--s3)}
-@media (max-width:359px){.pair{grid-template-columns:1fr}}
-.inline{display:flex;gap:var(--s2);align-items:stretch}
-.inline>.input{flex:1;min-width:0}
-.row-between{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2)}
-.spin{display:none;width:18px;height:18px;border-radius:50%;border:2px solid currentColor;border-inline-end-color:transparent;animation:spin .8s linear infinite}
-.btn.loading .spin{display:inline-block}
-@keyframes spin{to{transform:rotate(1turn)}}
-
-/* ---------- form controls ---------- */
-.field{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
-.input{min-height:var(--h-md);padding:0 var(--s3);border-radius:var(--r-md);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-size:16px;width:100%}
-.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-input[type=range]{width:100%;height:var(--h-md);margin:0;background:transparent;accent-color:var(--accent);cursor:pointer}
-.switch{display:flex;align-items:center;gap:var(--s3);min-height:var(--h-md);cursor:pointer;font-weight:500}
-.switch input{width:22px;height:22px;accent-color:var(--accent);flex:none}
-/* segmented control: equal columns; the selected item is raised (shape cue, not colour only) */
-.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:var(--s1);padding:var(--s1);border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--line)}
-.seg.seg-wrap{grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
-.chip{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--h-md);padding:0 var(--s2);border-radius:var(--r-sm);border:1px solid transparent;
-  background:transparent;color:var(--ink-2);font-size:var(--fs-sm);font-weight:500;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
-.chip:disabled{opacity:.4;cursor:not-allowed}
-.chip:hover:not(:disabled){color:var(--ink);background:var(--surface-3)}
-.chip.sel-on,.chip[aria-pressed="true"]{background:var(--surface);color:var(--accent);border-color:var(--accent-line);font-weight:600;box-shadow:var(--shadow-sm)}
-.chip span{font-size:inherit}
-.seg .chip span+span{opacity:.75;font-size:var(--fs-xs);margin-inline-start:2px}
-#lens .chip{gap:3px}#lens .chip span{opacity:.75;font-size:var(--fs-xs)}
-
-/* ---------- start card ---------- */
-.drop{display:flex;flex-direction:column;align-items:stretch;gap:var(--s3);text-align:center}
-.droph{font-size:var(--fs-3xl);line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
-.dropsub{color:var(--muted);font-size:var(--fs-md);max-width:38ch;margin:0 auto}
-.drop .file{margin-top:var(--s2)}
-.trust{list-style:none;margin:var(--s1) 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s1) var(--s4);color:var(--muted);font-size:var(--fs-sm)}
-.trust li{display:inline-flex;align-items:center;gap:6px}
-.droplinks{display:flex;flex-direction:column;align-items:center;gap:0}
-.drop.over{border-color:var(--accent);background:var(--accent-soft)}
-@media (min-width:600px){.drop .file,.drop .alt{width:100%;max-width:420px;margin-inline:auto}}
-/* once a song is open the start card becomes a slim "choose another" bar */
-main.editing .drop{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;padding:var(--s3)}
-main.editing .drop>:not(.file):not(.alt):not(.droplinks){display:none}
-main.editing .drop .file{margin:0;min-height:var(--h-md);font-size:var(--fs-md);flex:1 1 220px;max-width:none}
-main.editing .drop .alt{flex:1 1 220px;max-width:none}
-main.editing .drop .droplinks{flex-basis:100%}
-main.editing .drop #noFile,main.editing .drop #watchBtn{display:none}
-
-.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2);counter-reset:st}
-.steps li{counter-increment:st;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:var(--s1)}
-.steps li::before{content:counter(st);width:32px;height:32px;border-radius:50%;background:var(--surface);color:var(--accent);border:1px solid var(--accent-line);display:grid;place-items:center;font-weight:600;font-size:var(--fs-sm)}
-.steps b{font-size:var(--fs-sm);font-weight:600;line-height:1.35}
-.steps span{display:none}
-.notice{display:flex;align-items:center;gap:var(--s3);background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:var(--r-lg);padding:var(--s2) var(--s2) var(--s2) var(--s4);color:var(--ink)}
-html[dir=rtl] .notice{padding:var(--s2) var(--s4) var(--s2) var(--s2)}
-.notice>.ic{color:var(--accent)}
-.notice p{flex:1;font-size:var(--fs-sm)}
-
-/* ---------- editor ---------- */
-.editor{display:flex;flex-direction:column;gap:var(--s4);padding-bottom:0}
-.song{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s3);flex-wrap:wrap}
-.stitle{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
-.sname{font-size:clamp(20px,5.6vw,26px);font-weight:600;line-height:1.25;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.badges{display:flex;gap:var(--s2);flex-wrap:wrap;min-width:0}
-.badge{font-size:var(--fs-xs);color:var(--muted);border:1px solid var(--line);background:var(--surface-2);border-radius:var(--r-pill);padding:3px 10px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.badge:empty{display:none}
-.seg.modes .chip{min-height:var(--h-md);font-size:var(--fs-md)}
-@media (max-width:429px){.seg.modes .chip{flex-direction:column;gap:2px;min-height:56px;font-size:var(--fs-sm);white-space:normal;line-height:1.2;padding:var(--s1)}}
-.wavecard{display:flex;flex-direction:column;gap:var(--s2)}
-.zoom{display:flex;align-items:center;gap:var(--s1);align-self:flex-end}
-.zoom .num{min-width:3em;text-align:center;font-size:var(--fs-sm);color:var(--muted)}
-.zoom .iconbtn:disabled{opacity:.4;cursor:default}
-.wavebox{position:relative;direction:ltr;border-radius:var(--r-lg);background:var(--surface-2);border:1px solid var(--line);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-.wavebox:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-#wave{display:block;width:100%;height:150px;cursor:grab}
-.ruler{display:flex;justify-content:space-between;direction:ltr;font-size:var(--fs-xs);color:var(--muted);padding:0 2px}
-.hero{display:flex;align-items:center;gap:var(--s3);padding:var(--s3);border-radius:var(--r-lg);background:var(--accent-soft);border:1px solid var(--accent-line)}
-.play{width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;cursor:pointer;flex:none}
-.play svg{width:22px;height:22px;fill:currentColor}
-.hinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.hero .range{display:flex;gap:var(--s2);align-items:baseline;font-size:var(--fs-xl);font-weight:600;color:var(--ink)}
-html[dir=rtl] .hero .range{justify-content:flex-end}
-.hero .range b{font-weight:600}
-.dash{color:var(--muted)}
-.hlen{flex:none;display:flex;align-items:baseline;gap:3px;background:var(--surface);color:var(--ink);border:1px solid var(--accent-line);border-radius:var(--r-md);padding:var(--s2) var(--s3)}
-.hlen b{font-size:var(--fs-xl);font-weight:600}.hlen span{font-size:var(--fs-xs);color:var(--muted)}
-/* sections inside the editor: dividers instead of nested boxes */
-.panel{display:flex;flex-direction:column;gap:var(--s3);padding-top:var(--s4);border-top:1px solid var(--line)}
-.panel h3{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-lg)}
-.panel h3 .ic{color:var(--accent)}
-/* best-part suggestions */
-.bests{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--s2)}
-@media (max-width:599px){.bests{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:minmax(240px,82%);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:var(--s1);scrollbar-width:thin}
-  .bests:has(> .best:only-child){grid-auto-columns:100%}}
-.best{scroll-snap-align:start;display:flex;flex-direction:column;gap:var(--s2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s3)}
-.best.sel-on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.best b{font-size:var(--fs-md);font-weight:600}
-.best .bd{font-size:var(--fs-sm);color:var(--muted);line-height:1.45}
-.best .bt{font-size:var(--fs-sm);font-weight:600;color:var(--ink-2)}
-.best .bb{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);margin-top:auto}
-.best .buse[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
-.best .bb .btn{min-height:var(--h-md);font-size:var(--fs-sm);padding:0 var(--s2)}
-.tin{display:flex;align-items:center;gap:var(--s1)}
-.tin .input{width:64px;text-align:center;padding:0 var(--s1);font-variant-numeric:tabular-nums}
-.tin b{color:var(--muted)}
-#lenR{margin-top:var(--s1)}
-.fxout,#fxOut{font-size:var(--fs-sm)}
-#fxOut b{color:var(--ink)}
-.dedinfo{display:flex;align-items:center;gap:var(--s2);font-weight:500}
-.dedinfo .ic{color:var(--ok)}
-.dedhas{display:flex;flex-direction:column;gap:var(--s2)}
-/* disclosure (fine-tune, advanced) */
-.disclosure{border-top:1px solid var(--line)}
-.disclosure summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:var(--s2);min-height:var(--h-lg);cursor:pointer;font-weight:600;color:var(--ink)}
-.disclosure summary::-webkit-details-marker{display:none}
-.disclosure .chev{color:var(--muted);transition:transform .2s}
-.disclosure[open] .chev{transform:rotate(180deg)}
-.dbody{display:flex;flex-direction:column;gap:var(--s3);padding-bottom:var(--s4)}
-.trow{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);flex-wrap:wrap}
-.tlabel{font-weight:600}
-.tgroup{display:flex;align-items:center;gap:var(--s1)}
-.tgroup .time{min-width:6.5ch;text-align:center;font-weight:600}
-.nudge{min-width:var(--h-md);min-height:var(--h-md);border-radius:var(--r-sm);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-size:var(--fs-sm);font-variant-numeric:tabular-nums;cursor:pointer}
-.nudge:hover{background:var(--surface-2)}
-/* "what now?" card */
-.next{display:flex;gap:var(--s4);align-items:center;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:var(--r-lg);padding:var(--s4)}
-.next h3{margin-bottom:var(--s2)}
-.next .txt{flex:1;min-width:0}
-.sheet{flex:none;width:112px;border-radius:12px 12px 6px 6px;background:var(--surface);border:1px solid var(--line);padding:8px 8px 6px;display:flex;flex-direction:column;gap:5px;position:relative}
-.sheet .icons{display:flex;gap:5px;justify-content:center;margin-bottom:2px}
-.sheet .icons i{width:18px;height:18px;border-radius:5px;background:var(--surface-3)}
-.sheet .row{height:15px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line)}
-.sheet .row.hit{height:auto;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:10.5px;font-weight:600;padding:3px 5px;display:flex;align-items:center;gap:4px;line-height:1.2}
-.sheet .scroll{position:absolute;inset-inline-end:-12px;top:34px;bottom:30px;width:2px;border-radius:2px;background:var(--accent)}
-html.android .sheet{display:none}
-.olist{margin:0;padding-inline-start:var(--s5);display:flex;flex-direction:column;gap:var(--s2)}
-.invite{display:flex;flex-direction:column;gap:var(--s3);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s4);background:var(--surface-2)}
-/* sticky create bar: compact — main action + one line of status */
-.export{position:sticky;bottom:0;z-index:5;margin-inline:calc(-1 * var(--s4));padding:var(--s3) var(--s4) calc(var(--s3) + env(safe-area-inset-bottom,0px));
-  background:var(--surface);border-top:1px solid var(--line);border-radius:0 0 var(--r-xl) var(--r-xl);display:flex;flex-direction:column;gap:6px}
-@media (min-width:600px){.export{margin-inline:calc(-1 * var(--s6));padding-inline:var(--s6)}}
-.xbtns{display:flex;gap:var(--s2)}
-.xbtns>.btn{flex:1 1 0;min-width:0}
-.export .status{font-size:var(--fs-xs);color:var(--muted);text-align:center;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:0}
-.export .status:empty{display:none}
-html.kbd .export{position:static}
-@media (min-width:768px){.xbtns{width:100%;max-width:480px;margin-inline:auto}}
-
-/* ---------- my ringtones ---------- */
-.mine{display:flex;flex-direction:column;gap:var(--s2)}
-.minehead{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);flex-wrap:wrap}
-.mine ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.mine li{display:flex;flex-direction:column;gap:var(--s2);padding:var(--s3) 0;border-top:1px solid var(--line)}
-.mine li:first-child{border-top:0}
-.mine .stop{display:flex;align-items:center;gap:var(--s3)}
-.mine .mname{flex:1;min-width:0;font-weight:600;display:flex;flex-direction:column;gap:2px}
-.mine .mname>bdi{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
-.mine .mname small{font-weight:400;color:var(--muted);font-size:var(--fs-xs);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.mine .srow{display:grid;grid-template-columns:1fr 1fr var(--h-md);gap:var(--s2)}
-.mine .srow.three{grid-template-columns:1fr 1fr 1fr var(--h-md)}
-.mine .srow .btn{min-height:var(--h-md);font-size:var(--fs-sm);padding:0 var(--s2)}
-.mine .srow.extra{grid-template-columns:repeat(2,1fr);padding:var(--s2);border-radius:var(--r-md);background:var(--surface-2)}
-@media (min-width:600px){.mine .srow.extra{grid-template-columns:repeat(4,1fr)}}
-.mine .star{color:var(--muted)}
-.mine .star svg{fill:none}
-.mine li.fav .star{color:#C98A00;border-color:#E6B44C}
-.mine li.fav .star svg{fill:currentColor}
-.mine .btn.danger{color:var(--danger)}
-.mine .ren{min-height:var(--h-md);width:100%;padding:0 var(--s3);border-radius:var(--r-md);border:1px solid var(--accent);background:var(--surface);color:var(--ink);font-size:16px;font-weight:600}
-
-/* ---------- bottom guide + footer ---------- */
-.guide{display:flex;flex-direction:column;gap:var(--s3)}
-.sitefoot{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s1) var(--s4);font-size:var(--fs-sm);color:var(--muted);padding-top:var(--s2)}
-.sitefoot>*{min-height:var(--h-md);display:inline-flex;align-items:center}
-.sitefoot a{color:var(--muted)}
-
-/* ---------- dialogs & panels ---------- */
-.dlg{border:1px solid var(--line);border-radius:var(--r-xl);background:var(--surface);color:var(--ink);padding:var(--s5);width:min(520px,calc(100vw - 2 * var(--gutter)));
-  max-height:calc(100dvh - 32px);overflow:auto;box-shadow:var(--shadow-lg)}
-.dlg[open]{display:flex;flex-direction:column;gap:var(--s4)}
-.dlg::backdrop{background:rgba(6,10,20,.55)}
-.dlg-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
-.dlg-head h2{font-size:var(--fs-xl)}
-.dlg h3{font-size:var(--fs-md)}
-.dlg .links{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s4);font-size:var(--fs-sm)}
-.dlg .links a{min-height:var(--h-md);display:inline-flex;align-items:center}
-.dlg.demo{width:min(420px,calc(100vw - 2 * var(--gutter)))}
-.dlg.demo video{width:100%;height:auto;max-height:calc(100dvh - 220px);aspect-ratio:9/16;object-fit:contain;border-radius:var(--r-lg);background:#0B0F1A;display:block}
-.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2)}
-.list li{display:flex;gap:var(--s3);align-items:flex-start;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s3);font-size:var(--fs-sm);line-height:1.5}
-.list li .ic{color:var(--accent);margin-top:1px}
-.recbox{display:flex;flex-direction:column;align-items:center;gap:var(--s3);padding:var(--s4);border-radius:var(--r-lg);background:var(--surface-2);border:1px solid var(--line)}
-#recMeter{width:100%;height:64px;display:block}
-.rect{font-size:28px;font-weight:600}
-.recgo{width:72px;height:72px;border-radius:50%;border:3px solid var(--ink);background:transparent;display:grid;place-items:center;cursor:pointer;padding:0}
-.recgo .dot{width:50px;height:50px;border-radius:50%;background:#E5484D;transition:all .2s}
-.recgo[aria-pressed="true"] .dot{width:26px;height:26px;border-radius:6px}
-.recbox .status{text-align:center;color:var(--muted);font-size:var(--fs-sm);min-height:1.5em}
-.a11y{display:flex;flex-direction:column;gap:var(--s3)}
-.a11y-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:var(--s2)}
-.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s1);min-height:72px;padding:var(--s2);border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);color:var(--ink);cursor:pointer;font-size:var(--fs-sm)}
-.tile b{font-size:var(--fs-lg)}
-.tile[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
-.consent{position:fixed;z-index:160;inset-inline:var(--gutter);bottom:calc(var(--s3) + env(safe-area-inset-bottom,0px));max-width:560px;margin-inline:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);padding:var(--s4);display:flex;flex-direction:column;gap:var(--s3);font-size:var(--fs-sm)}
-.consent[hidden]{display:none}
-.sitefoot .foot-btn{color:var(--muted);font-size:inherit;font-weight:400;padding:0}
-.toastzone{position:fixed;inset-inline:0;bottom:calc(var(--s5) + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none;z-index:150}
-.toast{background:var(--ink);color:var(--bg);padding:var(--s3) var(--s4);border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:600;box-shadow:var(--shadow-lg);max-width:calc(100vw - 2 * var(--gutter))}
-
-/* ---------- accessibility modes ---------- */
-html.a-bigger{font-size:125%}
-html.a-bigger body{font-size:18.75px}
-html:root.a-contrast:not([data-none]){--bg:#000;--surface:#000;--surface-2:#0A0A0A;--surface-3:#1A1A1A;--ink:#fff;--ink-2:#fff;--muted:#E6E6E6;--line:#fff;--line-strong:#fff;--accent:#FFD400;--accent-hover:#FFE14D;--accent-ink:#000;--accent-soft:#2A2400;--accent-line:#FFD400;--wave:#9A9A9A;--focus:#FFD400;color-scheme:dark}
-html.a-links a{text-decoration:underline!important;text-underline-offset:3px;font-weight:700}
-html.a-still *,html.a-still *::before,html.a-still *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
-html.a-readable body,html.a-readable button,html.a-readable input{font-family:Arial,"Arial Hebrew",Helvetica,sans-serif!important;letter-spacing:.02em;word-spacing:.08em}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
-
-/* ---------- small screens ---------- */
-@media (max-width:374px){
-  .logo{font-size:34px}
-  .top{gap:var(--s2)}
-  .hbtns{gap:var(--s1)}
-  .textbtn{padding:0 var(--s2)}
-  .sname{font-size:var(--fs-xl)}
-  .hero .range{font-size:var(--fs-lg)}
-  .hero{display:grid;grid-template-columns:auto 1fr;row-gap:var(--s1)}
-  .hero .play{grid-row:span 2}
-  .hlen{justify-self:start;padding:2px var(--s2)}
-  .hlen b{font-size:var(--fs-md)}
-  .steps b{font-size:var(--fs-xs)}
-}
-
-/* ---------- call preview overlay ---------- */
-.cpill{width:72px;height:72px;border-radius:50%;border:0;background:#34C759;color:#fff;display:grid;place-items:center;cursor:pointer}
-.callov .cb{color:#fff}
-.callov .cb .ic{width:30px;height:30px}
-.genrow{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
-.callov{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;color:#fff;padding:calc(56px + env(safe-area-inset-top,0px)) 24px calc(28px + env(safe-area-inset-bottom,0px));overflow:hidden}
-.callov[hidden]{display:none}
-.cbg{position:absolute;inset:-20%;z-index:-1;background:radial-gradient(60% 45% at 30% 20%,#5B6CFF 0,transparent 70%),radial-gradient(55% 45% at 80% 70%,#B04CE0 0,transparent 70%),radial-gradient(50% 40% at 20% 90%,#1FB5A8 0,transparent 70%),#0B0F1A;filter:blur(30px);animation:drift 12s ease-in-out infinite alternate}
-@keyframes drift{to{transform:translate(4%,-3%) scale(1.08)}}
-.ctop{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
-.csub{font-size:17px;opacity:.85}
-.cname{font:inherit;font-size:40px;font-weight:600;color:#fff;background:transparent;border:0;border-bottom:1px dashed rgba(255,255,255,.35);text-align:center;width:min(90vw,420px);padding:2px 0}
-.cname:focus{outline:none;border-bottom-color:#fff}
-.cedit{font-size:12px;opacity:.6}
-.cav{position:relative;width:150px;height:150px;margin-top:44px;display:grid;place-items:center}
-.cinit{width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);display:grid;place-items:center;font-size:52px;font-weight:600}
-.cring{position:absolute;inset:15px;border-radius:50%;border:2px solid rgba(255,255,255,.5);animation:pulse 2.4s ease-out infinite}
-.r2{animation-delay:.8s}.r3{animation-delay:1.6s}
-@keyframes pulse{from{transform:scale(1);opacity:.8}to{transform:scale(1.9);opacity:0}}
-.cnow{margin-top:30px;font-size:15px;background:rgba(255,255,255,.14);backdrop-filter:blur(10px);padding:8px 16px;border-radius:999px;max-width:90vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cbtns{margin-top:auto;display:flex;justify-content:space-around;width:min(100%,380px)}
-.cbtns>div{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:15px}
-.cb{width:76px;height:76px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer}
-.cb.no{background:#FF3B30}.cb.yes{background:#34C759;animation:nudge 1.6s ease-in-out infinite}
-@keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.cfoot{margin-top:26px;font-size:12.5px;opacity:.7}
-.cslide,.cdeclink,.cswipe,.ckind{display:none}
-/* iPhone-style: soft blurred backdrop, light thin name, slide to answer (generic look, no Apple assets) */
-.callov.ios .cbg{background:radial-gradient(70% 50% at 50% 25%,var(--cA) 0,transparent 75%),radial-gradient(60% 50% at 50% 95%,var(--cB) 0,transparent 75%),#151515;filter:blur(40px)}
-.callov.ios .csub{order:2;font-size:16px;opacity:.75}
-.callov.ios .cname{order:1;font-weight:300;font-size:42px;border-bottom-color:transparent}
-.callov.ios .cname:focus{border-bottom-color:rgba(255,255,255,.4)}
-.callov.ios .cedit{order:3}
-.callov.ios .cav{display:none}
-.callov.ios .cnow{margin-top:24px}
-.callov.ios .cbtns{display:none}
-.callov.ios .cdeclink{display:block;margin-top:14px;background:none;border:0;color:#fff;opacity:.8;font:inherit;font-size:15px;padding:10px;cursor:pointer}
-.callov.ios .cslide{display:flex;align-items:center;position:relative;width:min(100%,330px);height:72px;border-radius:36px;background:rgba(255,255,255,.18);backdrop-filter:blur(14px);margin-top:auto;direction:ltr;overflow:hidden}
-.callov.ios .ctrack{position:absolute;inset:0;display:grid;place-items:center;padding-left:60px;font-size:19px;color:rgba(255,255,255,.85);pointer-events:none;
-  background:linear-gradient(90deg,rgba(255,255,255,.45) 0,#fff 50%,rgba(255,255,255,.45) 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shine 2.6s linear infinite}
-@keyframes shine{from{background-position:200% 0}to{background-position:0 0}}
-.callov.ios .cknob{position:relative;z-index:1;width:62px;height:62px;margin-left:5px;border-radius:50%;border:0;background:#fff;color:#34C759;display:grid;place-items:center;cursor:grab;touch-action:none}
-/* Android-style: tonal surface, coloured initial, swipe up on the centre button (generic look, no Google assets) */
-.callov.and .cbg{background:linear-gradient(180deg,#1E2A3A 0,#121722 60%,#0E1118 100%);filter:none;inset:0;animation:none}
-.callov.and .ckind{display:block;font-size:14px;opacity:.7}
-.callov.and .cname{font-weight:500;font-size:36px;border-bottom-color:transparent}
-.callov.and .cname:focus{border-bottom-color:rgba(255,255,255,.4)}
-.callov.and .cinit{background:var(--cA);backdrop-filter:none;border-radius:50%}
-.callov.and .cring{border-color:rgba(255,255,255,.25)}
-.chintA{display:none}
-.callov.and .chintA{display:block;margin-top:auto;font-size:13px;opacity:.75;text-align:center}
-.callov.and .cbtns{margin-top:14px;width:min(100%,320px);display:grid;grid-template-columns:1fr 1fr;justify-items:center;align-items:end}
-.callov.and .cbtns>div{display:flex;flex-direction:column;align-items:center;gap:8px}
-.callov.and .cb{width:68px;height:68px;border-radius:50%}
-.callov.and .cb.yes{animation:none;touch-action:none;cursor:grab;box-shadow:0 8px 24px -8px #34C759;position:relative}
-.callov.and .cbtns>div:last-child::before{content:"";display:block;width:12px;height:12px;border-top:2px solid currentColor;border-inline-start:2px solid currentColor;transform:rotate(45deg);margin-bottom:4px;opacity:.7;animation:up 1.4s ease-in-out infinite}
-@keyframes up{0%,100%{transform:translateY(4px) rotate(45deg);opacity:.3}50%{transform:translateY(-4px) rotate(45deg);opacity:.9}}
-.callov.and .cbtns>div:first-child::before{content:"";display:block;height:10px}
-.callov.and .cswipe{display:none}
-html.a-still .ctrack,html.a-still .carrows,html.a-still .callov.and .cbtns>div:last-child::before,html.a-still .cbg,html.a-still .cring,html.a-still .cb.yes{animation:none}
-@media (prefers-reduced-motion:reduce){.ctrack,.carrows,.cbg,.cring,.cb.yes{animation:none}}
-</style>
+<link rel="stylesheet" href="app.css">
 
 </head>
 <body>
@@ -628,10 +228,21 @@ html.a-still .ctrack,html.a-still .carrows,html.a-still .callov.and .cbtns>div:l
       <div class="badges"><bdi class="badge" id="badge"></bdi><span class="badge num" id="songLen" dir="ltr">0:00</span></div>
     </div>
 
-    <div class="seg modes" id="modes" role="group" data-i18n-aria="modeAria">
+    <div class="field">
+    <span class="lbl" id="modesL" data-i18n="modesL"></span>
+    <div class="seg modes" id="modes" role="group" aria-labelledby="modesL">
       <button class="chip" type="button" data-mode="ring"><svg class="ic sm" aria-hidden="true"><use href="#i-bell"/></svg><span data-i18n="mRing"></span></button>
       <button class="chip" type="button" data-mode="text"><svg class="ic sm" aria-hidden="true"><use href="#i-message"/></svg><span data-i18n="mText"></span></button>
       <button class="chip" type="button" data-mode="alarm"><svg class="ic sm" aria-hidden="true"><use href="#i-alarm"/></svg><span data-i18n="mAlarm"></span></button>
+      <button class="chip" type="button" id="modeMore" aria-expanded="false" aria-controls="modes2"><svg class="ic sm" aria-hidden="true"><use href="#i-more"/></svg><span data-i18n="mMore"></span></button>
+    </div>
+    <div class="seg seg-wrap modes2" id="modes2" role="group" aria-labelledby="modesL" hidden>
+      <button class="chip" type="button" data-mode="sfx" data-i18n="mSfx"></button>
+      <button class="chip" type="button" data-mode="intro" data-i18n="mIntro"></button>
+      <button class="chip" type="button" data-mode="outro" data-i18n="mOutro"></button>
+      <button class="chip" type="button" data-mode="custom" data-i18n="mCustom"></button>
+    </div>
+    <p class="hint" id="modeHint"></p>
     </div>
 
     <div class="wavecard">
@@ -643,7 +254,7 @@ html.a-still .ctrack,html.a-still .carrows,html.a-still .callov.and .cbtns>div:l
     <div class="hero">
       <button class="play" id="play" type="button"><svg id="playIcon" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></button>
       <div class="hinfo">
-        <span class="lbl" data-i18n="playRt"></span>
+        <span class="lbl" id="heroL"></span>
         <p class="range num" dir="ltr"><b id="sumA">0:00</b><span class="dash">–</span><b id="sumB">0:29</b></p>
       </div>
       <div class="hlen" dir="ltr"><b class="num" id="tLen">0.0</b><span data-i18n="sec"></span></div>
@@ -728,11 +339,11 @@ html.a-still .ctrack,html.a-still .carrows,html.a-still .callov.and .cbtns>div:l
     </details>
 
     <div class="field">
-      <label class="lbl" for="name" data-i18n="rtName"></label>
+      <label class="lbl" for="name" id="nameL"></label>
       <input class="input" id="name" maxlength="40" value="" autocomplete="off" dir="auto">
     </div>
 
-    <div class="field">
+    <div class="field" id="devField">
       <span class="lbl" id="devL" data-i18n="devL"></span>
       <div class="seg dev" id="device" role="group" aria-labelledby="devL"><button class="chip" type="button" data-dev="iphone">iPhone</button><button class="chip" type="button" data-dev="android">Android</button></div>
     </div>
@@ -752,8 +363,8 @@ html.a-still .ctrack,html.a-still .carrows,html.a-still .callov.and .cbtns>div:l
 
     <div class="export" id="exportBar">
       <div class="xbtns">
-        <button class="btn primary lg" id="export" type="button"><span class="spin" aria-hidden="true"></span><span data-i18n="create"></span></button>
-        <button class="btn primary lg" id="share" type="button" hidden><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg><span data-i18n="setRt"></span></button>
+        <button class="btn primary lg" id="export" type="button"><span class="spin" aria-hidden="true"></span><span id="createL"></span></button>
+        <button class="btn primary lg" id="share" type="button" hidden><svg class="ic" aria-hidden="true"><use id="shareIc" href="#i-bell"/></svg><span id="shareL"></span></button>
         <a class="btn lg" id="dl" hidden><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg><span data-i18n="dl"></span></a>
       </div>
       <p class="status" id="status" role="status"></p>
@@ -763,6 +374,7 @@ html.a-still .ctrack,html.a-still .carrows,html.a-still .callov.and .cbtns>div:l
   <section class="card mine" id="mine" hidden aria-labelledby="mineH">
     <div class="minehead"><h2 id="mineH" data-i18n="mineH"></h2><span class="small muted" data-i18n="mineSub"></span></div>
     <p class="muted" id="mineEmpty" data-i18n="mineEmpty"></p>
+    <div class="mfilter" id="mineFilter" role="group" data-i18n-aria="filterAria" hidden></div>
     <ul id="mineList"></ul>
   </section>
 
@@ -797,8 +409,16 @@ const S={cursor:0,start:0,len:29,fin:.5,fout:2,norm:true,cand:0,mode:'ring',gain
 /* what we're making: ringtone, text tone, or alarm — each with its own lengths and fades */
 const MODES={ring:{lens:[10,15,20,25,29.5],def:29,min:3,max:29.5,step:.5,fin:.5,fout:2},
   text:{lens:[1,2,3,5,8],def:3,min:.5,max:10,step:.1,fin:.02,fout:.4},
-  alarm:{lens:[15,20,25,29.5],def:29.5,min:3,max:29.5,step:.5,fin:3,fout:2}};
-const ALARM_A={lens:[15,30,45,60],def:45,min:3,max:60,step:1,fin:3,fout:2};
+  alarm:{lens:[15,20,25,29.5],def:29.5,min:3,max:29.5,step:.5,fin:3,fout:2},
+  // non-phone types: plain audio files (no ringtone hand-off, no 30-second limit except where it makes sense)
+  sfx:{lens:[1,2,3,5,10],def:3,min:.3,max:15,step:.1,fin:.01,fout:.3,cap:15,file:true},
+  intro:{lens:[3,5,8,10,15],def:5,min:1,max:30,step:.5,fin:.2,fout:1.5,cap:30,file:true},
+  outro:{lens:[3,5,8,10,15],def:8,min:1,max:30,step:.5,fin:1,fout:2.5,cap:30,file:true},
+  custom:{lens:[15,30,60,120,300],def:30,min:1,max:300,step:1,fin:.5,fout:1.5,cap:300,file:true}};
+const ALARM_A={lens:[15,30,45,60],def:45,min:3,max:60,step:1,fin:3,fout:2,cap:60};
+const MODE_IC={ring:'bell',text:'message',alarm:'alarm',sfx:'wave',intro:'music',outro:'music',custom:'music'};
+const MODE_K={ring:'mRing',text:'mText',alarm:'mAlarm',sfx:'mSfx',intro:'mIntro',outro:'mOutro',custom:'mCustom'};
+const isFile=()=>!!MODES[S.mode].file;
 const M=()=>ANDROID&&S.mode==='alarm'?ALARM_A:MODES[S.mode];
 let Z=1,V0=0; // waveform zoom: Z× magnification, view starts at V0 seconds
 let cands=[];
@@ -913,7 +533,7 @@ function analyse(){
   findCandidates();
 }
 /* iPhone needs every ringtone/alarm sound under 30 s; Android alarms may run longer */
-const CAP=()=>ANDROID&&S.mode==='alarm'?60:29.5;
+const CAP=()=>M().cap||29.5;
 /* Chorus finder: chroma self-similarity + loudness.
    A chorus is the loud part of a song that repeats, so we look for the window
    whose harmony recurs elsewhere in the song most strongly. */
@@ -1156,16 +776,27 @@ $('goTime').addEventListener('click',goTyped);
 function setLen(L){S.cand=-1;markCand();setRange(S.start,S.start+L,'move');invalidate()}
 function renderLens(){const m=M(),box=$('lens');box.innerHTML='';box.style.gridTemplateColumns='repeat('+m.lens.length+',1fr)';
   m.lens.forEach(L=>{const b=document.createElement('button');b.className='chip';b.type='button';b.dataset.len=L;
-    if(L===29.5)b.textContent=t('max');else{b.textContent=L;const u=document.createElement('span');u.textContent=t('sec');b.appendChild(u)}if(song&&L!==29.5&&L>song.duration+.05)b.disabled=true;box.appendChild(b)});
+    if(L===29.5)b.textContent=t('max');else{const mn=L>=60;b.textContent=mn?L/60:L;const u=document.createElement('span');u.textContent=t(mn?'minShort':'sec');b.appendChild(u)}if(song&&L!==29.5&&L>song.duration+.05)b.disabled=true;box.appendChild(b)});
   const r=$('lenR');r.min=m.min;r.max=m.max;r.step=m.step;
   [...box.children].forEach(b=>{b.classList.toggle('sel-on',Math.abs(+b.dataset.len-S.len)<.05);b.setAttribute('aria-pressed',String(b.classList.contains('sel-on')))})}
 function setMode(m,user){if(!MODES[m])return;S.mode=m;const c=M();
-  [...$('modes').children].forEach(b=>{const on=b.dataset.mode===m;b.classList.toggle('sel-on',on);b.setAttribute('aria-pressed',String(on))});
+  document.querySelectorAll('#modes [data-mode],#modes2 [data-mode]').forEach(b=>{const on=b.dataset.mode===m;b.classList.toggle('sel-on',on);b.setAttribute('aria-pressed',String(on))});
+  const more=MODES[m].file;$('modeMore').classList.toggle('sel-on',!!more);$('modeMore').setAttribute('aria-pressed',String(!!more));if(more)showMore(true);
+  typeUI();
   S.fin=c.fin;S.fout=c.fout;$('fin').value=S.fin;$('fout').value=S.fout;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
   renderLens();if(song){setRange(S.start,S.start+c.def,'move');if(cands.length){renderCands();markCand()}}renderNext();invalidate();
   if(user){track('mode_changed',{mode:m});if(song)previewSel()}}
 $('device').addEventListener('click',e=>{const b=e.target.closest('[data-dev]');if(b)setDevice(b.dataset.dev,true)});
 $('modes').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setMode(b.dataset.mode,true)});
+$('modes2').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setMode(b.dataset.mode,true)});
+function showMore(v){$('modes2').hidden=!v;$('modeMore').setAttribute('aria-expanded',String(v))}
+$('modeMore').addEventListener('click',()=>{const v=$('modes2').hidden;showMore(v);if(v)track('more_types_opened')});
+/* everything that depends on "phone sound" vs "audio file" */
+function typeUI(){const f=isFile();
+  $('createL').textContent=t(f?'createS':'create');$('heroL').textContent=t(f?'playS':'playRt');setIcon();$('nameL').textContent=t(f?'fileName':'rtName');
+  $('devField').hidden=f;$('callBtn').hidden=f;$('next').classList.toggle('filemode',f);
+  const h=(T[lang]||{})['hint_'+S.mode]||'';$('modeHint').textContent=h;$('modeHint').hidden=!h;
+  $('shareL').textContent=t(f?'shareFile':'setRt');$('shareIc').setAttribute('href',f?'#i-share':'#i-bell')}
 /* effects: voice character, volume boost, speed (pitch and tempo together), and repeat */
 $('fxVoice').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(!b)return;S.voice=b.dataset.v;refreshOut();invalidate();track('fx',{k:'voice',v:S.voice});previewSel()});
 function outLen(){return Math.min(CAP(),S.len/effSpeed()*S.loop)}
@@ -1220,7 +851,7 @@ function previewSel(tail){
 function playFull(at){mode='full';startPlayback(at,song.duration-at,false)}
 function preview(){previewSel()}
 function stopPreview(){if(playing&&mode==='full')S.cursor=Math.round(pos()*10)/10;playing=false;try{src&&src.stop()}catch(e){}cancelAnimationFrame(raf);setIcon();$('cursorT').textContent=fmtShort(S.cursor||0);draw()}
-function setIcon(){const on=playing&&mode==='sel';$('playIcon').innerHTML=on?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',on?t('stop'):t('playRt'));
+function setIcon(){const on=playing&&mode==='sel';$('playIcon').innerHTML=on?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4.5v15l13-7.5z"/>';$('play').setAttribute('aria-label',on?t('stop'):t(isFile()?'playS':'playRt'));
   $('playFromT').textContent=(playing&&mode==='full')?t('stop'):t('playSong')}
 $('play').addEventListener('click',()=>{if(playing&&mode==='sel')return stopPreview();previewSel();track('preview_clicked',{where:'ringtone'})});
 $('playFrom').addEventListener('click',()=>{if(playing&&mode==='full')return stopPreview();playFull(S.cursor||0);track('preview_clicked',{where:'song'})});
@@ -1243,10 +874,11 @@ $('file').addEventListener('change',e=>loadFile(e.target.files[0]));
 /* effects belong to one ringtone: a new source starts clean (otherwise "edit again" would apply them twice) */
 function resetFx(){S.voice='none';S.gain=0;S.speed=1;S.loop=1;S.vo=null;refreshOut();refreshDed()}
 /* name/badge may be functions: auto-generated names (recordings, tunes) are re-translated when the language changes */
-let songAuto=null;
+let songAuto=null,curSource='demo',mineOrigin=null;
 async function useSong(buf,name,source,badge){
   songAuto=(typeof name==='function'||typeof badge==='function')?{nf:typeof name==='function'?name:null,bf:typeof badge==='function'?badge:null}:null;
   if(typeof name==='function')name=name();if(typeof badge==='function')badge=badge();
+  curSource=source==='mine'?(mineOrigin||'file'):source;mineOrigin=null;
   stopPreview();song=buf;resetFx();invalidate();
   $('songTitle').textContent=name;$('name').value=name.slice(0,40);delete $('name').dataset.touched;$('badge').textContent=badge||'';
   $('songLen').textContent=fmtShort(song.duration);S.cursor=0;$('cursorT').textContent='0:00';
@@ -1256,7 +888,7 @@ async function useSong(buf,name,source,badge){
     // a saved ringtone is already cut and faded: select all of it and don't fade it again
     S.fin=0;S.fout=0;$('fin').value=0;$('fout').value=0;$('finV').textContent='0.0 '+t('sec');$('foutV').textContent='0.0 '+t('sec');
     S.cand=-1;setRange(0,Math.min(song.duration,CAP()),'start');markCand();say(t('sMineLoaded'));
-  }else{S.fin=M().fin;S.fout=M().fout;$('fin').value=S.fin;$('fout').value=S.fout;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');say(t(cands.length===1&&cands[0].kind==='start'?'sLoadedShort':'sLoaded'))}
+  }else{S.fin=M().fin;S.fout=M().fout;$('fin').value=S.fin;$('fout').value=S.fout;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');say(t(source==='video'?'sLoadedVideo':cands.length===1&&cands[0].kind==='start'?'sLoadedShort':'sLoaded'))}
   // always bring the editor into view, also when it was already open (e.g. "edit again" from the bottom of the page)
   {const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');
    requestAnimationFrame(()=>$('editor').scrollIntoView({behavior:calm?'auto':'smooth',block:'start'}))}
@@ -1457,8 +1089,10 @@ function id3(title){
 }
 /* ---------- export: build the MP3, then hand it to the iOS share sheet ---------- */
 let ready=null,dlUrl=null,diag='';
-function exportButtons(){if(!ready)return;const viaShare=!!navigator.share&&!ANDROID;
-  $('share').hidden=!viaShare;$('export').hidden=true;$('dl').hidden=false;$('dl').classList.toggle('primary',!viaShare)}
+function exportButtons(){if(!ready)return;const f=isFile(),viaShare=!!navigator.share&&!ANDROID&&!f;
+  // phone sound on iPhone: the share sheet is the main action ("Use as Ringtone"); audio files: download first, share second
+  $('share').hidden=!(viaShare||(f&&!!navigator.share));$('share').classList.toggle('primary',viaShare);
+  $('export').hidden=true;$('dl').hidden=false;$('dl').classList.toggle('primary',!viaShare)}
 function setDevice(d,user){ANDROID=d==='android';document.documentElement.classList.toggle('android',ANDROID);
   try{localStorage.setItem('snipring-device',d)}catch(e){}
   [...$('device').children].forEach(b=>{const on=b.dataset.dev===d;b.classList.toggle('sel-on',on);b.setAttribute('aria-pressed',String(on))});
@@ -1485,7 +1119,7 @@ $('export').addEventListener('click',async()=>{
     let canShare=false;try{canShare=!!(navigator.canShare&&navigator.canShare({files:[ready]}))}catch(e){}
     diag='share='+(hasShare?'yes':'no')+' canShare='+(canShare?'yes':'no');
     // Android has no "Use as Ringtone" in its share sheet, so there the download is the main action
-    exportButtons();say(t('sReady'));
+    exportButtons();say(t(isFile()?'sReadyF':'sReady'));
     saveMine(ready,S.len,title);
     $('next').hidden=false;
     {const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');
@@ -1513,7 +1147,7 @@ create:'צור רינגטון',setRt:'הגדר כרינגטון',dl:'הורד MP
 g1:'לוחצים <b>צור רינגטון</b>, ואז <b>הגדר כרינגטון</b>.',g2:'בתפריט השיתוף גוללים למטה ובוחרים <b>שימוש כצלצול</b>. זהו.',
 g3:'אם התפריט לא נפתח: <b>הורד MP3</b>, ואז בקבצים לחיצה ארוכה ← שתף ← שימוש כצלצול.',
 note:'באייפון, הקטע חייב להיות קצר מ‑30 שניות, ולכן האורך המרבי כאן הוא 29.5 שניות.',
-sReady0:'בחרו קטע ולחצו "צור רינגטון".',sOpening:'פותח את ',sFinding:'מחפש את הפזמון…',sMineLoaded:'הצלצול נפתח לעריכה. כל הקטע מסומן, והאפקטים אופסו כדי שלא יוכפלו.',sLoaded:'השיר נטען. הקטע המסומן הוא ההצעה לפזמון.',sLoadedShort:'השיר נטען. הוא קצר, אז הוא נבחר מההתחלה.',
+sReady0:'בחרו קטע ולחצו על הכפתור למטה.',sOpening:'פותח את ',sFinding:'מחפש את הפזמון…',sMineLoaded:'הצלצול נפתח לעריכה. כל הקטע מסומן, והאפקטים אופסו כדי שלא יוכפלו.',sLoaded:'השיר נטען. הקטע המסומן הוא ההצעה לפזמון.',sLoadedShort:'השיר נטען. הוא קצר, אז הוא נבחר מההתחלה.',
 sVideoFail:'לא הצלחנו לחלץ קול מהסרטון. נסו סרטון אחר, או קובץ MP3.',sTooBig:'הקובץ גדול מדי (מעל 400MB). נסו סרטון קצר יותר.',sOpenFail:'לא הצלחנו לפתוח את הקובץ. אם זה שיר מ‑Apple Music, הוא מוגן ולא ניתן לחיתוך. נסו קובץ MP3 או M4A.',
 sEncoding:'מקודד MP3…',sEncFail:'הקידוד נכשל. רעננו את הדף ונסו שוב.',sReady:'הרינגטון מוכן.',
 sNoShare:'הדפדפן לא תומך בשיתוף ישיר. לחצו "הורד MP3".',sShared:'נשלח לתפריט השיתוף.',sCancel:'השיתוף בוטל. אפשר ללחוץ שוב.',sShareFail:'השיתוף לא עבד. נסו "הורד MP3".',
@@ -1529,10 +1163,10 @@ g3_A:'לוחצים <b>+</b> (או "הצלילים שלי" ← <b>+</b>), ובו�
 note_A:'באנדרואיד אין מגבלת אורך, אבל רינגטון קצר מ‑30 שניות מתאים לכל טלפון.',
 sReady_A:'הרינגטון מוכן.',
 invText_A:'הפכתי שיר לרינגטון בדקה, בלי אפליקציה. נסו:',guideLink_A:'המדריך לאנדרואיד',
-mineH:'הרינגטונים שלי',ckH:'עוגיות למדידת פרסום.',ckP:'אם תאשרו, נטען את הפיקסל של Meta כדי לדעת אילו מודעות עובדות. השירים שלכם לא נשלחים לשום מקום.',ckMore:'פרטים',ckYes:'אישור',ckNo:'לא, תודה',ckSettings:'הגדרות עוגיות',theme:'ערכת צבעים',th_system:'לפי המערכת',th_light:'בהירה',th_dark:'כהה',defName:'רינגטון',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',devL:'הצלצול מיועד ל:',fxVoice:'אפקט קולי',vNone:'רגיל',vChip:'צ׳יפמאנק',vRobot:'רובוט',vEcho:'הד',vRev:'הפוך',vBit:'8‑ביט',vBass:'בס',vPhone:'רדיו',dedH:'הקדשה קולית',dedP:'הקליטו משפט קצר, למשל "אמא מתקשרת!", והוא יתנגן בתחילת הצלצול כשהשיר מונמך מתחתיו.',dedRec:'הקליטו הקדשה',dedHas:'הקדשה:',dedListen:'האזנה',dedDel:'מחיקה',dedRecP:'אמרו משפט קצר, עד 12 שניות. הוא יתנגן בתחילת הצלצול.',genNameL:'או: מנגינה מהשם (כל אות הופכת לצליל)',genNamePh:'למשל: אמא',genNameGo:'הלחינו',genOf:'הצלצול של {n}',callBtn:'נסו את זה כשיחה נכנסת',callSlide:'החליקו כדי לענות',callSwipe:'החליקו למעלה כדי לענות',callMobile:'נייד',callIncoming:'שיחה נכנסת…',callNameAria:'שם המתקשר',callEdit:'אפשר לשנות את השם',callDecline:'דחייה',callAccept:'מענה',callShot:'צלמו מסך ושתפו',callDefault:'אמא',altOr:'או',recBtn:'הקליטו',genBtn:'צלצול מקורי',recH:'הקלטה',recP:'הקליטו קול, שירה, משפט או את הצחוק של הילד. עד דקה אחת. ההקלטה נשארת בטלפון ולא נשלחת לשום מקום.',recStart:'התחלת הקלטה',recStop:'עצירת הקלטה',recReady:'לחצו על הכפתור האדום כדי להתחיל.',recOn:'מקליט… לחצו שוב כדי לעצור.',recDenied:'אין גישה למיקרופון. אפשרו גישה בהגדרות הדפדפן ונסו שוב.',recNo:'הדפדפן הזה לא תומך בהקלטה. נסו בספארי או בכרום.',recFail:'ההקלטה לא הצליחה. נסו שוב.',recShort:'ההקלטה קצרה מדי. הקליטו לפחות שנייה.',recName:'הקלטה',recBadge:'הקלטה',genH:'צלצול מקורי',genP:'SnipRing מלחין בשבילכם מנגינה חדשה. היא שלכם, בלי זכויות יוצרים ובלי קובץ.',genStyle:'סגנון',stMarimba:'מרימבה',stPop:'פופ',stRetro:'8‑ביט',stChill:'צ׳יל',stBells:'פעמונים',genTempo:'קצב (BPM)',genNew:'מנגינה אחרת',genPlayL:'השמעה',genUse:'השתמשו בצלצול הזה',genBadge:'צלצול מקורי',modeAria:'סוג הצליל',mRing:'רינגטון',mText:'צליל הודעה',mAlarm:'שעון מעורר',zoomIn:'הגדלת צורת הגל',zoomOut:'הקטנת צורת הגל',fxH:'אפקטים',fxVol:'עוצמה',vol0:'רגיל',vol1:'חזק',vol2:'חזק מאוד',vol3:'מקסימום',fxSpeed:'מהירות וגובה צליל',spd1:'רגיל',fxLoop:'חזרה על הקטע',loop1:'בלי',fxOut:'אורך הצלצול הסופי: {n} שנ׳',fxNone:'בלי אפקטים. אפשר להגביר, להאיץ או לחזור על קטע קצר.',next3_text:'אחר כך: <b>הגדרות</b> ← <b>צלילים</b> ← <b>צליל הודעה</b>, ובחרו את הצליל החדש.',next3_text_A:'בהגדרות בחרו <b>צליל התראה</b> (במקום רינגטון) ← <b>+</b>.',next3_alarm:'אחר כך: אפליקציית <b>שעון</b> ← <b>שעון מעורר</b> ← עריכה ← <b>צליל</b>, ובחרו את הצליל מרשימת הרינגטונים.',next3_alarm_A:'באפליקציית <b>שעון</b> ← המעורר ← <b>צליל</b> ← <b>+</b>, ובחרו את הקובץ.',noFile:'אין לכם קובץ שיר?',nfH:'מאיפה מביאים קובץ?',nfP:'שירים מספוטיפיי ומ‑Apple Music מוגנים ואי אפשר לחתוך אותם. אבל יש הרבה מקורות שכן עובדים:',nf1:'<b>סרטון מהגלריה</b>: הופעה, צחוק של הילד, כל סרטון שצילמתם. הקול שלו הופך לצלצול.',nf2:'<b>קובץ שחבר שלח בוואטסאפ</b>: שומרים אותו ל"קבצים" ובוחרים אותו כאן.',nf3:'<b>הקלטה שלכם</b>: הקליטו באפליקציית ההקלטות ושמרו ל"קבצים".',nf4:'<b>שיר שקניתם</b> ב‑iTunes Store, או MP3 שהורדתם מאתר שמוכר מוזיקה.',nf5:'<b>קובץ מ‑iCloud Drive או Google Drive</b>: כל MP3, M4A או WAV שיש לכם שם.',nfNote:'השתמשו רק בקבצים שיש לכם זכות להשתמש בהם.',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
+mineH:'הצלילים שלי',playS:'השמע את הצליל',modesL:'מה יוצרים?',mMore:'עוד סוגים',mSfx:'אפקט קולי',mIntro:'פתיח',mOutro:'סגיר',mCustom:'קובץ שמע',minShort:'דק׳',hint_sfx:'צליל קצר וחד, עד 15 שניות. לסרטונים, למשחקים ולמצגות.',hint_intro:'פתיח לסרטון, לפודקאסט או לסטורי, עד 30 שניות.',hint_outro:'סיום לסרטון או לפודקאסט, עד 30 שניות, עם דעיכה ארוכה.',hint_custom:'כל קטע באורך עד 5 דקות, כקובץ MP3 רגיל.',createS:'צור צליל',fileName:'שם הקובץ',shareFile:'שתף או שמור',sReadyF:'הצליל מוכן.',nextF1:'לחצו <b>הורד MP3</b> כדי לשמור את הקובץ.',nextF2:'או <b>שתף או שמור</b> כדי לשלוח אותו לוואטסאפ, לקבצים או לעורך וידאו.',sLoadedVideo:'השמע חולץ מהסרטון, בטלפון עצמו. בחרו קטע ומה ליצור ממנו.',fAll:'הכל',fFav:'מועדפים',fRecent:'אחרונים',fRec:'הקלטות',fGen:'מנגינות מקוריות',fUp:'משירים וסרטונים',fPhone:'לטלפון',fFile:'קבצי שמע',filterAria:'סינון הצלילים',ckH:'עוגיות למדידת פרסום.',ckP:'אם תאשרו, נטען את הפיקסל של Meta כדי לדעת אילו מודעות עובדות. השירים שלכם לא נשלחים לשום מקום.',ckMore:'פרטים',ckYes:'אישור',ckNo:'לא, תודה',ckSettings:'הגדרות עוגיות',theme:'ערכת צבעים',th_system:'לפי המערכת',th_light:'בהירה',th_dark:'כהה',defName:'רינגטון',mineSub:'נשמרים רק במכשיר הזה',mineSet:'הגדר',mineDl:'הורד',mineDel:'מחק',minePlay:'השמע',mineStop:'עצור',mineDelQ:'למחוק את "{n}"?',help:'איך זה עובד',devL:'הצלצול מיועד ל:',fxVoice:'אפקט קולי',vNone:'רגיל',vChip:'צ׳יפמאנק',vRobot:'רובוט',vEcho:'הד',vRev:'הפוך',vBit:'8‑ביט',vBass:'בס',vPhone:'רדיו',dedH:'הקדשה קולית',dedP:'הקליטו משפט קצר, למשל "אמא מתקשרת!", והוא יתנגן בתחילת הצלצול כשהשיר מונמך מתחתיו.',dedRec:'הקליטו הקדשה',dedHas:'הקדשה:',dedListen:'האזנה',dedDel:'מחיקה',dedRecP:'אמרו משפט קצר, עד 12 שניות. הוא יתנגן בתחילת הצלצול.',genNameL:'או: מנגינה מהשם (כל אות הופכת לצליל)',genNamePh:'למשל: אמא',genNameGo:'הלחינו',genOf:'הצלצול של {n}',callBtn:'נסו את זה כשיחה נכנסת',callSlide:'החליקו כדי לענות',callSwipe:'החליקו למעלה כדי לענות',callMobile:'נייד',callIncoming:'שיחה נכנסת…',callNameAria:'שם המתקשר',callEdit:'אפשר לשנות את השם',callDecline:'דחייה',callAccept:'מענה',callShot:'צלמו מסך ושתפו',callDefault:'אמא',altOr:'או',recBtn:'הקליטו',genBtn:'צלצול מקורי',recH:'הקלטה',recP:'הקליטו קול, שירה, משפט או את הצחוק של הילד. עד דקה אחת. ההקלטה נשארת בטלפון ולא נשלחת לשום מקום.',recStart:'התחלת הקלטה',recStop:'עצירת הקלטה',recReady:'לחצו על הכפתור האדום כדי להתחיל.',recOn:'מקליט… לחצו שוב כדי לעצור.',recDenied:'אין גישה למיקרופון. אפשרו גישה בהגדרות הדפדפן ונסו שוב.',recNo:'הדפדפן הזה לא תומך בהקלטה. נסו בספארי או בכרום.',recFail:'ההקלטה לא הצליחה. נסו שוב.',recShort:'ההקלטה קצרה מדי. הקליטו לפחות שנייה.',recName:'הקלטה',recBadge:'הקלטה',genH:'צלצול מקורי',genP:'SnipRing מלחין בשבילכם מנגינה חדשה. היא שלכם, בלי זכויות יוצרים ובלי קובץ.',genStyle:'סגנון',stMarimba:'מרימבה',stPop:'פופ',stRetro:'8‑ביט',stChill:'צ׳יל',stBells:'פעמונים',genTempo:'קצב (BPM)',genNew:'מנגינה אחרת',genPlayL:'השמעה',genUse:'השתמשו בצלצול הזה',genBadge:'צלצול מקורי',modeAria:'סוג הצליל',mRing:'רינגטון',mText:'צליל הודעה',mAlarm:'שעון מעורר',zoomIn:'הגדלת צורת הגל',zoomOut:'הקטנת צורת הגל',fxH:'אפקטים',fxVol:'עוצמה',vol0:'רגיל',vol1:'חזק',vol2:'חזק מאוד',vol3:'מקסימום',fxSpeed:'מהירות וגובה צליל',spd1:'רגיל',fxLoop:'חזרה על הקטע',loop1:'בלי',fxOut:'אורך הצלצול הסופי: {n} שנ׳',fxNone:'בלי אפקטים. אפשר להגביר, להאיץ או לחזור על קטע קצר.',next3_text:'אחר כך: <b>הגדרות</b> ← <b>צלילים</b> ← <b>צליל הודעה</b>, ובחרו את הצליל החדש.',next3_text_A:'בהגדרות בחרו <b>צליל התראה</b> (במקום רינגטון) ← <b>+</b>.',next3_alarm:'אחר כך: אפליקציית <b>שעון</b> ← <b>שעון מעורר</b> ← עריכה ← <b>צליל</b>, ובחרו את הצליל מרשימת הרינגטונים.',next3_alarm_A:'באפליקציית <b>שעון</b> ← המעורר ← <b>צליל</b> ← <b>+</b>, ובחרו את הקובץ.',noFile:'אין לכם קובץ שיר?',nfH:'מאיפה מביאים קובץ?',nfP:'שירים מספוטיפיי ומ‑Apple Music מוגנים ואי אפשר לחתוך אותם. אבל יש הרבה מקורות שכן עובדים:',nf1:'<b>סרטון מהגלריה</b>: הופעה, צחוק של הילד, כל סרטון שצילמתם. הקול שלו הופך לצלצול.',nf2:'<b>קובץ שחבר שלח בוואטסאפ</b>: שומרים אותו ל"קבצים" ובוחרים אותו כאן.',nf3:'<b>הקלטה שלכם</b>: הקליטו באפליקציית ההקלטות ושמרו ל"קבצים".',nf4:'<b>שיר שקניתם</b> ב‑iTunes Store, או MP3 שהורדתם מאתר שמוכר מוזיקה.',nf5:'<b>קובץ מ‑iCloud Drive או Google Drive</b>: כל MP3, M4A או WAV שיש לכם שם.',nfNote:'השתמשו רק בקבצים שיש לכם זכות להשתמש בהם.',watch:'צפו איך זה עובד · 30 שנ׳',demoH:'ככה זה עובד',demoGo:'בחר שיר ונסה בעצמך',h1:'בוחרים שיר או סרטון מהטלפון.',h2:'SnipRing מסמן את הפזמון. אפשר לשנות התחלה ואורך, עד 29.5 שניות.',h3:'לוחצים <b>צור רינגטון</b>.',otherOs:'המדריך לאנדרואיד',otherOs_A:'המדריך לאייפון',vidGuide:'רינגטון מסרטון',
 nextH:'מה עכשיו?',next1:'לחצו <b>הגדר כרינגטון</b> למטה.',next2:'בתפריט שנפתח <b>גללו למטה</b> ובחרו <b>שימוש כצלצול</b>.',useAs:'שימוש כצלצול',
 next1_A:'לחצו <b>הורד MP3</b> למטה.',next2_A:'<b>הגדרות</b> ← <b>צלילים ורטט</b> ← <b>רינגטון</b> ← <b>+</b>, ובחרו את הקובץ מההורדות.',
-mineSaved:'נשמר גם ב"הרינגטונים שלי" למטה.',mineFav:'סימון כמועדף',mineUnfav:'הסרה מהמועדפים',mineMore:'עוד אפשרויות',mineRename:'שינוי שם',mineEdit:'עריכה מחדש',mineDup:'שכפול',mineCopy:'(עותק)',mineBadge:'מהרינגטונים שלי',mineEmpty:'עדיין אין כאן רינגטונים. כל רינגטון שתיצרו יישמר כאן אוטומטית.'},
+mineSaved:'נשמר גם ב"הצלילים שלי" למטה.',mineFav:'סימון כמועדף',mineUnfav:'הסרה מהמועדפים',mineMore:'עוד אפשרויות',mineRename:'שינוי שם',mineEdit:'עריכה מחדש',mineDup:'שכפול',mineCopy:'(עותק)',mineBadge:'מהצלילים שלי',mineEmpty:'עדיין אין כאן צלילים. כל רינגטון או צליל שתיצרו יישמר כאן אוטומטית.'},
 en:{tagline:'Turn any song into an iPhone ringtone. Pick a song, SnipRing finds the chorus, and one tap makes it your ringtone.',
 pick:'Choose a song or video',pickNote:'Songs from Apple Music or Spotify are protected and won\'t open. You need a file you own, like an MP3.',dropH:'Your song. Your ringtone.',dropSub:'Pick a song or video on your phone, and in a minute it rings.',tr1:'Never uploaded',tr2:'MP3 · M4A · WAV · video',tr3:'Free, no sign-up',
 song:'Song',sample:'Sample song',sampleBadge:'Synthetic sample',waveAria:'Song waveform. Tap to choose where the ringtone starts.',
@@ -1546,7 +1180,7 @@ create:'Create ringtone',setRt:'Set as ringtone',dl:'Download MP3',guideH:'From 
 g1:'Tap <b>Create ringtone</b>, then <b>Set as ringtone</b>.',g2:'In the share sheet, scroll down and choose <b>Use as Ringtone</b>. Done.',
 g3:'If the share sheet doesn\'t open: <b>Download MP3</b>, then in Files long-press it → Share → Use as Ringtone.',
 note:'iPhone ringtones must be shorter than 30 seconds, so the maximum here is 29.5 seconds.',
-sReady0:'Choose a part and tap "Create ringtone".',sOpening:'Opening ',sFinding:'Finding the chorus…',sMineLoaded:'Your ringtone is open for editing. The whole clip is selected, and effects were reset so they don\'t apply twice.',sLoaded:'Song loaded. The highlighted part is our chorus pick.',sLoadedShort:'Song loaded. It\'s short, so it starts from the beginning.',
+sReady0:'Choose a part and tap the button below.',sOpening:'Opening ',sFinding:'Finding the chorus…',sMineLoaded:'Your ringtone is open for editing. The whole clip is selected, and effects were reset so they don\'t apply twice.',sLoaded:'Song loaded. The highlighted part is our chorus pick.',sLoadedShort:'Song loaded. It\'s short, so it starts from the beginning.',
 sVideoFail:'Couldn\'t get the sound from this video. Try another video, or an MP3 file.',sTooBig:'This file is too large (over 400MB). Try a shorter video.',sOpenFail:'Couldn\'t open this file. Apple Music songs are protected and can\'t be cut. Try an MP3 or M4A file.',
 sEncoding:'Encoding MP3…',sEncFail:'Encoding failed. Refresh the page and try again.',sReady:'Your ringtone is ready.',
 sNoShare:'This browser can\'t share files directly. Tap "Download MP3".',sShared:'Sent to the share sheet.',sCancel:'Sharing was cancelled. You can tap again.',sShareFail:'Sharing didn\'t work. Try "Download MP3".',
@@ -1562,10 +1196,10 @@ g3_A:'Tap <b>+</b> (or My sounds → <b>+</b>) and pick the file from Downloads.
 note_A:'Android has no length limit, but a ringtone under 30 seconds works on every phone.',
 sReady_A:'Your ringtone is ready.',
 invText_A:'I turned a song into a ringtone in a minute, no app needed. Try it:',guideLink_A:'Android guide',
-mineH:'My ringtones',ckH:'Ad measurement cookies.',ckP:'If you agree, we load the Meta Pixel to learn which ads work. Your songs never leave your device.',ckMore:'Details',ckYes:'Accept',ckNo:'No thanks',ckSettings:'Cookie settings',theme:'Colour theme',th_system:'System',th_light:'Light',th_dark:'Dark',defName:'Ringtone',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',devL:'This ringtone is for:',fxVoice:'Voice effect',vNone:'Normal',vChip:'Chipmunk',vRobot:'Robot',vEcho:'Echo',vRev:'Reverse',vBit:'8-bit',vBass:'Bass',vPhone:'Radio',dedH:'Voice dedication',dedP:'Record a short line, like "Mom\'s calling!", and it plays at the start of the ringtone with the music dipped underneath.',dedRec:'Record a dedication',dedHas:'Dedication:',dedListen:'Listen',dedDel:'Delete',dedRecP:'Say a short line, up to 12 seconds. It plays at the start of the ringtone.',genNameL:'Or: a melody from a name (each letter becomes a note)',genNamePh:'e.g. Mom',genNameGo:'Compose',genOf:'{n}\'s ringtone',callBtn:'Try it as an incoming call',callSlide:'slide to answer',callSwipe:'Swipe up to answer',callMobile:'Mobile',callIncoming:'Incoming call…',callNameAria:'Caller name',callEdit:'Tap the name to change it',callDecline:'Decline',callAccept:'Accept',callShot:'Screenshot and share',callDefault:'Mom',altOr:'or',recBtn:'Record',genBtn:'Original tune',recH:'Record',recP:'Record a voice, a song, a line, or your kid laughing. Up to one minute. The recording stays on your phone and is never uploaded.',recStart:'Start recording',recStop:'Stop recording',recReady:'Tap the red button to start.',recOn:'Recording… tap again to stop.',recDenied:'No microphone access. Allow it in your browser settings and try again.',recNo:'This browser can\'t record. Try Safari or Chrome.',recFail:'The recording didn\'t work. Try again.',recShort:'Too short. Record at least a second.',recName:'Recording',recBadge:'Recording',genH:'Original ringtone',genP:'SnipRing composes a brand-new melody for you. It\'s yours: no copyright, no file needed.',genStyle:'Style',stMarimba:'Marimba',stPop:'Pop',stRetro:'8-bit',stChill:'Chill',stBells:'Bells',genTempo:'Tempo (BPM)',genNew:'Another melody',genPlayL:'Play',genUse:'Use this ringtone',genBadge:'Original tune',modeAria:'Sound type',mRing:'Ringtone',mText:'Text tone',mAlarm:'Alarm',zoomIn:'Zoom in on the waveform',zoomOut:'Zoom out',fxH:'Effects',fxVol:'Volume',vol0:'Normal',vol1:'Loud',vol2:'Louder',vol3:'Max',fxSpeed:'Speed and pitch',spd1:'Normal',fxLoop:'Repeat the part',loop1:'Off',fxOut:'Final length: {n} s',fxNone:'No effects. Boost it, speed it up, or repeat a short part.',next3_text:'Then: <b>Settings</b> → <b>Sounds &amp; Haptics</b> → <b>Text Tone</b>, and pick the new sound.',next3_text_A:'In Settings choose <b>Notification sound</b> (instead of Ringtone) → <b>+</b>.',next3_alarm:'Then: <b>Clock</b> app → <b>Alarms</b> → Edit → <b>Sound</b>, and pick it from the Ringtones list.',next3_alarm_A:'In the <b>Clock</b> app → your alarm → <b>Sound</b> → <b>+</b>, and pick the file.',noFile:'No song file?',nfH:'Where to get a file',nfP:'Songs from Spotify and Apple Music are protected and can\'t be trimmed. But plenty of sources do work:',nf1:'<b>A video from your gallery</b>: a concert, your kid laughing, anything you filmed. Its sound becomes the ringtone.',nf2:'<b>A file a friend sent on WhatsApp</b>: save it to Files and pick it here.',nf3:'<b>Your own recording</b>: record in Voice Memos and share it to Files.',nf4:'<b>A song you bought</b> on the iTunes Store, or an MP3 from a store that sells music.',nf5:'<b>A file in iCloud Drive or Google Drive</b>: any MP3, M4A or WAV you keep there.',nfNote:'Only use files you have the right to use.',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
+mineH:'My sounds',playS:'Play sound',modesL:'What are you making?',mMore:'More types',mSfx:'Sound effect',mIntro:'Intro',mOutro:'Outro',mCustom:'Audio file',minShort:'min',hint_sfx:'A short, sharp sound, up to 15 seconds. For videos, games and slides.',hint_intro:'An opener for a video, podcast or story, up to 30 seconds.',hint_outro:'An ending for a video or podcast, up to 30 seconds, with a long fade.',hint_custom:'Any part up to 5 minutes, as a regular MP3 file.',createS:'Create sound',fileName:'File name',shareFile:'Share or save',sReadyF:'Your sound is ready.',nextF1:'Tap <b>Download MP3</b> to save the file.',nextF2:'Or <b>Share or save</b> to send it to WhatsApp, Files or a video editor.',sLoadedVideo:'Audio extracted from the video, right on your phone. Pick a part and what to make.',fAll:'All',fFav:'Favourites',fRecent:'Recent',fRec:'Recordings',fGen:'Original tunes',fUp:'From songs & videos',fPhone:'For the phone',fFile:'Audio files',filterAria:'Filter sounds',ckH:'Ad measurement cookies.',ckP:'If you agree, we load the Meta Pixel to learn which ads work. Your songs never leave your device.',ckMore:'Details',ckYes:'Accept',ckNo:'No thanks',ckSettings:'Cookie settings',theme:'Colour theme',th_system:'System',th_light:'Light',th_dark:'Dark',defName:'Ringtone',mineSub:'Saved on this device only',mineSet:'Set',mineDl:'Download',mineDel:'Delete',minePlay:'Play',mineStop:'Stop',mineDelQ:'Delete "{n}"?',help:'How it works',devL:'This ringtone is for:',fxVoice:'Voice effect',vNone:'Normal',vChip:'Chipmunk',vRobot:'Robot',vEcho:'Echo',vRev:'Reverse',vBit:'8-bit',vBass:'Bass',vPhone:'Radio',dedH:'Voice dedication',dedP:'Record a short line, like "Mom\'s calling!", and it plays at the start of the ringtone with the music dipped underneath.',dedRec:'Record a dedication',dedHas:'Dedication:',dedListen:'Listen',dedDel:'Delete',dedRecP:'Say a short line, up to 12 seconds. It plays at the start of the ringtone.',genNameL:'Or: a melody from a name (each letter becomes a note)',genNamePh:'e.g. Mom',genNameGo:'Compose',genOf:'{n}\'s ringtone',callBtn:'Try it as an incoming call',callSlide:'slide to answer',callSwipe:'Swipe up to answer',callMobile:'Mobile',callIncoming:'Incoming call…',callNameAria:'Caller name',callEdit:'Tap the name to change it',callDecline:'Decline',callAccept:'Accept',callShot:'Screenshot and share',callDefault:'Mom',altOr:'or',recBtn:'Record',genBtn:'Original tune',recH:'Record',recP:'Record a voice, a song, a line, or your kid laughing. Up to one minute. The recording stays on your phone and is never uploaded.',recStart:'Start recording',recStop:'Stop recording',recReady:'Tap the red button to start.',recOn:'Recording… tap again to stop.',recDenied:'No microphone access. Allow it in your browser settings and try again.',recNo:'This browser can\'t record. Try Safari or Chrome.',recFail:'The recording didn\'t work. Try again.',recShort:'Too short. Record at least a second.',recName:'Recording',recBadge:'Recording',genH:'Original ringtone',genP:'SnipRing composes a brand-new melody for you. It\'s yours: no copyright, no file needed.',genStyle:'Style',stMarimba:'Marimba',stPop:'Pop',stRetro:'8-bit',stChill:'Chill',stBells:'Bells',genTempo:'Tempo (BPM)',genNew:'Another melody',genPlayL:'Play',genUse:'Use this ringtone',genBadge:'Original tune',modeAria:'Sound type',mRing:'Ringtone',mText:'Text tone',mAlarm:'Alarm',zoomIn:'Zoom in on the waveform',zoomOut:'Zoom out',fxH:'Effects',fxVol:'Volume',vol0:'Normal',vol1:'Loud',vol2:'Louder',vol3:'Max',fxSpeed:'Speed and pitch',spd1:'Normal',fxLoop:'Repeat the part',loop1:'Off',fxOut:'Final length: {n} s',fxNone:'No effects. Boost it, speed it up, or repeat a short part.',next3_text:'Then: <b>Settings</b> → <b>Sounds &amp; Haptics</b> → <b>Text Tone</b>, and pick the new sound.',next3_text_A:'In Settings choose <b>Notification sound</b> (instead of Ringtone) → <b>+</b>.',next3_alarm:'Then: <b>Clock</b> app → <b>Alarms</b> → Edit → <b>Sound</b>, and pick it from the Ringtones list.',next3_alarm_A:'In the <b>Clock</b> app → your alarm → <b>Sound</b> → <b>+</b>, and pick the file.',noFile:'No song file?',nfH:'Where to get a file',nfP:'Songs from Spotify and Apple Music are protected and can\'t be trimmed. But plenty of sources do work:',nf1:'<b>A video from your gallery</b>: a concert, your kid laughing, anything you filmed. Its sound becomes the ringtone.',nf2:'<b>A file a friend sent on WhatsApp</b>: save it to Files and pick it here.',nf3:'<b>Your own recording</b>: record in Voice Memos and share it to Files.',nf4:'<b>A song you bought</b> on the iTunes Store, or an MP3 from a store that sells music.',nf5:'<b>A file in iCloud Drive or Google Drive</b>: any MP3, M4A or WAV you keep there.',nfNote:'Only use files you have the right to use.',watch:'Watch how it works · 30s',demoH:'Here\'s how it works',demoGo:'Choose a song and try it',h1:'Pick a song or video on your phone.',h2:'SnipRing highlights the chorus. Change the start and length if you like, up to 29.5 seconds.',h3:'Tap <b>Create ringtone</b>.',otherOs:'Android guide',otherOs_A:'iPhone guide',vidGuide:'Ringtone from a video',
 nextH:'What now?',next1:'Tap <b>Set as ringtone</b> below.',next2:'In the menu that opens, <b>scroll down</b> and choose <b>Use as Ringtone</b>.',useAs:'Use as Ringtone',
 next1_A:'Tap <b>Download MP3</b> below.',next2_A:'<b>Settings</b> → <b>Sound &amp; vibration</b> → <b>Ringtone</b> → <b>+</b>, and pick the file from Downloads.',
-mineSaved:'Also saved in "My ringtones" below.',mineFav:'Add to favourites',mineUnfav:'Remove from favourites',mineMore:'More options',mineRename:'Rename',mineEdit:'Edit again',mineDup:'Duplicate',mineCopy:'(copy)',mineBadge:'From My ringtones',mineEmpty:'No ringtones yet. Every ringtone you create is saved here automatically.'}};
+mineSaved:'Also saved in "My sounds" below.',mineFav:'Add to favourites',mineUnfav:'Remove from favourites',mineMore:'More options',mineRename:'Rename',mineEdit:'Edit again',mineDup:'Duplicate',mineCopy:'(copy)',mineBadge:'From My sounds',mineEmpty:'No sounds yet. Every ringtone or sound you create is saved here automatically.'}};
 let lang=(()=>{try{const v=localStorage.getItem('snipring-lang');if(v==='he'||v==='en')return v}catch(e){}return /^he|^iw/i.test(navigator.language||'')?'he':'en'})();
 /* Android gets its own wording wherever a key has an "_A" twin */
 const t=k=>(ANDROID&&T[lang]&&T[lang][k+'_A'])||(T[lang]&&T[lang][k])||T.en[k]||k;
@@ -1579,9 +1213,10 @@ function applyLang(){
   if(song&&song._demo){$('songTitle').textContent=t('sample');$('badge').textContent=t('sampleBadge');if(!$('name').dataset.touched)$('name').value=t('sample')}
   else if(song&&songAuto){if(songAuto.nf){const n=songAuto.nf();$('songTitle').textContent=n;if(!$('name').dataset.touched)$('name').value=n.slice(0,40)}if(songAuto.bf)$('badge').textContent=songAuto.bf()}
   $('finV').textContent=S.fin.toFixed(1)+' '+t('sec');$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec');
-  if(cands.length)renderCands(),markCand();setIcon();syncAria();renderLens();renderNext();refreshOut();if(typeof renderMine==='function')renderMine();if(typeof refreshDed==='function')refreshDed();if(typeof G!=='undefined'&&!G.src)genLbl(false);if(typeof paintTheme==='function')paintTheme();
+  if(cands.length)renderCands(),markCand();setIcon();syncAria();renderLens();renderNext();refreshOut();if(typeof renderMine==='function')renderMine();if(typeof refreshDed==='function')refreshDed();if(typeof G!=='undefined'&&!G.src)genLbl(false);if(typeof paintTheme==='function')paintTheme();typeUI();
 }
-function renderNext(){$('nx1').innerHTML=t('next1');$('nx2').innerHTML=t('next2');
+function renderNext(){if(isFile()){$('nx1').innerHTML=t('nextF1');$('nx2').innerHTML=t('nextF2');$('nx2').hidden=!navigator.share;$('nx3').hidden=true;return}
+  $('nx1').innerHTML=t('next1');$('nx2').innerHTML=t('next2');$('nx2').hidden=false;
   const x=S.mode==='ring'?'':t('next3_'+S.mode);$('nx3').innerHTML=x;$('nx3').hidden=!x}
 function openEditor(){const ed=$('editor'),was=ed.hidden;ed.hidden=false;$('toastzone').textContent='';$('steps').hidden=true;$('main').classList.add('editing');$('a2hs').hidden=true;
   requestAnimationFrame(()=>{draw();if(was){const calm=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.classList.contains('a-still');ed.scrollIntoView({behavior:calm?'auto':'smooth',block:'start'});$('main').focus({preventScroll:true})}})}
@@ -1615,7 +1250,7 @@ $('inviteBtn').addEventListener('click',async()=>{
   $('a11yReset').addEventListener('click',()=>{on={};paint()});
   paint();
 })();
-$('tryDemo').addEventListener('click',()=>{openEditor();previewSel();track('audio_loaded',{source_type:'demo',seconds:Math.round(song.duration)})});
+$('tryDemo').addEventListener('click',()=>{curSource='demo';openEditor();previewSel();track('audio_loaded',{source_type:'demo',seconds:Math.round(song.duration)})});
 /* theme: system → light → dark; stored per device, applied before paint by the head script */
 const THEMES=['system','light','dark'];let theme='system';try{theme=localStorage.getItem('snipring-theme')||'system'}catch(e){}if(!THEMES.includes(theme))theme='system';
 function paintTheme(){const r=document.documentElement;if(theme==='system')delete r.dataset.theme;else r.dataset.theme=theme;
@@ -1700,6 +1335,7 @@ async function dbDo(mode,fn){const d=await db();return new Promise((res,rej)=>{c
   tx.oncomplete=()=>res(out&&out.result);tx.onerror=()=>rej(tx.error)})}
 /* records: {id(created ms), name, secs, data(ArrayBuffer mp3), type:'ring'|'text'|'alarm', fav:bool}
    older records without type/fav are read as a ringtone, not favourite */
+function touchMine(r){r.used=Date.now();putRec(r).catch(()=>{})}
 const sortMine=()=>mine.sort((a,b)=>(!!b.fav-!!a.fav)||(b.id-a.id));
 async function loadMine(){try{const all=await dbDo('readonly',st=>st.getAll());mine=all||[];sortMine()}catch(e){mine=[]}renderMine()}
 const putRec=r=>dbDo('readwrite',st=>st.put(r));
@@ -1707,7 +1343,7 @@ async function prune(){const extra=mine.filter(r=>!r.fav).sort((a,b)=>a.id-b.id)
 async function saveMine(file,secs,title){
   try{// stored as a plain ArrayBuffer: Safari has been unreliable with Blobs inside IndexedDB
     const data=await file.arrayBuffer();
-    const rec={id:Date.now(),name:title||file.name.replace(/\.mp3$/i,''),secs:Math.round(secs*10)/10,data,type:S.mode,fav:false};
+    const rec={id:Date.now(),name:title||file.name.replace(/\.mp3$/i,''),secs:Math.round(secs*10)/10,data,type:S.mode,fav:false,origin:curSource,used:Date.now()};
     const last=[...mine].sort((a,b)=>b.id-a.id)[0];
     if(last&&last.name===rec.name&&last.data.byteLength===data.byteLength){say($('status').textContent+' '+t('mineSaved'));return}
     await putRec(rec);mine.push(rec);await prune();sortMine();
@@ -1718,16 +1354,27 @@ const mineBlob=r=>r.blob||new Blob([r.data],{type:'audio/mpeg'});
 function mineFile(r){return new File([mineBlob(r)],r.name.replace(/:/g,'.')+'.mp3',{type:'audio/mpeg'})}
 function stopMine(){if(mineAudio){mineAudio.pause();mineAudio=null}if(mineUrl){URL.revokeObjectURL(mineUrl);mineUrl=null}minePlaying=null}
 let mineOpen=null,mineRen=null;
-const TYPE_IC={ring:'bell',text:'message',alarm:'alarm'},TYPE_K={ring:'mRing',text:'mText',alarm:'mAlarm'};
+const TYPE_IC=MODE_IC,TYPE_K=MODE_K;
 /* "edit again": decode the saved MP3 and open it in the editor like any other song */
-async function editAgain(r){stopMine();mineOpen=null;renderMine();try{const c=ensureCtx(),ab=r.data?r.data.slice(0):await mineBlob(r).arrayBuffer();
+async function editAgain(r){touchMine(r);mineOrigin=r.origin||null;stopMine();mineOpen=null;renderMine();try{const c=ensureCtx(),ab=r.data?r.data.slice(0):await mineBlob(r).arrayBuffer();
   const buf=await new Promise((res,rej)=>{const p=c.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)});
   if(r.type&&r.type!==S.mode)setMode(r.type,false);await useSong(buf,r.name,'mine',()=>t('mineBadge'));track('mine_edit')}catch(e){say(t('sOpenFail'))}}
+/* "My sounds" filters: only the ones that would actually narrow the list are shown */
+let mineFilter='all';
+const FILTERS={all:()=>true,fav:r=>r.fav,recent:r=>!!r.used,phone:r=>!(MODES[r.type||'ring']||{}).file,file:r=>!!(MODES[r.type||'ring']||{}).file,
+  rec:r=>r.origin==='record',gen:r=>r.origin==='generated',up:r=>r.origin==='file'||r.origin==='video'};
+const FILTER_K={all:'fAll',fav:'fFav',recent:'fRecent',phone:'fPhone',file:'fFile',rec:'fRec',gen:'fGen',up:'fUp'};
+function renderFilters(){const box=$('mineFilter');box.textContent='';
+  const keys=Object.keys(FILTERS).filter(k=>{if(k==='all')return true;const n=mine.filter(FILTERS[k]).length;return n>0&&n<mine.length||(k==='recent'&&n>1)});
+  box.hidden=mine.length<4||keys.length<2;if(!keys.includes(mineFilter))mineFilter='all';
+  keys.forEach(k=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t(FILTER_K[k]);const on=k===mineFilter;b.classList.toggle('sel-on',on);b.setAttribute('aria-pressed',String(on));
+    b.addEventListener('click',()=>{mineFilter=k;stopMine();renderMine();track('mine_filter',{f:k})});box.appendChild(b)})}
 function renderMine(){
-  const ul=$('mineList');ul.textContent='';$('mine').hidden=false;$('mineEmpty').hidden=!!mine.length;
+  const ul=$('mineList');ul.textContent='';$('mine').hidden=false;$('mineEmpty').hidden=!!mine.length;renderFilters();
+  let list=mine.filter(FILTERS[mineFilter]);if(mineFilter==='recent')list=[...list].sort((a,b)=>(b.used||0)-(a.used||0)).slice(0,10);
   const btn=(txt,cls,fn,aria,ic)=>{const b=document.createElement('button');b.type='button';b.className=(txt?'btn':'iconbtn sm')+(cls?' '+cls:'');b.innerHTML=(ic?svg(ic,'sm'):'')+(txt?'<span></span>':'');if(txt)b.querySelector('span').textContent=txt;if(aria)b.setAttribute('aria-label',aria);b.addEventListener('click',fn);return b};
-  mine.forEach(r=>{
-    const type=r.type||'ring',li=document.createElement('li');li.className='snip'+(r.fav?' fav':'');
+  list.forEach(r=>{
+    const type=MODES[r.type]?r.type:'ring',fileT=!!MODES[type].file,li=document.createElement('li');li.className='snip'+(r.fav?' fav':'');
     const top=document.createElement('div');top.className='stop';
     const star=btn('','star',async()=>{r.fav=!r.fav;try{await putRec(r)}catch(e){}sortMine();renderMine();track('mine_fav',{on:r.fav})},(r.fav?t('mineUnfav'):t('mineFav'))+': '+r.name,'star');
     star.setAttribute('aria-pressed',String(!!r.fav));top.appendChild(star);
@@ -1742,10 +1389,10 @@ function renderMine(){
     const playing=minePlaying===r.id;
     row.appendChild(btn(playing?t('mineStop'):t('minePlay'),'',()=>{
       const was=minePlaying===r.id;stopMine();stopPreview();
-      if(!was){mineUrl=URL.createObjectURL(mineBlob(r));mineAudio=new Audio(mineUrl);minePlaying=r.id;mineAudio.onended=()=>{stopMine();renderMine()};mineAudio.play().catch(()=>{});track('mine_played')}
+      if(!was){mineUrl=URL.createObjectURL(mineBlob(r));mineAudio=new Audio(mineUrl);minePlaying=r.id;mineAudio.onended=()=>{stopMine();renderMine()};mineAudio.play().catch(()=>{});touchMine(r);track('mine_played')}
       renderMine()},(playing?t('mineStop'):t('minePlay'))+': '+r.name,playing?'pause':'play'));
-    if(navigator.share&&!ANDROID)row.appendChild(btn(t('mineSet'),'primary',async()=>{track('mine_set_tapped');try{await navigator.share({files:[mineFile(r)]});track('export_completed',{method:'share',from:'mine',mode:r.type||'ring',seconds:Math.round(r.secs)})}catch(e){}},t('setRt')+': '+r.name,'phone'));
-    row.appendChild(btn(t('mineDl'),ANDROID||!navigator.share?'primary':'',()=>{const u=URL.createObjectURL(mineBlob(r)),a=document.createElement('a');a.href=u;a.download=r.name.replace(/:/g,'.')+'.mp3';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);track('export_completed',{method:'download',mode:r.type||'ring',seconds:Math.round(r.secs),from:'mine'})},t('mineDl')+': '+r.name,'download'));
+    if(navigator.share&&(!ANDROID||fileT))row.appendChild(btn(t(fileT?'shareFile':'mineSet'),fileT?'':'primary',async()=>{track('mine_set_tapped');touchMine(r);try{await navigator.share({files:[mineFile(r)]});track('export_completed',{method:'share',from:'mine',mode:r.type||'ring',seconds:Math.round(r.secs)})}catch(e){}},t(fileT?'shareFile':'setRt')+': '+r.name,fileT?'share':'phone'));
+    row.appendChild(btn(t('mineDl'),ANDROID||!navigator.share||fileT?'primary':'',()=>{touchMine(r);const u=URL.createObjectURL(mineBlob(r)),a=document.createElement('a');a.href=u;a.download=r.name.replace(/:/g,'.')+'.mp3';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);track('export_completed',{method:'download',mode:r.type||'ring',seconds:Math.round(r.secs),from:'mine'})},t('mineDl')+': '+r.name,'download'));
     if(row.children.length===3)row.classList.add('three');
     const more=btn('','more',()=>{mineOpen=mineOpen===r.id?null:r.id;renderMine()},t('mineMore')+': '+r.name,'more');more.setAttribute('aria-expanded',String(mineOpen===r.id));row.appendChild(more);
     li.appendChild(row);

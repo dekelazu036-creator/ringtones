@@ -36,7 +36,7 @@ All funnel events automatically include:
 | `audio_loaded` | Audio from another source opened | `source_type` record/generated/mine/demo, `seconds` | `AudioLoaded` (custom) |
 | `preview_clicked` | Playback started | `where` ringtone/song/suggestion | — |
 | `smart_cut_used` | An automatic suggestion was used | `kind` chorus/drop/peak/start | — |
-| `export_started` | "Create ringtone" tapped | `mode`, `seconds` | — |
+| `export_started` | "Create" tapped | `mode` (ring, text, alarm, sfx, intro, outro, custom), `seconds` | — |
 | `ringtone_created` | MP3 built successfully | `mode`, `seconds`, `voice`, `ded`, `fx`, `picked`, `renamed` | `RingtoneCreated` (custom) |
 | `export_completed` | MP3 downloaded or share sheet completed (once per ringtone per method) | `method` download/share, `mode`, `seconds`, `from` | `ExportCompleted` (custom) |
 | `installation_guide_opened` | Help dialog or a guide link opened | `where` | — |
