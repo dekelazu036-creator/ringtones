@@ -10,7 +10,7 @@ const env: Record<string, string> = {
   SUPABASE_SECRET_KEYS: JSON.stringify({ default: 'sb_secret_TESTONLY' }),
   SUPABASE_SERVICE_ROLE_KEY: 'legacy-should-not-be-used',
   ALLOWED_ORIGINS: 'https://snipring.com, https://staging.example',
-  JANITOR_SECRET: 'j'.repeat(40),
+  JANITOR_SECRET: 'j'.repeat(40) + '\n',                // pasted in the dashboard with a trailing newline
 };
 const handlers: Record<string, (r: Request) => Promise<Response>> = {};
 let current = '';

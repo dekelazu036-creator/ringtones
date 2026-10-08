@@ -70,7 +70,7 @@ export function configFromEnv(): Config {
     allowedOrigins: origins,
     maxFileBytes: 10 * 1024 * 1024,
     signedUrlSeconds: 300,
-    janitorSecret: Deno.env.get('JANITOR_SECRET') ?? '',
+    janitorSecret: (Deno.env.get('JANITOR_SECRET') ?? '').trim(),   // dashboard pastes often end in a newline
     janitorBudgetMs: 100_000,
     holder: Deno.env.get('SB_EXECUTION_ID') ?? undefined,
   };
