@@ -1,6 +1,6 @@
 # Phase 1B database & storage test matrix
 
-Status: **L** = passed locally (stub), **S** = staging, pending until M1. Nothing has run on staging yet.
+Status: **L** = passed locally (stub), **S** = staging. First staging run 2026-10-08: T0–T9a, T9c, T10, T12, T13, T17a–b passed; T9b failed (hung → 503, fixed by draining unread bodies, rerun pending); T11/T14 failed on a runner bug (fixed). T26 audit ran (see CLAUDE.md M1).
 
 | Invariant | Local tests | Staging (real Auth/Storage) |
 |---|---|---|

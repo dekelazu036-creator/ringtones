@@ -108,8 +108,13 @@ test('I3 malformed metadata → 400 (bad key, bad type, bad origin, not JSON, ov
   }
 });
 test('I4 size cap: declared too large → 413 without reading; streamed too large → 413', async () => {
-  const r1 = await call(handleUpload(uploadReq('hdr.userA.sig', meta(), SONG, { 'content-length': '20000000' }), deps, cfg));
+  const req1 = uploadReq('hdr.userA.sig', meta(), SONG, { 'content-length': '20000000' });
+  const r1 = await call(handleUpload(req1, deps, cfg));
   assert.equal(r1.status, 413);
+  assert.equal(req1.bodyUsed, true, 'unread body drained before answering (staging T9b hung otherwise)');
+  const req401 = uploadReq('hdr.forged.sig', meta(), SONG);
+  assert.equal((await call(handleUpload(req401, deps, cfg))).status, 401);
+  assert.equal(req401.bodyUsed, true, 'refused upload: body drained too');
   const big = new Uint8Array(10485761);
   const stream = new ReadableStream({ start(c) { c.enqueue(big.subarray(0, 6e6)); c.enqueue(big.subarray(6e6)); c.close(); } });
   const req = new Request('https://fn.test', { method: 'POST', headers: { authorization: 'Bearer hdr.userA.sig', 'x-library-meta': b64url(meta()) }, body: stream, duplex: 'half' } as RequestInit);

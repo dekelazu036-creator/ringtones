@@ -118,20 +118,17 @@ Architecture rules (keep them):
 10. **Phase 1B M0** — branch `phase-1b-m0` (pushed, **not merged**): `supabase/library_1b.sql`, cron + teardown SQL, 3 Edge Functions (+ single-file bundles in `supabase/functions/dist/`), 168 local tests passing (`supabase/tests/run_all.sh`), `STAGING.md`, `TEST_MATRIX.md`, staging test runner. `schema.sql` fixed (profiles private).
 
 ### In progress — Phase 1B M1 (staging validation)
-Done: staging project `snipring-staging` created; two test users A/B (the owner's Gmail address with `+a` / `+b`); Supabase connector attached to Claude.
-**Blocked:** Supabase connector `apply_migration` calls return `cancelled` (reads via `execute_sql` work). Fallback: owner pastes SQL in the SQL Editor.
-Next steps, in order:
-1. Run on **staging only**: `schema.sql` → `auth_1a.sql` → `library_1b.sql` → beta snippet:
-   ```sql
-   insert into private.cloud_access (user_id)
-   select id from auth.users where email in ('<owner>+a@gmail.com','<owner>+b@gmail.com');
-   update private.settings set value = 'true' where key = 'reservations_open';
-   ```
-2. `supabase/tests/policy_audit.sql` + Supabase security advisors; compare with the expected list.
-3. Deploy the 3 functions (upload/download `verify_jwt` on, janitor off). Owner sets function secrets `ALLOWED_ORIGINS=http://localhost:8080` and `JANITOR_SECRET` (48+ random chars, password manager).
-4. Enable `pg_cron` + `pg_net`, create Vault secrets `library_project_url` and `library_janitor_secret`, run `library_1b_cron.sql`.
-5. Owner runs `node supabase/tests/staging/staging_test.mjs --slow` with env vars (passwords typed locally only), then manual checks T15, T16, T18, T19, T26 (`TEST_MATRIX.md`).
-6. Fix failures on the branch; M1 exit = all staging tests pass, audit matches, risks R1/R2 closed, `library_health` clean for 24 h.
+Connector status: reads (`execute_sql` selects, `list_*`, `get_*`, logs, advisors) work; **every write times out or is cancelled** (`apply_migration`, `execute_sql` DDL/DML). The owner runs all writes in the SQL Editor / dashboard; Claude verifies each step with reads.
+
+Done on staging (2026-10-08, verified by read queries):
+1. `schema.sql` → `auth_1a.sql` → `library_1b.sql` applied; 2 test users in `private.cloud_access`; `reservations_open = true`.
+2. `policy_audit.sql` + security advisors: every Phase 1B row matches the expected list. **Open (needs approval):** Discover tables from `schema.sql` keep Supabase's default ALL grants for anon/authenticated (incl. TRUNCATE/REFERENCES/TRIGGER; DML is still RLS-bound, TRUNCATE is not reachable through the API). Proposal: explicit revokes in `schema.sql` (affects production too).
+3. 3 functions deployed from `dist/` (upload/download `verify_jwt` on, janitor off). User tokens pass the legacy-JWT gateway check (T1 = 200), so the "legacy secret" toggle is not a problem on staging.
+4. Vault secrets `library_project_url`, `library_janitor_secret` (64 hex) + `library_1b_cron.sql` (job every 10 min). First runs returned 500 `janitor_not_configured` = the **function** secret `JANITOR_SECRET` was missing/short; being re-set by the owner.
+5. First two-account run: 25 passed, 3 failed. T14 + T11 = runner bug (192 kbps file was 390 s > 300 s cap → 422; fixed: 320 kbps). **T9b = real R1 finding:** an 11 MiB upload refused by Content-Length (body unread) hung until the 150 s wall clock → 503. Fix: `handleUpload` drains an unread body (`discardBody`, ≤ 2× max) before answering; runner got a 60 s request timeout and per-run random tones (reruns no longer hit duplicate detection). Valid 8.9 MiB bodies reach the function in ~1.3 s.
+
+Next: redeploy `library-upload` from the new `dist/`, rerun the runner (then `--slow`), manual checks T15, T16, T18, T19; change test user B's password (it appeared in screenshots). M1 exit = all staging tests pass, audit matches (or the grant item is decided), risks R1/R2 closed, `library_health` clean for 24 h.
+Runner tips (zsh): paste one command at a time; read passwords with `read -s`; a pasted trailing newline can answer a prompt with an empty value.
 
 ### Planned
 - **M2:** `library.html` (separate page) + local upload queue (per-user DB `snipring-cloud-<uid>`, owner binding, Web Lock, AbortController on account switch, last-copy dialog D8, `cloudCopy` D11, blocked `deleteDatabase`, storage-shortage handling). Test against staging.
@@ -168,7 +165,7 @@ Next steps, in order:
 | **Domain** | `snipring.com` bought via **Cloudflare**. `CNAME` file → GitHub Pages. |
 | **Hosting** | GitHub Pages from `main` of `dekelazu036-creator/ringtones`. Merging to `main` = deploying. |
 | **Supabase production** | Project `snipring`, ref `gtjtvfogqrnuiducvoqm`, region **eu-central-1**, Free plan, org `fwbpzcottjvuyqcwwkci`. `schema.sql` (older version) and `auth_1a.sql` run by the owner. Auth: Site URL `https://snipring.com`, redirect `https://snipring.com/account.html**`, Email OTP 6 digits / 600 s, Confirm email on, anonymous sign-ins off, OTP template from `supabase/email-templates/otp.html` in "Magic link" and "Confirm signup". Custom SMTP via Resend. Turnstile secret in Attack Protection. Google provider on. No 1B objects in production. |
-| **Supabase staging** | Project `snipring-staging`, ref `kavomvsvufqnqjepbevs`, region **eu-west-1** (differs from production; fine for correctness tests), Free. Email provider, Confirm email off. Two test users A (`+a`) and B (`+b`); look up their UUIDs in Auth → Users. Nothing migrated yet. Default privileges on `public` still grant new tables/functions to API roles — our SQL revokes explicitly. |
+| **Supabase staging** | Project `snipring-staging`, ref `kavomvsvufqnqjepbevs`, region **eu-west-1** (differs from production; fine for correctness tests), Free. Email provider, Confirm email off. Two test users A (`+a`) and B (`+b`); look up their UUIDs in Auth → Users. Phase 1B applied (M1 in progress). Default privileges on `public` still grant new tables/functions to API roles — our SQL revokes explicitly. |
 | **Resend** | Domain `mail.snipring.com` verified (DKIM + SPF, eu-west-1); sender `SnipRing <noreply@mail.snipring.com>`; restricted sending key used only as Supabase SMTP password. |
 | **Cloudflare Turnstile** | Widget "SnipRing auth", Managed, hostname `snipring.com`; public site key `0x4AAAAAAFQ0O8x3Ke3kRuTq` in `config.js`. |
 | **Google Cloud** | Project "SnipRing", OAuth consent External, **In production**, basic scopes, web client with origin `https://snipring.com` + Supabase callback. Consent screen shows the Supabase domain (custom auth domain is a paid add-on). |
@@ -177,7 +174,7 @@ Next steps, in order:
 | **Claude artifacts** | Brand kit: `https://claude.ai/artifact/7istGkWd44Q5SnruYLVPW5`. Phase 1B plan v3: `https://claude.ai/code/artifact/4b761e93-3f5c-47d0-9386-8227ab69163f`. M0 report: `https://claude.ai/code/artifact/544f8657-c9b9-443a-a6a5-46a9d6dca077`. Marketing plan doc lives in the "מערך שיווק" chat. |
 | **Claude scheduled tasks** | 3 marketing agents (see §2 Marketing), drafts only. |
 
-Secrets that exist **only** in dashboards / password manager: Supabase DB passwords and secret keys (both projects), Google OAuth client secret, Resend key, Turnstile secret, staging test-user passwords, future `JANITOR_SECRET`.
+Secrets that exist **only** in dashboards / password manager: Supabase DB passwords and secret keys (both projects), Google OAuth client secret, Resend key, Turnstile secret, staging test-user passwords, staging `JANITOR_SECRET` (also in Vault as `library_janitor_secret`).
 
 ---
 

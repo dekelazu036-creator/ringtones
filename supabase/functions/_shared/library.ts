@@ -9,7 +9,7 @@
 //  * no lock is held while talking to Storage (Storage calls happen between SQL calls).
 
 import { checkMp3, sha256Hex } from './mp3.ts';
-import { bearer, corsHeaders, decodeMeta, json, readCapped, safeEqual, UUID_RE } from './http.ts';
+import { bearer, corsHeaders, decodeMeta, discardBody, json, readCapped, safeEqual, UUID_RE } from './http.ts';
 
 export type User = { id: string; isAnonymous: boolean };
 export type Deps = {
@@ -61,6 +61,13 @@ async function authenticate(req: Request, deps: Deps): Promise<User | null> {
 
 // ------------------------------------------------------------------ library-upload
 export async function handleUpload(req: Request, deps: Deps, cfg: Config): Promise<Response> {
+  const res = await uploadResponse(req, deps, cfg);
+  // every early refusal (401, 400, 413 by content-length) leaves the file unread: drain it first
+  await discardBody(req, 2 * cfg.maxFileBytes);
+  return res;
+}
+
+async function uploadResponse(req: Request, deps: Deps, cfg: Config): Promise<Response> {
   const cors = corsHeaders(req, cfg.allowedOrigins);
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return fail('bad_request', cors);

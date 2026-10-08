@@ -54,6 +54,23 @@ export async function readCapped(req: Request, max: number): Promise<Uint8Array 
   return out;
 }
 
+// read and drop a request body nobody read (at most `max` bytes, then cancel).
+// On the hosted runtime a response sent while the client is still sending the body never arrives:
+// staging T9b (11 MiB, 413 decided from content-length) hung until the 150 s wall clock → 503.
+export async function discardBody(req: Request, max: number): Promise<void> {
+  if (!req.body || req.bodyUsed) return;
+  const reader = req.body.getReader();
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      total += value.byteLength;
+      if (total > max) { await reader.cancel(); return; }
+    }
+  } catch { /* client went away */ }
+}
+
 export function decodeMeta(header: string | null): Record<string, unknown> | null {
   if (!header || header.length > 4096) return null;
   try {

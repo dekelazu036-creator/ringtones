@@ -33,8 +33,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const lameCtx = { console, Math, Int16Array, Int8Array, Float32Array, Float64Array, Int32Array, Uint8Array, Array, Error };
 lameCtx.window = lameCtx; lameCtx.self = lameCtx; vm.createContext(lameCtx);
 vm.runInContext(readFileSync(new URL('../../../vendor/lame.min.js', import.meta.url), 'utf8'), lameCtx);
-function mp3(seconds, freq = 440) {
-  const sr = 44100, enc = new lameCtx.lamejs.Mp3Encoder(2, sr, 192), n = Math.round(sr * seconds);
+function mp3(seconds, freq = 440, kbps = 192) {
+  const sr = 44100, enc = new lameCtx.lamejs.Mp3Encoder(2, sr, kbps), n = Math.round(sr * seconds);
   const L = new Int16Array(n);
   for (let i = 0; i < n; i++) L[i] = Math.round(8000 * Math.sin((2 * Math.PI * freq * i) / sr));
   const out = [];
@@ -54,10 +54,16 @@ async function signIn(email, password) {
   return { token: j.access_token, id: j.user.id };
 }
 const H = (tok, extra = {}) => ({ apikey: SB_KEY, ...(tok ? { authorization: `Bearer ${tok}` } : {}), ...extra });
+// no request may hang the run (T9b once waited 160 s for the platform's wall clock); status 0 = no answer
+const TIMEOUT_S = 60;
 async function req(method, path, tok, body, extra = {}) {
-  const r = await fetch(`${SB_URL}${path}`, { method, headers: H(tok, extra), body });
-  const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {}
-  return { status: r.status, json, text, headers: r.headers };
+  try {
+    const r = await fetch(`${SB_URL}${path}`, { method, headers: H(tok, extra), body, signal: AbortSignal.timeout(TIMEOUT_S * 1000) });
+    const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {}
+    return { status: r.status, json, text, headers: r.headers };
+  } catch (e) {
+    return { status: 0, json: null, text: `no answer within ${TIMEOUT_S} s (${e.name})`, headers: new Headers() };
+  }
 }
 const upload = (tok, meta, bytes) => req('POST', '/functions/v1/library-upload', tok, bytes,
   { 'content-type': 'audio/mpeg', 'x-library-meta': b64url(meta), origin: ORIGIN });
@@ -71,7 +77,7 @@ const B = await signIn(B_EMAIL, B_PASSWORD);
 check('T0', 'two distinct real accounts signed in', A.id !== B.id);
 
 // T1 upload through the function
-const songA = mp3(4, 440 + Math.floor(Math.random() * 400));
+const songA = mp3(4, 440 + Math.random() * 400);                  // new bytes every run: reruns must not hit duplicates
 const up = await upload(A.token, meta(), songA);
 check('T1', 'A uploads through library-upload → ready', up.status === 200 && up.json?.status === 'ready', `${up.status} ${up.text.slice(0, 120)}`);
 const idA = up.json?.id;
@@ -133,19 +139,20 @@ const rowA = await rpc(A.token, 'library_job_status', { p_client_keys: [] });
 check('T10', 'job status callable (own keys only)', rowA.status === 200, String(rowA.status));
 
 // T12 concurrent duplicates: 6 parallel uploads of one new file → 1 ready, 5 duplicate
-const dup = mp3(3, 1234);
+const dup = mp3(3, 1000 + Math.random() * 1000);
 const par = await Promise.all(Array.from({ length: 6 }, () => upload(B.token, meta(), dup)));
 const readyN = par.filter((r) => r.json?.status === 'ready').length, dupN = par.filter((r) => r.json?.status === 'duplicate').length;
 check('T12', '6 concurrent uploads of the same file → 1 stored', readyN === 1 && dupN === 5, `${readyN} ready / ${dupN} duplicate / ${par.map((r) => r.status)}`);
 
 // T13 delete ∥ download race on a fresh item
-const fresh = await upload(A.token, meta(), mp3(2, 777));
+const fresh = await upload(A.token, meta(), mp3(2, 700 + Math.random() * 100));
 const [del] = await Promise.all([rpc(A.token, 'library_delete', { p_id: fresh.json?.id }), download(A.token, fresh.json?.id)]);
 const after = await download(A.token, fresh.json?.id);
 check('T13', 'after delete: no new download links', del.json === 'deleting' && after.status === 404, `${del.text}/${after.status}`);
 
 // T14 a near-10 MiB upload: wall time through the function
-let big = mp3(30); const parts = []; let total = 0;
+// 320 kbps: ~9.2 MiB in 8 × 30 s = 240 s (192 kbps needed 390 s, over the 300 s cap → 422 bad_duration)
+let big = mp3(30, 440, 320); const parts = []; let total = 0;
 while (total + big.length < 9.5 * 1024 * 1024) { parts.push(big); total += big.length; }
 big = new Uint8Array(total); let o = 0; for (const p of parts) { big.set(p, o); o += p.length; }
 const t0 = Date.now();
