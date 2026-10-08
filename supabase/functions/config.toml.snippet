@@ -1,0 +1,10 @@
+# Add to supabase/config.toml if deploying with the Supabase CLI (or set the same in the dashboard).
+# upload/download: keep the platform JWT check ON (defence in depth); the function ALSO verifies the user with Auth.
+[functions.library-upload]
+verify_jwt = true
+[functions.library-download]
+verify_jwt = true
+# janitor is called by pg_cron with its own secret (not a user JWT), so the platform check is off
+# and the function compares JANITOR_SECRET itself, in constant time.
+[functions.library-janitor]
+verify_jwt = false
