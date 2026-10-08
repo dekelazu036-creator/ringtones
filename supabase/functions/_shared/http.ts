@@ -33,7 +33,8 @@ export function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-// read at most `max` bytes; returns null if the body is larger (stops reading early)
+// read at most `max` bytes; returns null if the body is larger (stops reading early and leaves the
+// rest unread but unlocked, so the handler's discardBody can still drain it)
 export async function readCapped(req: Request, max: number): Promise<Uint8Array | null | 'missing'> {
   const declared = req.headers.get('content-length');
   if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > max)) return null;
@@ -45,7 +46,7 @@ export async function readCapped(req: Request, max: number): Promise<Uint8Array 
     const { done, value } = await reader.read();
     if (done) break;
     total += value.byteLength;
-    if (total > max) { await reader.cancel().catch(() => {}); return null; }
+    if (total > max) { reader.releaseLock(); return null; }
     parts.push(value);
   }
   const out = new Uint8Array(total);
@@ -58,7 +59,7 @@ export async function readCapped(req: Request, max: number): Promise<Uint8Array 
 // On the hosted runtime a response sent while the client is still sending the body never arrives:
 // staging T9b (11 MiB, 413 decided from content-length) hung until the 150 s wall clock → 503.
 export async function discardBody(req: Request, max: number): Promise<void> {
-  if (!req.body || req.bodyUsed) return;
+  if (!req.body || req.body.locked) return;            // locked = a reader is still busy with it (fully read)
   const reader = req.body.getReader();
   let total = 0;
   try {

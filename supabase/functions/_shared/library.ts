@@ -127,6 +127,12 @@ async function uploadResponse(req: Request, deps: Deps, cfg: Config): Promise<Re
 
 // ------------------------------------------------------------------ library-download
 export async function handleDownload(req: Request, deps: Deps, cfg: Config): Promise<Response> {
+  const res = await downloadResponse(req, deps, cfg);
+  await discardBody(req, 64 * 1024);                   // a real body is ~50 bytes of JSON
+  return res;
+}
+
+async function downloadResponse(req: Request, deps: Deps, cfg: Config): Promise<Response> {
   const cors = corsHeaders(req, cfg.allowedOrigins);
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return fail('bad_request', cors);
@@ -160,6 +166,12 @@ export type JanitorReport = {
 };
 
 export async function handleJanitor(req: Request, deps: Deps, cfg: Config): Promise<Response> {
+  const res = await janitorResponse(req, deps, cfg);
+  await discardBody(req, 64 * 1024);                   // verify_jwt is off here: anyone can POST a body
+  return res;
+}
+
+async function janitorResponse(req: Request, deps: Deps, cfg: Config): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'bad_request' }, 400);
   const secret = cfg.janitorSecret ?? '';
   const token = bearer(req) ?? '';

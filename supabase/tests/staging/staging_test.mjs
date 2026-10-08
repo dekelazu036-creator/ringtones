@@ -47,7 +47,7 @@ const b64url = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 
 // ---------------------------------------------------------------- API helpers
 async function signIn(email, password) {
-  const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+  const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, { signal: AbortSignal.timeout(30_000),
     method: 'POST', headers: { apikey: SB_KEY, 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) });
   const j = await r.json();
   if (!r.ok) throw new Error(`sign-in failed for ${email}: ${r.status} ${j.error_description || j.msg || ''}`);
@@ -56,15 +56,19 @@ async function signIn(email, password) {
 const H = (tok, extra = {}) => ({ apikey: SB_KEY, ...(tok ? { authorization: `Bearer ${tok}` } : {}), ...extra });
 // no request may hang the run (T9b once waited 160 s for the platform's wall clock); status 0 = no answer
 const TIMEOUT_S = 60;
-async function req(method, path, tok, body, extra = {}) {
+async function get(url, init = {}) {
+  const t0 = Date.now();
   try {
-    const r = await fetch(`${SB_URL}${path}`, { method, headers: H(tok, extra), body, signal: AbortSignal.timeout(TIMEOUT_S * 1000) });
-    const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {}
-    return { status: r.status, json, text, headers: r.headers };
+    const r = await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_S * 1000) });
+    const bytes = new Uint8Array(await r.arrayBuffer()), text = new TextDecoder().decode(bytes);
+    let json = null; try { json = JSON.parse(text); } catch {}
+    return { status: r.status, json, text, bytes, headers: r.headers, ms: Date.now() - t0 };
   } catch (e) {
-    return { status: 0, json: null, text: `no answer within ${TIMEOUT_S} s (${e.name})`, headers: new Headers() };
+    const why = e.name === 'TimeoutError' ? `no answer within ${TIMEOUT_S} s` : `${e.name}: ${e.cause?.code ?? e.cause?.message ?? e.message}`;
+    return { status: 0, json: null, text: `${why} after ${Date.now() - t0} ms`, bytes: new Uint8Array(), headers: new Headers(), ms: Date.now() - t0 };
   }
 }
+const req = (method, path, tok, body, extra = {}) => get(`${SB_URL}${path}`, { method, headers: H(tok, extra), body });
 const upload = (tok, meta, bytes) => req('POST', '/functions/v1/library-upload', tok, bytes,
   { 'content-type': 'audio/mpeg', 'x-library-meta': b64url(meta), origin: ORIGIN });
 const download = (tok, id) => req('POST', '/functions/v1/library-download', tok, JSON.stringify({ id }), { 'content-type': 'application/json', origin: ORIGIN });
@@ -129,7 +133,10 @@ const wav = new Uint8Array(4000); wav.set([0x52, 0x49, 0x46, 0x46]);
 const v1 = await upload(A.token, meta(), wav);
 check('T9a', 'non-MP3 refused (415)', v1.status === 415, String(v1.status));
 const v2 = await req('POST', '/functions/v1/library-upload', A.token, new Uint8Array(11 * 1024 * 1024), { 'content-type': 'audio/mpeg', 'x-library-meta': b64url(meta()), origin: ORIGIN });
-check('T9b', 'over 10 MiB refused (413 from function or gateway)', v2.status === 413 || v2.status === 400, String(v2.status));
+check('T9b', 'over 10 MiB refused (413 from function or gateway)', v2.status === 413 || v2.status === 400, `${v2.status} in ${v2.ms} ms ${v2.text.slice(0, 120)}`);
+// a refusal decided before the body is read (here: bad metadata) must still answer promptly
+const v2b = await req('POST', '/functions/v1/library-upload', A.token, new Uint8Array(11 * 1024 * 1024), { 'content-type': 'audio/mpeg', 'x-library-meta': 'not-base64-json', origin: ORIGIN });
+check('T9d', 'refused 11 MiB upload (bad metadata) answers 400 promptly', v2b.status === 400 && v2b.ms < 30_000, `${v2b.status} in ${v2b.ms} ms`);
 const v3 = await upload('not.a.jwt', meta(), songA);
 const v4 = await upload(SB_KEY, meta(), songA);
 check('T9c', 'forged token and bare API key refused', v3.status === 401 && v4.status === 401, `${v3.status}/${v4.status}`);
@@ -137,6 +144,9 @@ check('T9c', 'forged token and bare API key refused', v3.status === 401 && v4.st
 // T10 hash is the server's
 const rowA = await rpc(A.token, 'library_job_status', { p_client_keys: [] });
 check('T10', 'job status callable (own keys only)', rowA.status === 200, String(rowA.status));
+
+// T11 baseline: B's counters before this run adds exactly 2 items (T12 + T14)
+const usageB0 = await rpc(B.token, 'library_usage', {});
 
 // T12 concurrent duplicates: 6 parallel uploads of one new file → 1 ready, 5 duplicate
 const dup = mp3(3, 1000 + Math.random() * 1000);
@@ -161,19 +171,26 @@ check('T14', `~${(total / 1048576).toFixed(1)} MiB upload completes`, bigUp.stat
 
 // T11 usage counters reflect reality
 const usageB = await rpc(B.token, 'library_usage', {});
-check('T11', 'usage() returns own counters', usageB.status === 200 && usageB.json?.items >= 2, usageB.text);
+check('T11', 'usage() counts this run\'s 2 new items', usageB.status === 200 && usageB.json?.items === (usageB0.json?.items ?? -99) + 2,
+  `${usageB0.json?.items} → ${usageB.json?.items}`);
 
 // signed URL works now and is limited to 300 s by the server
 const link = await download(A.token, idA);
-check('T17a', 'download link valid for 300 s, fetchable', link.status === 200 && link.json?.expires_in === 300
-  && (await fetch(link.json.url)).status === 200, String(link.status));
-const got = link.status === 200 ? new Uint8Array(await (await fetch(link.json.url)).arrayBuffer()) : new Uint8Array();
-check('T17b', 'downloaded bytes are exactly the uploaded bytes', sha(got) === sha(songA));
+const fetched = link.status === 200 ? await get(link.json.url) : { status: 0, bytes: new Uint8Array() };
+check('T17a', 'download link valid for 300 s, fetchable', link.status === 200 && link.json?.expires_in === 300 && fetched.status === 200,
+  `${link.status}/${fetched.status}`);
+check('T17b', 'downloaded bytes are exactly the uploaded bytes', sha(fetched.bytes) === sha(songA));
 
-if (SLOW) {
+if (SLOW && link.status === 200) {
   console.log('… waiting 305 s for the signed URL to expire');
   await sleep(305_000);
-  check('T17c', 'signed URL refused after 300 s', (await fetch(link.json.url)).status >= 400);
+  const late = await get(link.json.url);
+  check('T17c', 'signed URL refused after 300 s', late.status >= 400, String(late.status));
+}
+
+// clean up this run's items so B's 100 MB quota does not fill up over reruns (feeds the janitor check T16)
+for (const [tok, id] of [[A.token, idA], [B.token, par.find((r) => r.json?.status === 'ready')?.json?.id], [B.token, bigUp.json?.id]]) {
+  if (id) await rpc(tok, 'library_delete', { p_id: id });
 }
 
 const failed = results.filter((r) => !r.ok);

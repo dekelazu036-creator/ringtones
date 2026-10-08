@@ -10,6 +10,7 @@ Status: **L** = passed locally (stub), **S** = staging. First staging run 2026-1
 | JWT validation | I2, W3 | T9c |
 | Signed URL authorization & lifetime | R8, I11, W4 | T3, T17a–c |
 | MP3 / size / hash measured by server | M1–M14, I4–I7, F7, I9 | T9a–b, T14 |
+| Refusals answer promptly (unread body drained) | I4b | T9b, T9d (bodies > 20 MiB: cancelled after 20 MiB, not covered on staging) |
 | Concurrent uploads & duplicates | F13, C1, C2, I8 | T12 |
 | Quota enforcement (items, bytes, physical, project, rate) | Q1–Q8, C2–C3 | T11 |
 | Expired reservations | E1–E5, I16 | T15 (manual) |

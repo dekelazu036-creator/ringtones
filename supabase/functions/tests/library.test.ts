@@ -107,18 +107,56 @@ test('I3 malformed metadata → 400 (bad key, bad type, bad origin, not JSON, ov
     assert.equal((await call(handleUpload(uploadReq('hdr.userA.sig', m, SONG), deps, cfg))).status, 400, JSON.stringify(m));
   }
 });
+// a request body that arrives in many small, delayed chunks and records how much was pulled
+function slowBody(total: number) {
+  const s = { pulled: 0, closed: false, cancelled: false };
+  const stream = new ReadableStream<Uint8Array>({
+    async pull(c) {
+      await new Promise((r) => setTimeout(r, 0));
+      const n = Math.min(256 * 1024, total - s.pulled);
+      if (n <= 0) { s.closed = true; c.close(); return; }
+      s.pulled += n; c.enqueue(new Uint8Array(n));
+    },
+    cancel() { s.cancelled = true; },
+  });
+  return { stream, s };
+}
+function streamReq(token: string, body: ReadableStream<Uint8Array>, extra: Record<string, string> = {}): Request {
+  return new Request('https://fn.test', { method: 'POST', body, duplex: 'half',
+    headers: { authorization: `Bearer ${token}`, origin: ORIGIN, 'x-library-meta': b64url(meta()), ...extra } } as RequestInit);
+}
 test('I4 size cap: declared too large → 413 without reading; streamed too large → 413', async () => {
-  const req1 = uploadReq('hdr.userA.sig', meta(), SONG, { 'content-length': '20000000' });
-  const r1 = await call(handleUpload(req1, deps, cfg));
+  const r1 = await call(handleUpload(uploadReq('hdr.userA.sig', meta(), SONG, { 'content-length': '20000000' }), deps, cfg));
   assert.equal(r1.status, 413);
-  assert.equal(req1.bodyUsed, true, 'unread body drained before answering (staging T9b hung otherwise)');
-  const req401 = uploadReq('hdr.forged.sig', meta(), SONG);
-  assert.equal((await call(handleUpload(req401, deps, cfg))).status, 401);
-  assert.equal(req401.bodyUsed, true, 'refused upload: body drained too');
   const big = new Uint8Array(10485761);
   const stream = new ReadableStream({ start(c) { c.enqueue(big.subarray(0, 6e6)); c.enqueue(big.subarray(6e6)); c.close(); } });
   const req = new Request('https://fn.test', { method: 'POST', headers: { authorization: 'Bearer hdr.userA.sig', 'x-library-meta': b64url(meta()) }, body: stream, duplex: 'half' } as RequestInit);
   assert.equal((await call(handleUpload(req, deps, cfg))).status, 413);
+});
+// staging T9b: a refusal answered while the client was still sending the file hung until the 150 s
+// wall clock. Every refusal must read the rest of the body (bounded) BEFORE the response is returned.
+test('I4b refusals drain the unread body before answering (declared, streamed, 401, 400, download, janitor)', async () => {
+  const MiB = 1024 * 1024;
+  const cases: [string, (b: ReadableStream<Uint8Array>) => Promise<Response>, number, number][] = [
+    ['413 by content-length', (b) => handleUpload(streamReq('hdr.userA.sig', b, { 'content-length': String(11 * MiB) }), deps, cfg), 11 * MiB, 413],
+    ['413 streamed, no length', (b) => handleUpload(streamReq('hdr.userA.sig', b), deps, cfg), 11 * MiB, 413],
+    ['401 forged token', (b) => handleUpload(streamReq('hdr.forged.sig', b), deps, cfg), 3 * MiB, 401],
+    ['400 bad metadata', (b) => handleUpload(streamReq('hdr.userA.sig', b, { 'x-library-meta': '%%%' }), deps, cfg), 3 * MiB, 400],
+    ['download 401', (b) => handleDownload(streamReq('hdr.forged.sig', b), deps, cfg), 48 * 1024, 401],
+    ['janitor 401', (b) => handleJanitor(streamReq('wrong', b), deps, cfg), 48 * 1024, 401],
+  ];
+  for (const [name, run, total, status] of cases) {
+    const { stream, s } = slowBody(total);
+    const res = await run(stream);
+    assert.equal(res.status, status, name);
+    assert.equal(s.pulled, total, `${name}: whole body read before the response was returned`);
+    assert.equal(s.closed, true, name);
+  }
+  // beyond the drain limit (2 × 10 MiB for uploads) the rest is cancelled, never read without end
+  const { stream, s } = slowBody(25 * MiB);
+  assert.equal((await handleUpload(streamReq('hdr.userA.sig', stream, { 'content-length': String(25 * MiB) }), deps, cfg)).status, 413);
+  assert.equal(s.cancelled, true);
+  assert.ok(s.pulled <= 20 * MiB + 512 * 1024, `pulled ${s.pulled}`);
 });
 test('I5 not an MP3 (WAV renamed) → 415, nothing reserved', async () => {
   const r = await call(handleUpload(uploadReq('hdr.userA.sig', meta(), ffmpeg([...sine(2), '-f', 'wav'])), deps, cfg));
