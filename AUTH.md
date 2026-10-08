@@ -36,6 +36,20 @@ Methods: **email one-time code** (6 digits, typed in the same tab — no magic l
 - Neutral messages ("if the address is valid we sent a code") → no account enumeration.
 - Tokens live in localStorage: XSS is the main risk → strict CSP on `account.html`; user-provided text is rendered with `textContent` only. A site-wide CSP for the creator page is a separate future task (inline scripts + blob: audio).
 
+## Production setup status (2026-10-08)
+
+Done by the owner in the dashboards (no secrets are stored in this repo):
+
+- Resend: domain `mail.snipring.com` verified (DKIM + SPF, eu-west-1); restricted "Sending access" key used only as the Supabase SMTP password.
+- Supabase SMTP: `smtp.resend.com:465`, user `resend`, sender `SnipRing <noreply@mail.snipring.com>`.
+- Turnstile: widget "SnipRing auth" (Managed) for `snipring.com`; public site key in `config.js`, secret only in Supabase Attack Protection.
+- Google OAuth: project "SnipRing", External, In production, basic scopes only; web client with origin `https://snipring.com` and the Supabase callback; secret only in Supabase.
+- Supabase Auth: Site URL `https://snipring.com`, redirect `https://snipring.com/account.html**`, Email OTP 6 digits / 600 s, Confirm email on, anonymous sign-ins off, `supabase/email-templates/otp.html` in "Magic link" and "Confirm signup".
+- `supabase/auth_1a.sql` run in production by the owner.
+- Owner tests (`?me`) passed: email code, Google on desktop and iPhone Safari, one user per email, return to site with saved sounds intact, Instagram in-app browser.
+
+`auth.enabled` stays `false`. The Google consent screen shows the Supabase project domain; a custom auth domain is a paid add-on and is part of the plan decision.
+
 ## Open requirements before PUBLIC account launch (blockers)
 1. **Self-service account deletion** (needs a server function with the service role; must delete auth user + profile + any future data). Email-based deletion is *not* the final implementation.
 2. Supabase plan / backups / limits review (decision by the owner; no paid plan activated).
