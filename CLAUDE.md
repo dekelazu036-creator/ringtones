@@ -1,7 +1,7 @@
 # SnipRing — project context for Claude sessions
 
 Last updated: 2026-10-08. Owner: Dekel. Live site: https://snipring.com (GitHub Pages, repo `dekelazu036-creator/ringtones`).
-This file is the single source of context. Read it fully before doing anything. **No secrets belong in this file or anywhere in the repo.**
+This file is the single source of context. It is public (served by GitHub Pages like every repo file): never put personal data or secrets in it. Read it fully before doing anything. **No secrets belong in this file or anywhere in the repo.**
 
 ---
 
@@ -118,13 +118,13 @@ Architecture rules (keep them):
 10. **Phase 1B M0** — branch `phase-1b-m0` (pushed, **not merged**): `supabase/library_1b.sql`, cron + teardown SQL, 3 Edge Functions (+ single-file bundles in `supabase/functions/dist/`), 168 local tests passing (`supabase/tests/run_all.sh`), `STAGING.md`, `TEST_MATRIX.md`, staging test runner. `schema.sql` fixed (profiles private).
 
 ### In progress — Phase 1B M1 (staging validation)
-Done: staging project `snipring-staging` created; two test users A/B (`dekelazu036+a@gmail.com`, `+b`); Supabase connector attached to Claude.
+Done: staging project `snipring-staging` created; two test users A/B (the owner's Gmail address with `+a` / `+b`); Supabase connector attached to Claude.
 **Blocked:** Supabase connector `apply_migration` calls return `cancelled` (reads via `execute_sql` work). Fallback: owner pastes SQL in the SQL Editor.
 Next steps, in order:
 1. Run on **staging only**: `schema.sql` → `auth_1a.sql` → `library_1b.sql` → beta snippet:
    ```sql
    insert into private.cloud_access (user_id)
-   select id from auth.users where email in ('dekelazu036+a@gmail.com','dekelazu036+b@gmail.com');
+   select id from auth.users where email in ('<owner>+a@gmail.com','<owner>+b@gmail.com');
    update private.settings set value = 'true' where key = 'reservations_open';
    ```
 2. `supabase/tests/policy_audit.sql` + Supabase security advisors; compare with the expected list.
@@ -168,7 +168,7 @@ Next steps, in order:
 | **Domain** | `snipring.com` bought via **Cloudflare**. `CNAME` file → GitHub Pages. |
 | **Hosting** | GitHub Pages from `main` of `dekelazu036-creator/ringtones`. Merging to `main` = deploying. |
 | **Supabase production** | Project `snipring`, ref `gtjtvfogqrnuiducvoqm`, region **eu-central-1**, Free plan, org `fwbpzcottjvuyqcwwkci`. `schema.sql` (older version) and `auth_1a.sql` run by the owner. Auth: Site URL `https://snipring.com`, redirect `https://snipring.com/account.html**`, Email OTP 6 digits / 600 s, Confirm email on, anonymous sign-ins off, OTP template from `supabase/email-templates/otp.html` in "Magic link" and "Confirm signup". Custom SMTP via Resend. Turnstile secret in Attack Protection. Google provider on. No 1B objects in production. |
-| **Supabase staging** | Project `snipring-staging`, ref `kavomvsvufqnqjepbevs`, region **eu-west-1** (differs from production; fine for correctness tests), Free. Email provider, Confirm email off. Users A `ecdb6f4c-5076-4238-9aae-71db02162860` (`+a`), B `abfa9ee5-b71f-4071-a6a1-5b7315eed2c1` (`+b`). Nothing migrated yet. Default privileges on `public` still grant new tables/functions to API roles — our SQL revokes explicitly. |
+| **Supabase staging** | Project `snipring-staging`, ref `kavomvsvufqnqjepbevs`, region **eu-west-1** (differs from production; fine for correctness tests), Free. Email provider, Confirm email off. Two test users A (`+a`) and B (`+b`); look up their UUIDs in Auth → Users. Nothing migrated yet. Default privileges on `public` still grant new tables/functions to API roles — our SQL revokes explicitly. |
 | **Resend** | Domain `mail.snipring.com` verified (DKIM + SPF, eu-west-1); sender `SnipRing <noreply@mail.snipring.com>`; restricted sending key used only as Supabase SMTP password. |
 | **Cloudflare Turnstile** | Widget "SnipRing auth", Managed, hostname `snipring.com`; public site key `0x4AAAAAAFQ0O8x3Ke3kRuTq` in `config.js`. |
 | **Google Cloud** | Project "SnipRing", OAuth consent External, **In production**, basic scopes, web client with origin `https://snipring.com` + Supabase callback. Consent screen shows the Supabase domain (custom auth domain is a paid add-on). |
