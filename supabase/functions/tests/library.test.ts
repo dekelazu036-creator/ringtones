@@ -495,3 +495,26 @@ test('B5 ten failed tries per hour, then refused even with a valid code', () => 
   assert.equal(redeem(U, good), 'rate_limited');
   assert.equal(one(`select count(*) from private.cloud_access where user_id = '${U}'`), '0');
 });
+
+// ------------------------------------------------------------------ public launch switch
+test('P1 cloud_for_all: a user outside the allow-list can save; usage says enabled', async () => {
+  const P = '00000000-0000-0000-0000-0000000000ab';
+  TOKENS['hdr.userP.sig'] = { id: P, isAnonymous: false };
+  one(`insert into auth.users (id, is_anonymous) values ('${P}', false) on conflict do nothing`);
+  const before = await call(handleUpload(uploadReq('hdr.userP.sig', meta(), siteMp3(44100, 2)), deps, cfg));
+  assert.equal(before.body.error, 'not_enabled');
+  one(`insert into private.settings (key, value) values ('cloud_for_all', 'true') on conflict (key) do update set value = 'true'`);
+  const after = await call(handleUpload(uploadReq('hdr.userP.sig', meta(), siteMp3(44100, 2)), deps, cfg));
+  assert.equal(after.status, 200, JSON.stringify(after.body));
+  assert.equal(asUser(P, `select (public.library_usage() ->> 'enabled')`), 'true');
+});
+test('P2 with cloud_for_all on, an account being deleted still cannot start uploads', async () => {
+  const Q = '00000000-0000-0000-0000-0000000000ac';
+  TOKENS['hdr.userQ.sig'] = { id: Q, isAnonymous: false };
+  one(`insert into auth.users (id, is_anonymous) values ('${Q}', false) on conflict do nothing`);
+  one(`insert into private.account_deletions (user_id) values ('${Q}')`);       // pending
+  const r = await call(handleUpload(uploadReq('hdr.userQ.sig', meta(), siteMp3(44100, 2)), deps, cfg));
+  assert.equal(r.body.error, 'not_enabled');
+  one(`delete from private.account_deletions where user_id = '${Q}'`);
+  one(`update private.settings set value = 'false' where key = 'cloud_for_all'`);
+});

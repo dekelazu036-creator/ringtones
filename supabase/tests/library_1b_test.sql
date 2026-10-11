@@ -162,6 +162,12 @@ select tst.ok('F1 reservations closed by default', tst.reserve(:A, gen_random_uu
 update private.settings set value = 'true' where key = 'reservations_open';
 select tst.ok('F2 user outside the beta allow-list is refused (and gets no usage row)', tst.reserve(:C, gen_random_uuid(), tst.sha('x')) ->> 'error' = 'not_enabled'
   and tst.usage(:C) is null);
+-- public launch switch: everyone signed in may save (C passes the allow-list and reaches input validation)
+update private.settings set value = 'true' where key = 'cloud_for_all';
+select tst.ok('F2b cloud_for_all lets a user outside the allow-list through', tst.reserve(:C, gen_random_uuid(), 'nothex') ->> 'error' = 'bad_hash');
+delete from private.library_usage where user_id = :C;
+delete from private.settings where key = 'cloud_for_all';
+select tst.ok('F2c a MISSING cloud_for_all switch means allow-list only', tst.reserve(:C, gen_random_uuid(), tst.sha('x')) ->> 'error' = 'not_enabled');
 
 select tst.ok('F3 input validation',
       tst.reserve(:A, gen_random_uuid(), 'nothex')                       ->> 'error' = 'bad_hash'

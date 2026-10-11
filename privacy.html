@@ -55,13 +55,13 @@
     <p>ספקים שמעורבים בהתחברות: <b>Supabase</b> (ניהול החשבונות), <b>Google</b> (רק אם בחרתם להתחבר איתו), <b>Resend</b> (שליחת קוד ההתחברות למייל) ו‑<b>Cloudflare Turnstile</b> (בדיקה שאתם לא בוט). פרטי ההתחברות נשמרים בדפדפן שלכם כדי שתישארו מחוברים, ונמחקים כשאתם מתנתקים.</p>
 
     <h2 id="library">הספרייה בענן (אופציונלי)</h2>
-    <p>עם חשבון אפשר לשמור צלילים בענן ולפתוח אותם בכל מכשיר. כרגע הספרייה פתוחה רק לבודקי בטא.</p>
+    <p>עם חשבון אפשר לשמור צלילים בענן ולפתוח אותם בכל מכשיר.</p>
     <ul>
       <li><b>מה נשמר:</b> קובץ ה‑MP3 של הצליל ששמרתם, השם שנתתם לו, סוג הצליל (רינגטון, צליל הודעה וכו׳), האורך, הגודל, מאיפה הוא נוצר (קובץ, סרטון, הקלטה וכו׳) ומתי נשמר. בנוסף נשמרת "טביעת אצבע" של הקובץ (SHA‑256) כדי לזהות שמירה כפולה של אותו צליל.</li>
       <li><b>איפה:</b> אצל Supabase, בשרתים באיחוד האירופי (גרמניה). הקבצים פרטיים: רק אתם יכולים לגשת אליהם, דרך החשבון שלכם. קישור הורדה תקף 5 דקות בלבד.</li>
       <li><b>מגבלות:</b> עד 100 צלילים ועד 100 MB לחשבון, וקובץ עד 10 MB.</li>
       <li><b>מחיקת צליל:</b> כפתור "מחיקה מהענן" מוחק את העותק בענן לצמיתות, בדרך כלל תוך 20 דקות. עותקים שנשמרו בטלפונים שלכם לא נמחקים.</li>
-      <li><b>גיבוי:</b> בתקופת הבטא אין גיבוי נפרד לצלילים בענן. שמרו את הצלילים החשובים גם במכשיר.</li>
+      <li><b>גיבוי:</b> בשלב זה אין גיבוי נפרד לקובצי הצלילים בענן. שמרו את הצלילים החשובים גם במכשיר.</li>
       <li>אנחנו שומרים רישום טכני של פעולות בספרייה (למשל העלאה, מחיקה ותקלות) עם מזהה המשתמש ומזהה הצליל, לצורך אבטחה ותפעול. הרישום לא כולל את תוכן הצליל, ונמחק אחרי 90 יום.</li>
     </ul>
 
@@ -133,13 +133,13 @@
     <p>Providers involved in signing in: <b>Supabase</b> (account management), <b>Google</b> (only if you choose to sign in with it), <b>Resend</b> (emailing your sign-in code) and <b>Cloudflare Turnstile</b> (checking you are not a bot). Your sign-in details are kept in your browser so you stay signed in, and are removed when you sign out.</p>
 
     <h2 id="library-en">Cloud library (optional)</h2>
-    <p>With an account you can save sounds to the cloud and open them on any device. For now the library is open to beta testers only.</p>
+    <p>With an account you can save sounds to the cloud and open them on any device.</p>
     <ul>
       <li><b>What is stored:</b> the MP3 file of the sound you saved, the name you gave it, its type (ringtone, text tone, etc.), length, size, where it was made (file, video, recording, etc.) and when it was saved. We also store a "fingerprint" of the file (SHA-256) to spot the same sound saved twice.</li>
       <li><b>Where:</b> with Supabase, on servers in the European Union (Germany). Files are private: only you can access them, through your account. A download link is valid for 5 minutes only.</li>
       <li><b>Limits:</b> up to 100 sounds and 100 MB per account, and up to 10 MB per file.</li>
       <li><b>Deleting a sound:</b> "Delete from cloud" permanently deletes the cloud copy, usually within 20 minutes. Copies saved on your phones are not deleted.</li>
-      <li><b>Backups:</b> during the beta there is no separate backup of cloud sounds. Keep important sounds on your device too.</li>
+      <li><b>Backups:</b> for now there is no separate backup of the sound files in the cloud. Keep important sounds on your device too.</li>
       <li>We keep a technical log of library actions (such as upload, delete and errors) with the user id and sound id, for security and operations. It never contains the sound itself, and is deleted after 90 days.</li>
     </ul>
 

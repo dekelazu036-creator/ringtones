@@ -35,6 +35,7 @@ create table if not exists private.settings (
   updated_at timestamptz not null default now());
 insert into private.settings (key, value) values
   ('reservations_open', 'false'),   -- may NEW uploads start?        (missing row = closed)
+  ('cloud_for_all',     'false'),   -- true = every signed-in user may save (public launch); false = allow-list only
   ('emergency_stop',    'false'),   -- anything but JSON false = no start and no finish (missing/malformed = stopped;
                                     -- download/delete/janitor keep working)
   ('limits', jsonb_build_object(
@@ -230,13 +231,19 @@ create or replace function private.lib_begin(
   p_size bigint, p_sha256 text, p_origin text, p_allow_duplicate boolean)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
-  u private.library_usage; r public.library_items; x record; n_hour int; total bigint;
+  u private.library_usage; r public.library_items; x record; n_hour int; total bigint; v_pending boolean;
 begin
   if private.stopped() then return '{"error":"stopped"}'; end if;
   if p_client_key is null then return '{"error":"bad_request"}'; end if;
   -- allow-list BEFORE the lock: users outside the beta never get a usage row (which would block account deletion)
-  if not exists (select 1 from private.cloud_access a where a.user_id = p_uid) then
+  if not (private.flag('cloud_for_all') or exists (select 1 from private.cloud_access a where a.user_id = p_uid)) then
     return '{"error":"not_enabled"}'; end if;
+  -- an account being deleted never starts a new upload (account_delete.sql may not be installed: dynamic check)
+  if to_regclass('private.account_deletions') is not null then
+    execute 'select exists (select 1 from private.account_deletions d where d.user_id = $1 and d.state = ''pending'')'
+      into v_pending using p_uid;
+    if v_pending then return '{"error":"not_enabled"}'; end if;
+  end if;
   u := private.lib_lock(p_uid);                                                -- lock 1
 
   -- the same job again (lost response, retry)?
@@ -622,7 +629,7 @@ language sql stable security definer set search_path = '' as $$
     'items', coalesce(u.items_active, 0), 'bytes', coalesce(u.bytes_active, 0),
     'max_items', private.lim('max_items'), 'max_bytes', private.lim('max_bytes'),
     'uploads_open', private.flag('reservations_open') and not private.stopped(),
-    'enabled', exists (select 1 from private.cloud_access a where a.user_id = x.uid))
+    'enabled', private.flag('cloud_for_all') or exists (select 1 from private.cloud_access a where a.user_id = x.uid))
   from (select auth.uid() as uid) x
   left join private.library_usage u on u.user_id = x.uid
   where x.uid is not null and not coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false)

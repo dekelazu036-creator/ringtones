@@ -7,9 +7,9 @@ window.SNIPRING_CONFIG = {
   // Supabase (Discover library). The publishable key is designed to be public; access is limited by row-level security.
   supabaseUrl: 'https://gtjtvfogqrnuiducvoqm.supabase.co',
   supabaseKey: 'sb_publishable_t3dVqGlMKrpi_SeLMwiM2g_Y12HoRSp',
-  // Accounts (Phase 1A). Ships switched OFF: only owner test mode (snipring.com/?me) can see it.
+  // Accounts: PUBLIC since 2026-10-11 (optional; creating and exporting never needs one).
   // turnstileSiteKey is the PUBLIC site key; the secret lives only in Supabase.
-  auth: { enabled: false, google: true, email: true, turnstileSiteKey: '0x4AAAAAAFQ0O8x3Ke3kRuTq' },
+  auth: { enabled: true, google: true, email: true, turnstileSiteKey: '0x4AAAAAAFQ0O8x3Ke3kRuTq' },
   consentVersion: 2     // 2026-10-11: cloud library + account deletion. Raise by 1 after a material privacy change, to ask everyone again
 };
 /* Local staging tests only. On localhost / 127.0.0.1, localStorage 'snipring-dev-supabase' =

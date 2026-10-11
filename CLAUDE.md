@@ -45,7 +45,7 @@ Tagline: **"השיר שלכם. הצלצול שלכם." / "Your song. Your ringto
 | supabase-js **2.109.0** vendored with SRI (`vendor/supabase-2.109.0.js`), same version pinned in Edge Functions | Reproducible, verified build |
 
 ### Accounts (Phase 1A — built, **switched off**)
-- `config.js` → `auth.enabled: false`. Visible only in owner mode `snipring.com/?me` on that device.
+- `config.js` → `auth.enabled: true` since the public release (2026-10-11). Accounts are optional.
 - Methods: **email 6-digit OTP** (typed in the same tab) and **Google** (OAuth PKCE). *No magic links* — on iPhone they open in a different browser. Apple Sign-in: later, decided by iPhone signup data.
 - Turnstile on signups; neutral messages (no account enumeration); `return` param same-site only; sign-out local or global; local sounds untouched by sign-out.
 - In-app browsers (Instagram/TikTok/Facebook): banner + "copy link", email first (Google blocks OAuth in webviews).
@@ -145,6 +145,13 @@ Alerting live (PR #6, `3a8ad3b`): `private.ops_health()` + `library-health` func
 Actions secret) + `.github/workflows/health.yml` hourly; first run ok=true. Production was upgraded to **Pro**; staging moved
 to its own free org. On 2026-10-11 the owner removed Claude's deny rules for `gh pr merge` and `supabase secrets`
 (Claude may now merge PRs and set function secrets when asked; the production-ref Bash rule stays).
+
+### PUBLIC RELEASE (2026-10-11, owner decision)
+`config.js` `auth.enabled: true` (accounts optional and public); `private.settings.cloud_for_all = true` (every signed-in
+user may save to the cloud; the allow-list and invite codes (`beta_invites.sql`) remain for later gated features).
+Known gaps accepted by the owner at release: no separate backup of cloud MP3 files yet (Cloudflare R2 planned), restore
+drill not done yet. Safety nets: per-user quotas, 300 uploads/hour site-wide, 800 MB project cap, hourly health alerts,
+`emergency_stop`. A pending account deletion blocks new uploads even with `cloud_for_all`.
 
 ### Core 1.0 build — branch `core-1.0` (2026-10-11, owner approved building per the master spec; **not merged** = not in production)
 Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core First; Studio gated). `core-1.0` = `phase-1b-m0` + the commits below. CI: `.github/workflows/tests.yml` runs `run_all.sh` + bundle drift check on every push (green).
