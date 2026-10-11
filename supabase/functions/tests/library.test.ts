@@ -6,6 +6,7 @@ import { before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { handleAccountDelete, handleDownload, handleJanitor, handleUpload, runJanitor, type Config, type Deps } from '../_shared/library.ts';
 import { ffmpeg, sine, siteMp3 } from './fixtures.ts';
 
@@ -97,7 +98,10 @@ before(() => {
   execFileSync('sudo', ['-u', 'postgres', 'dropdb', '--if-exists', DB]);
   execFileSync('sudo', ['-u', 'postgres', 'createdb', DB]);
   for (const f of ['tests/stub_supabase.sql', 'schema.sql', 'auth_1a.sql', 'library_1b.sql', 'account_delete.sql']) {
-    execFileSync('sudo', ['-u', 'postgres', 'psql', '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-d', DB, '-f', SQL_DIR + f], { stdio: 'ignore' });
+    // through stdin, not -f: the postgres OS user may not be allowed to read the checkout (CI runners)
+    const r = spawnSync('sudo', ['-u', 'postgres', 'psql', '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-d', DB],
+      { input: readFileSync(SQL_DIR + f, 'utf8'), encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(`${f}: ${r.stderr.trim().split('\n').slice(-3).join(' | ')}`);
   }
   one(`insert into auth.users (id, is_anonymous) values ('${A}', false), ('${B}', false), ('${C}', false), ('${ANON}', true), ('${E}', false), ('${F}', false);
        insert into private.cloud_access (user_id) values ('${A}'), ('${B}'), ('${ANON}'), ('${E}'), ('${F}');
