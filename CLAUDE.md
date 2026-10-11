@@ -38,7 +38,7 @@ Tagline: **"השיר שלכם. הצלצול שלכם." / "Your song. Your ringto
 | All audio processing in the browser (Web Audio, `vendor/lame.min.js` MP3 encoder, self-hosted) | Privacy promise: the guest's file never leaves the device; no server cost |
 | Local storage: IndexedDB `snipring` v1, store `rings` (keyPath `id` = `Date.now()`), record `{id,name,secs,data:ArrayBuffer,type,fav,origin,used}`, prune keeps 30 (oldest non-favourite deleted). `studio.js` also opens v1 | ArrayBuffer instead of Blob because of Safari; **do not change this structure without approval** |
 | Chorus detection by repetition (chroma self-similarity), not loudness | Loudness picked wrong parts |
-| Exported file name `<song> - ringtone.mp3`, ID3 title = chosen name | Never confused with the original |
+| Exported file name = the name in the "name the ringtone" field (`<name>.mp3`, default: the song title), ID3 title = same name (since `9a7c53c`; the older `<song> - ringtone.mp3` rule was replaced) | User controls how it appears in the phone's ringtone list |
 | Service worker `sw.js` (cache `snipring-v7`): pages network-first, static stale-while-revalidate; `config.js`, `account.html`, `auth.js`, `boot.js`, `vendor/supabase*` and `/media/` are never cached | Updates show immediately; auth always fresh |
 | Self-hosted fonts and encoder; only third-party requests are analytics | Compliance / privacy |
 | Supabase as backend (Postgres, Auth, Storage, Edge Functions), publishable key in `config.js` | Fastest safe path. **Tension:** Dekel prefers owning the stack over depending on platforms — keep Supabase usage portable (plain SQL, standard Postgres, thin Edge Functions) |
