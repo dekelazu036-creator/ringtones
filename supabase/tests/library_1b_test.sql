@@ -335,6 +335,13 @@ select tst.ok('Q6 hourly rate counts every job started in the last hour (incl. p
 update private.settings set value = value - 'per_hour' where key = 'limits';
 select tst.ok('Q7 a MISSING limit fails closed (error, not unlimited)', tst.err($$select tst.reserve('00000000-0000-0000-0000-0000000000a1', gen_random_uuid(), tst.sha('q8'))$$) like 'P0001%');
 update private.settings set value = value || '{"per_hour": 30}' where key = 'limits';
+-- global ceiling: B has few jobs of its own, but all users together reached the project-wide hourly limit
+update private.settings set value = value || jsonb_build_object('global_per_hour', (select count(*) from public.library_items where created_at > now() - interval '1 hour')) where key = 'limits';
+select tst.ok('Q7b project-wide hourly ceiling refuses new jobs for every user (service_full)',
+  tst.reserve(:B, gen_random_uuid(), tst.sha('q7b')) ->> 'error' = 'service_full');
+select tst.ok('Q7c the refusal is logged (separate statement: a function''s writes are invisible within one statement)',
+  exists (select 1 from private.library_events where kind = 'global_rate_limited'));
+update private.settings set value = value || '{"global_per_hour": 300}' where key = 'limits';
 delete from private.settings where key = 'reservations_open';
 select tst.ok('Q8 a MISSING reservations_open switch means closed', tst.reserve(:A, gen_random_uuid(), tst.sha('q9')) ->> 'error' = 'reservations_closed');
 insert into private.settings (key, value) values ('reservations_open', 'true');
