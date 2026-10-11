@@ -3,7 +3,13 @@ export function createClient(url, key, opts) {
   const f = globalThis.__fake;
   f.created.push({ url, key, opts });
   return {
-    auth: { getUser: async (t) => f.getUser(t) },
+    auth: {
+      getUser: async (t) => f.getUser(t),
+      admin: {
+        deleteUser: async (id) => { f.calls.push(['deleteUser', id]); return { data: {}, error: null }; },
+        signOut: async (jwt, scope) => { f.calls.push(['signOut', jwt, scope]); return { data: null, error: null }; },
+      },
+    },
     rpc: async (fn, args) => { f.calls.push(['rpc', fn, args]); return f.rpc(fn, args); },
     storage: {
       from: (bucket) => ({

@@ -27,6 +27,25 @@ do $$ begin
   end if;
 end $$;
 
+-- account deletion (account_delete.sql) depends on Phase 1B: remove it first, never with requests pending
+do $$ begin
+  if to_regclass('private.account_deletions') is not null then
+    if exists (select 1 from private.account_deletions where state = 'pending') then
+      raise exception 'teardown refused: account deletions are still pending';
+    end if;
+  end if;
+end $$;
+drop function if exists public.svc_account(text, jsonb);
+drop view     if exists private.account_deletion_health;
+drop function if exists private.acct_request(uuid);
+drop function if exists private.acct_purges(uuid);
+drop function if exists private.acct_due(int);
+drop function if exists private.acct_prepare(uuid);
+drop function if exists private.acct_done(uuid);
+drop function if exists private.acct_failed(uuid, text);
+drop function if exists private.acct_later(uuid);
+drop table    if exists private.account_deletions;
+
 drop function if exists public.svc_library(text, jsonb);
 drop function if exists public.library_delete(uuid);
 drop function if exists public.library_job_status(uuid[]);

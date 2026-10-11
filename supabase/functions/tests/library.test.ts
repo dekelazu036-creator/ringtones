@@ -6,7 +6,7 @@ import { before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { handleDownload, handleJanitor, handleUpload, runJanitor, type Config, type Deps } from '../_shared/library.ts';
+import { handleAccountDelete, handleDownload, handleJanitor, handleUpload, runJanitor, type Config, type Deps } from '../_shared/library.ts';
 import { ffmpeg, sine, siteMp3 } from './fixtures.ts';
 
 const DB = 'snipring_fn_test';
@@ -15,11 +15,15 @@ const A = '00000000-0000-0000-0000-0000000000a1';
 const B = '00000000-0000-0000-0000-0000000000b2';
 const C = '00000000-0000-0000-0000-0000000000c3';      // not in the beta allow-list
 const ANON = '00000000-0000-0000-0000-0000000000d4';   // anonymous sign-in
+const E = '00000000-0000-0000-0000-0000000000e5';      // deletes their account
+const F = '00000000-0000-0000-0000-0000000000f6';      // deletion where Auth fails once
 const TOKENS: Record<string, { id: string; isAnonymous: boolean }> = {
   'hdr.userA.sig': { id: A, isAnonymous: false },
   'hdr.userB.sig': { id: B, isAnonymous: false },
   'hdr.userC.sig': { id: C, isAnonymous: false },
   'hdr.anon.sig': { id: ANON, isAnonymous: true },
+  'hdr.userE.sig': { id: E, isAnonymous: false },
+  'hdr.userF.sig': { id: F, isAnonymous: false },
 };
 const SECRET = 'x'.repeat(48);
 const ORIGIN = 'https://snipring.com';
@@ -34,7 +38,8 @@ function psql(sql: string, vars: Record<string, string> = {}): string {
 const one = (sql: string) => psql(sql);
 
 // ---- fakes
-const fault = { finishThrows: 0, uploadFails: 0 };
+const fault = { finishThrows: 0, uploadFails: 0, deleteUserFails: 0, removeFails: 0 };
+const signedOut: string[] = [];
 const deps: Deps = {
   async getUser(token) { return TOKENS[token] ?? null; },
   async rpc(op, args) {
@@ -53,7 +58,18 @@ const deps: Deps = {
     return 'ok';
   },
   async signedUrl(path, seconds) { return `https://storage.test/sign/user-media/${path}?expires=${seconds}`; },
+  async acct(op, args) {
+    const out = psql(`set request.jwt.claims = '{"role":"service_role"}'; set role service_role;
+                      select public.svc_account(:'op', :'args'::jsonb);`, { op, args: JSON.stringify(args) });
+    return JSON.parse(out);
+  },
+  async deleteUser(id) {
+    if (fault.deleteUserFails > 0) { fault.deleteUserFails--; return { error: '500 auth unavailable' }; }
+    try { one(`delete from auth.users where id = '${id}'`); return 'ok'; } catch (e) { return { error: String(e).slice(0, 200) }; }   // like GoTrue: FK errors surface
+  },
+  async signOutAll(token) { signedOut.push(token); },
   async remove(paths) {
+    if (fault.removeFails > 0) { fault.removeFails--; return { error: 'storage unavailable' }; }
     const list = paths.map((p) => `'${p}'`).join(',');
     const out = one(`delete from storage.objects where bucket_id='user-media' and name in (${list}) returning name`);
     return { removed: out ? out.split('\n') : [] };
@@ -80,11 +96,11 @@ const objects = (uid: string) => Number(one(`select count(*) from storage.object
 before(() => {
   execFileSync('sudo', ['-u', 'postgres', 'dropdb', '--if-exists', DB]);
   execFileSync('sudo', ['-u', 'postgres', 'createdb', DB]);
-  for (const f of ['tests/stub_supabase.sql', 'schema.sql', 'auth_1a.sql', 'library_1b.sql']) {
+  for (const f of ['tests/stub_supabase.sql', 'schema.sql', 'auth_1a.sql', 'library_1b.sql', 'account_delete.sql']) {
     execFileSync('sudo', ['-u', 'postgres', 'psql', '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-d', DB, '-f', SQL_DIR + f], { stdio: 'ignore' });
   }
-  one(`insert into auth.users (id, is_anonymous) values ('${A}', false), ('${B}', false), ('${C}', false), ('${ANON}', true);
-       insert into private.cloud_access (user_id) values ('${A}'), ('${B}'), ('${ANON}');
+  one(`insert into auth.users (id, is_anonymous) values ('${A}', false), ('${B}', false), ('${C}', false), ('${ANON}', true), ('${E}', false), ('${F}', false);
+       insert into private.cloud_access (user_id) values ('${A}'), ('${B}'), ('${ANON}'), ('${E}'), ('${F}');
        update private.settings set value = 'true' where key = 'reservations_open';`);
 });
 
@@ -296,6 +312,93 @@ test('I17 two janitor runs at once: only one does the work', async () => {
   assert.equal([x, y].filter((v) => v === null).length, 1);
 });
 test('I18 end state: counters equal rows for every user', () => {
+  assert.equal(one(`set request.jwt.claims = '{"role":"service_role"}';
+    select count(*) filter (where public.svc_library('audit_user', jsonb_build_object('user_id', user_id)) = 'true'::jsonb)
+      from private.library_usage`), '0');
+});
+
+// ------------------------------------------------------------------ account deletion
+const delReq = (token: string | null, body: unknown = { confirm: 'delete-my-account' }) => {
+  const h: Record<string, string> = { origin: ORIGIN, 'content-type': 'application/json' };
+  if (token) h.authorization = `Bearer ${token}`;
+  return new Request('https://fn.test/account-delete', { method: 'POST', headers: h, body: JSON.stringify(body) });
+};
+const userExists = (id: string) => one(`select count(*) from auth.users where id = '${id}'`) === '1';
+const ad = (id: string) => JSON.parse(one(`select to_jsonb(d) from private.account_deletions d where user_id = '${id}'`) || 'null');
+
+test('AD1 account-delete refuses without a session, with an API key, or without the confirmation word', async () => {
+  assert.equal((await call(handleAccountDelete(delReq(null), deps, cfg))).status, 401);
+  assert.equal((await call(handleAccountDelete(delReq('sb_secret_abc'), deps, cfg))).status, 401);
+  assert.equal((await call(handleAccountDelete(delReq('hdr.anon.sig'), deps, cfg))).status, 401);
+  assert.equal((await call(handleAccountDelete(delReq('hdr.userE.sig', {}), deps, cfg))).status, 400);
+  assert.equal((await call(handleAccountDelete(delReq('hdr.userE.sig', { confirm: 'yes' }), deps, cfg))).status, 400);
+  assert.ok(userExists(E)); assert.equal(ad(E), null);
+});
+test('AD2 a user id in the body is ignored: only the session decides whose account goes', async () => {
+  const r = await call(handleAccountDelete(delReq('hdr.userE.sig', { confirm: 'yes', user_id: A }), deps, cfg));
+  assert.equal(r.status, 400); assert.ok(userExists(A)); assert.equal(ad(A), null);
+});
+test('AD3 deleting an account with media: objects removed, quota rows gone, Auth user deleted, other users untouched', async () => {
+  const s1 = await call(handleUpload(uploadReq('hdr.userE.sig', meta(), siteMp3(44100, 3)), deps, cfg));
+  const s2 = await call(handleUpload(uploadReq('hdr.userE.sig', meta(), siteMp3(44100, 4)), deps, cfg));
+  assert.equal(s1.status, 200); assert.equal(s2.status, 200);
+  // one more upload left half-way (reserved, never finished)
+  fault.uploadFails = 1;
+  const s3 = await call(handleUpload(uploadReq('hdr.userE.sig', meta(), siteMp3(44100, 2)), deps, cfg));
+  assert.equal(s3.status, 502);
+  assert.equal(objects(E), 2);
+  const othersBefore = objects(A) + objects(B);
+  const res = await call(handleAccountDelete(delReq('hdr.userE.sig'), deps, cfg));
+  assert.equal(res.status, 200, JSON.stringify(res.body)); assert.equal(res.body.status, 'deleted');
+  assert.equal(objects(E), 0);
+  assert.ok(!userExists(E));
+  assert.equal(one(`select count(*) from public.library_items where user_id = '${E}'`), '0');
+  assert.equal(one(`select count(*) from private.library_usage where user_id = '${E}'`), '0');
+  assert.equal(one(`select count(*) from private.cloud_access where user_id = '${E}'`), '0');
+  assert.equal(one(`select count(*) from public.profiles where id = '${E}'`), '0');
+  assert.equal(ad(E).state, 'done');
+  assert.ok(signedOut.includes('hdr.userE.sig'));
+  assert.equal(objects(A) + objects(B), othersBefore);
+});
+test('AD4 a deleted account cannot upload again with an old token (user is gone)', async () => {
+  // the fake getUser still knows the token, like a JWT that has not expired yet; SQL refuses anyway
+  const r = await call(handleUpload(uploadReq('hdr.userE.sig', meta(), siteMp3(44100, 2)), deps, cfg));
+  assert.equal(r.status, 403); assert.equal(r.body.error, 'not_enabled');
+});
+test('AD5 Storage or Auth failing: the request stays pending, the janitor finishes it later', async () => {
+  const s1 = await call(handleUpload(uploadReq('hdr.userF.sig', meta(), siteMp3(44100, 3)), deps, cfg));
+  assert.equal(s1.status, 200);
+  fault.removeFails = 5;
+  const res = await call(handleAccountDelete(delReq('hdr.userF.sig'), deps, cfg));
+  assert.equal(res.status, 200); assert.equal(res.body.status, 'pending');
+  assert.ok(userExists(F)); assert.equal(objects(F), 1);
+  // the Auth user cannot be deleted by accident while media exists (RESTRICT)
+  assert.notEqual(await deps.deleteUser!(F), 'ok');
+  assert.equal(ad(F).state, 'pending');
+  // new uploads are refused while the request is pending
+  const again = await call(handleUpload(uploadReq('hdr.userF.sig', meta(), siteMp3(44100, 2)), deps, cfg));
+  assert.equal(again.body.error, 'not_enabled');
+  fault.removeFails = 0; fault.deleteUserFails = 1;
+  one(`update private.account_deletions set next_at = now() where user_id = '${F}'`);
+  one(`update public.library_items set purge_next_at = now() where user_id = '${F}' and state in ('deleting','abandoned')`);
+  const r1 = await runJanitor(deps, { ...cfg, holder: 'acct1' });
+  assert.ok(r1); assert.equal(r1.accounts, 0);                      // objects gone, Auth failed once → backed off
+  assert.equal(objects(F), 0); assert.ok(userExists(F));
+  assert.equal(ad(F).attempts, 1); assert.match(ad(F).last_error, /auth unavailable/);
+  one(`update private.account_deletions set next_at = now() where user_id = '${F}'`);
+  const r2 = await runJanitor(deps, { ...cfg, holder: 'acct2' });
+  assert.ok(r2); assert.equal(r2.accounts, 1);
+  assert.ok(!userExists(F)); assert.equal(ad(F).state, 'done');
+});
+test('AD6 svc_account is service_role only; private account tables are unreachable', () => {
+  for (const role of ['anon', 'authenticated']) {
+    assert.throws(() => psql(`set role ${role}; select public.svc_account('due', '{}');`), /permission denied/);
+    assert.throws(() => psql(`set role ${role}; select * from private.account_deletions;`), /permission denied/);
+  }
+  // service_role grant alone is not enough: the JWT role claim must say so too
+  assert.throws(() => psql(`set role service_role; select public.svc_account('due', '{}');`), /service role required|permission denied/);
+});
+test('AD7 end state after deletions: counters equal rows for every remaining user', () => {
   assert.equal(one(`set request.jwt.claims = '{"role":"service_role"}';
     select count(*) filter (where public.svc_library('audit_user', jsonb_build_object('user_id', user_id)) = 'true'::jsonb)
       from private.library_usage`), '0');

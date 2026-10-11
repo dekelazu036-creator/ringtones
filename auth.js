@@ -23,7 +23,11 @@ var T = {
     codeH: 'הקלידו את הקוד', codeP: 'אם הכתובת תקינה, שלחנו קוד בן 6 ספרות אל', codeL: 'קוד בן 6 ספרות', verify: 'התחברות',
     resend: 'שליחה מחדש', resendIn: 'שליחה מחדש בעוד {n}', changeEmail: 'שינוי מייל', spamHint: 'לא הגיע? בדקו בתיקיית הספאם או קידומי מכירות.',
     inH: 'מחובר/ת', viaL: 'התחברות דרך', planL: 'חשבון', planFree: 'חינמי', via_google: 'Google', via_email: 'מייל',
-    inNote: 'השמירה והסנכרון של הצלילים יתווספו בקרוב. הצלילים שיצרתם נשמרים בינתיים במכשיר הזה.',
+    inNote: 'בספרייה אפשר לשמור צלילים בענן ולפתוח אותם בכל מכשיר. הצלילים שבמכשיר נשארים שלכם גם בלי חשבון.',
+    delH: 'מחיקת החשבון', delP: 'החשבון וכל הצלילים שלו בענן יימחקו לצמיתות, ואי אפשר לשחזר אותם. הצלילים שבטלפון הזה לא נמחקים. תנותקו מכל המכשירים.',
+    delCheck: 'הבנתי. מחקו את החשבון ואת כל הצלילים בענן.', delGo: 'מחיקת החשבון לצמיתות',
+    goneH: 'החשבון נמחק', goneP: 'החשבון וכל הצלילים בענן נמחקו. הצלילים שבטלפון הזה נשארו.',
+    gonePending: 'קיבלנו את הבקשה. החשבון והצלילים בענן יימחקו לגמרי תוך כמה דקות. הצלילים שבטלפון הזה נשארו.', e_delete: 'המחיקה לא הצליחה. נסו שוב בעוד רגע.', e_session: 'פג תוקף ההתחברות. התנתקו, התחברו שוב ונסו שוב.',
     continue: 'חזרה לאתר', library: 'הספרייה שלי בענן', logout: 'התנתקות', logoutAll: 'התנתקות מכל המכשירים',
     loggedOut: 'התנתקתם. הצלילים שבמכשיר נשארו.', signedIn: 'התחברתם!',
     e_email: 'נא להקליד כתובת מייל תקינה.', e_code: 'הקוד צריך להיות 6 ספרות.', e_bad: 'הקוד שגוי או שפג תוקפו. נסו שוב או בקשו קוד חדש.',
@@ -42,7 +46,11 @@ var T = {
     codeH: 'Enter the code', codeP: 'If the address is valid, we sent a 6-digit code to', codeL: '6-digit code', verify: 'Sign in',
     resend: 'Send again', resendIn: 'Send again in {n}', changeEmail: 'Change email', spamHint: 'Nothing yet? Check your spam or promotions folder.',
     inH: 'Signed in', viaL: 'Signed in with', planL: 'Account', planFree: 'Free', via_google: 'Google', via_email: 'Email',
-    inNote: 'Saving and syncing your sounds is coming soon. Until then, what you create stays on this device.',
+    inNote: 'Your library keeps sounds in the cloud so you can open them on any device. Sounds on this device stay yours, with or without an account.',
+    delH: 'Delete account', delP: 'Your account and all its cloud sounds are deleted for good and cannot be restored. Sounds on this phone are not deleted. You will be signed out everywhere.',
+    delCheck: 'I understand. Delete my account and all cloud sounds.', delGo: 'Delete account permanently',
+    goneH: 'Account deleted', goneP: 'Your account and all cloud sounds were deleted. The sounds on this phone are still here.',
+    gonePending: 'We got your request. Your account and cloud sounds will be fully deleted within a few minutes. The sounds on this phone are still here.', e_delete: 'Deletion did not work. Please try again in a moment.', e_session: 'Your sign-in expired. Sign out, sign in again and retry.',
     continue: 'Back to SnipRing', library: 'My cloud library', logout: 'Sign out', logoutAll: 'Sign out on all devices',
     loggedOut: 'You are signed out. The sounds on this device are still here.', signedIn: 'You are signed in!',
     e_email: 'Please enter a valid email address.', e_code: 'The code has 6 digits.', e_bad: 'That code is wrong or has expired. Try again or ask for a new one.',
@@ -64,7 +72,7 @@ function track(n, d) { d = Object.assign({ tier: user ? 'free' : 'guest' }, d ||
 function pageview() { var go = function () { try { umami.track(); q.forEach(function (x) { umami.track(x[0], x[1]) }); q = [] } catch (e) {} }; if (window.umami && umami.track) go(); else window.addEventListener('load', function () { if (window.umami && umami.track) go() }) }
 
 /* ---------------------------------------------------------------- views */
-var VIEWS = ['vOff', 'vBusy', 'vStart', 'vCode', 'vIn'];
+var VIEWS = ['vOff', 'vBusy', 'vStart', 'vCode', 'vIn', 'vGone'];
 function show(v) { VIEWS.forEach(function (id) { $(id).hidden = id !== v }); var h = $(v).querySelector('h1'); if (h && v !== 'vBusy') { h.tabIndex = -1; try { h.focus({ preventScroll: true }) } catch (e) {} } }
 function msg(id, k) { $(id).textContent = k ? t(k) : '' }
 function busy(btn, on) { btn.disabled = on; btn.classList.toggle('loading', on); btn.setAttribute('aria-busy', on ? 'true' : 'false') }
@@ -200,6 +208,27 @@ function logout(scope) {
   });
 }
 
+/* ---------------------------------------------------------------- account deletion (account-delete Edge Function) */
+function clearSession() { try { Object.keys(localStorage).forEach(function (k) { if (/^sb-.*-auth-token/.test(k)) localStorage.removeItem(k) }) } catch (e) {} }
+function deleteAccount() {
+  var b = $('delGo'); if (b.disabled) return; busy(b, true); msg('delMsg');
+  var uid = user && user.id;
+  client().auth.getSession().then(function (r) {
+    var s = r.data && r.data.session; if (!s) throw { status: 401 };
+    return fetch(CFG.supabaseUrl + '/functions/v1/account-delete', { method: 'POST', cache: 'no-store',
+      headers: { apikey: CFG.supabaseKey, authorization: 'Bearer ' + s.access_token, 'content-type': 'application/json' },
+      body: JSON.stringify({ confirm: 'delete-my-account' }) });
+  }).then(function (res) {
+    return res.json().catch(function () { return {} }).then(function (j) { if (!res.ok) throw { status: res.status }; return j });
+  }).then(function (j) {
+    clearSession(); user = null;
+    // the per-user upload queue of My Library; the local sounds ('snipring') stay untouched
+    if (uid && window.indexedDB) { try { indexedDB.deleteDatabase('snipring-cloud-' + uid) } catch (e) {} }
+    track('account_deleted', { result: j.status === 'deleted' ? 'deleted' : 'pending' });
+    $('goneP').textContent = t(j.status === 'deleted' ? 'goneP' : 'gonePending'); show('vGone');
+  }).catch(function (e) { busy(b, false); msg('delMsg', e && e.status === 401 ? 'e_session' : (e && e.status) ? 'e_delete' : 'e_net') });
+}
+
 /* ---------------------------------------------------------------- in-app browsers (Google blocks sign-in there) */
 var INAPP = /FBAN|FBAV|FB_IAB|Instagram|TikTok|musical_ly|BytedanceWebview|Line\/|Snapchat|LinkedInApp|Pinterest|Twitter/i.test(navigator.userAgent);
 
@@ -220,6 +249,8 @@ function wire() {
   });
   $('logout').addEventListener('click', function () { logout('local') });
   $('logoutAll').addEventListener('click', function () { logout('global') });
+  $('delOk').addEventListener('change', function () { $('delGo').disabled = !this.checked });
+  $('delGo').addEventListener('click', deleteAccount);
   $('copyLink').addEventListener('click', function () {
     var url = location.origin + '/account.html' + (RET ? '?return=' + encodeURIComponent(RET) : '');
     (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { msg('startMsg', 'copied') }).catch(function () { window.prompt('', url) });

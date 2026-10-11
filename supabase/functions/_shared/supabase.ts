@@ -57,6 +57,18 @@ export function createDeps(fn: string): Deps {
       if (error) return { error: error.message };
       return { removed: (data ?? []).map((o: { name: string }) => o.name) };
     },
+    async acct(op, args) {
+      const { data, error } = await admin.rpc('svc_account', { p_op: op, p_args: args });
+      if (error) throw new Error(`svc_account ${op}: ${error.code ?? ''} ${error.message}`);
+      return data;
+    },
+    async deleteUser(id) {
+      const { error } = await admin.auth.admin.deleteUser(id);          // hard delete; profiles/favourites cascade
+      return error ? { error: `${(error as { status?: number }).status ?? ''} ${error.message}`.trim() } : 'ok';
+    },
+    async signOutAll(token) {
+      await admin.auth.admin.signOut(token, 'global');                  // revokes every refresh token of the user
+    },
     log(event) {
       console.log(JSON.stringify({ fn, at: new Date().toISOString(), ...event }));
     },

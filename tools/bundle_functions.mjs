@@ -14,7 +14,7 @@ const strip = (src) => src.split('\n')
   .join('\n');
 
 mkdirSync(new URL('dist/', FN), { recursive: true });
-for (const name of ['library-upload', 'library-download', 'library-janitor']) {
+for (const name of ['library-upload', 'library-download', 'library-janitor', 'account-delete']) {
   const parts = SHARED.map((f) => `// ---- _shared/${f}\n${strip(readFileSync(new URL(`_shared/${f}`, FN), 'utf8'))}`);
   const index = strip(readFileSync(new URL(`${name}/index.ts`, FN), 'utf8'));
   const body = [NPM, ...parts, `// ---- ${name}/index.ts\n${index}`].join('\n\n');

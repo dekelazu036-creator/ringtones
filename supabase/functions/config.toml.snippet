@@ -8,3 +8,6 @@ verify_jwt = true
 # and the function compares JANITOR_SECRET itself, in constant time.
 [functions.library-janitor]
 verify_jwt = false
+# account deletion: a user JWT, checked by the platform and again by the function
+[functions.account-delete]
+verify_jwt = true

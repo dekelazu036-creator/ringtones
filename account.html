@@ -108,6 +108,19 @@
         <button class="btn" id="logoutAll" type="button"><span data-i18n="logoutAll"></span></button>
       </div>
       <p class="hint small" id="inMsg" role="status"></p>
+      <details class="acct-danger">
+        <summary data-i18n="delH"></summary>
+        <p class="hint" data-i18n="delP"></p>
+        <label class="acct-check"><input type="checkbox" id="delOk"> <span data-i18n="delCheck"></span></label>
+        <button class="btn danger block" id="delGo" type="button" disabled><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-trash"/></svg><span data-i18n="delGo"></span></button>
+        <p class="hint small" id="delMsg" role="status"></p>
+      </details>
+    </section>
+
+    <section class="card acct-card" id="vGone" hidden>
+      <h1 data-i18n="goneH"></h1>
+      <p class="muted" id="goneP"></p>
+      <a class="btn primary lg block" href="/" data-i18n="continue"></a>
     </section>
   </main>
 

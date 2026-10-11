@@ -602,3 +602,9 @@ html[dir=rtl] .back-ic{transform:rotate(-90deg)}
 .lib-dlg{display:flex;flex-direction:column;gap:var(--s4)}
 .lib-dlg h2{font-size:var(--fs-xl)}
 .lib-foot{text-align:center}
+.acct-danger{border-top:1px solid var(--line);padding-top:var(--s3);display:flex;flex-direction:column;gap:var(--s3)}
+.acct-danger[open]{gap:var(--s3)}
+.acct-danger summary{cursor:pointer;color:var(--danger);font-weight:600;font-size:var(--fs-sm);min-height:var(--h-sm);display:flex;align-items:center}
+.acct-danger > * + *{margin-top:var(--s3)}
+.acct-check{display:flex;align-items:flex-start;gap:var(--s2);font-size:var(--fs-sm)}
+.acct-check input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--danger)}

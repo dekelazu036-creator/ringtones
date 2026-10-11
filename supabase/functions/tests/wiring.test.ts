@@ -29,6 +29,13 @@ const fake = (globalThis as any).__fake = {
     if (a.p_op === 'purged') return { data: 'purged', error: null };
     if (['expired', 'orphans', 'audit_due'].includes(a.p_op)) return { data: [], error: null };
     if (a.p_op === 'drop_tombstones' || a.p_op === 'prune_usage') return { data: 0, error: null };
+    if (_fn === 'svc_account') {
+      if (a.p_op === 'due') return { data: [], error: null };
+      if (a.p_op === 'request') return { data: { status: 'pending', items: 0 }, error: null };
+      if (a.p_op === 'purges') return { data: [], error: null };
+      if (a.p_op === 'prepare') return { data: 'ready', error: null };
+      if (a.p_op === 'done') return { data: 'done', error: null };
+    }
     return { data: true, error: null };
   },
   upload: async () => ({ data: null, error: { statusCode: '409', message: 'The resource already exists' } }),
@@ -90,4 +97,20 @@ test('W5 janitor reads JANITOR_SECRET from env and removes through the Storage A
   assert.deepEqual(fake.calls.find((c) => c[0] === 'remove').slice(1), ['user-media', ['u/x.mp3']]);
   assert.ok(fake.calls.some((c) => c[0] === 'rpc' && c[2].p_op === 'prune_usage'));
   assert.ok(fake.calls.some((c) => c[0] === 'rpc' && c[2].p_op === 'janitor_release'));
+});
+test('W6 account-delete: svc_account(p_op,p_args) with the session user only, global sign-out, Auth admin delete', async () => {
+  const h = await load('account-delete');
+  fake.calls.length = 0;
+  const bad = await h(new Request('https://f', { method: 'POST', headers: { authorization: 'Bearer h.ok.s', origin: 'https://snipring.com' }, body: '{}' }));
+  assert.equal(bad.status, 400);
+  assert.equal(fake.calls.length, 0);                                       // nothing happens without the confirmation word
+  const ok = await h(new Request('https://f', { method: 'POST', headers: { authorization: 'Bearer h.ok.s', origin: 'https://snipring.com' },
+    body: JSON.stringify({ confirm: 'delete-my-account', user_id: '00000000-0000-0000-0000-0000000000b2' }) }));
+  assert.equal(ok.status, 200, await ok.clone().text());
+  assert.deepEqual(await ok.json(), { status: 'deleted' });
+  const req = fake.calls.find((c) => c[0] === 'rpc' && c[2].p_op === 'request');
+  assert.equal(req[1], 'svc_account');
+  assert.deepEqual(req[2].p_args, { user_id: '00000000-0000-0000-0000-0000000000a1' });   // from the session, not the body
+  assert.deepEqual(fake.calls.find((c) => c[0] === 'signOut').slice(1), ['h.ok.s', 'global']);
+  assert.deepEqual(fake.calls.find((c) => c[0] === 'deleteUser').slice(1), ['00000000-0000-0000-0000-0000000000a1']);
 });
