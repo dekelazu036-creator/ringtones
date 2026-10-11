@@ -109,6 +109,9 @@ begin
   if exists (select 1 from auth.users where id = p_uid) then return 'still_exists'; end if;
   update private.account_deletions set state = 'done', done_at = now(), last_error = null
    where user_id = p_uid and state = 'pending';
+  if not found then return 'done'; end if;                               -- already done earlier: idempotent
+  -- the technical log of this user goes too; only the proof row below stays (id + time, nothing else)
+  delete from private.library_events where user_id = p_uid;
   perform private.log(p_uid, null, 'account_deleted', null);
   return 'done';
 end $$;

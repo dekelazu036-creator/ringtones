@@ -361,6 +361,8 @@ test('AD3 deleting an account with media: objects removed, quota rows gone, Auth
   assert.equal(one(`select count(*) from private.cloud_access where user_id = '${E}'`), '0');
   assert.equal(one(`select count(*) from public.profiles where id = '${E}'`), '0');
   assert.equal(ad(E).state, 'done');
+  // only the proof event stays in the technical log
+  assert.equal(one(`select string_agg(kind, ',') from private.library_events where user_id = '${E}'`), 'account_deleted');
   assert.ok(signedOut.includes('hdr.userE.sig'));
   assert.equal(objects(A) + objects(B), othersBefore);
 });
