@@ -20,16 +20,16 @@ indexedDB.open = (name, v) => realOpen('h-' + name, v);
 window.SNIPRING_CONFIG = { supabaseUrl: 'https://aaaaaaaaaaaaaaaaaaaa.supabase.co', supabaseKey: 'sb_publishable_test', auth: { enabled: true } };
 
 /* ---- fake auth */
-const USERS = { A: { id: '00000000-0000-4000-8000-00000000000a', email: 'a@test.invalid' }, B: { id: '00000000-0000-4000-8000-00000000000b', email: 'b@test.invalid' } };
+const USERS = { A: { id: '00000000-0000-4000-8000-00000000000a', email: 'a@test.invalid' }, B: { id: '00000000-0000-4000-8000-00000000000b', email: 'b@test.invalid' }, C: { id: '00000000-0000-4000-8000-00000000000c', email: 'c@test.invalid' } };
 let current = null, listeners = [];
 function setUser(k) { current = k ? USERS[k] : null; const s = current ? { user: current, access_token: 'jwt.' + (k || '') + '.sig' } : null; listeners.forEach(f => f(current ? 'SIGNED_IN' : 'SIGNED_OUT', s)) }
 window.supabase = { createClient: () => ({ auth: {
-  getSession: async () => ({ data: { session: current ? { user: current, access_token: 'jwt.' + (current === USERS.A ? 'A' : 'B') + '.sig' } : null } }),
+  getSession: async () => ({ data: { session: current ? { user: current, access_token: 'jwt.' + Object.keys(USERS).find(k => USERS[k] === current) + '.sig' } : null } }),
   onAuthStateChange: f => { listeners.push(f); setTimeout(() => f('INITIAL_SESSION', current ? { user: current } : null), 0); return { data: { subscription: { unsubscribe() {} } } } }
 } }) };
 
 /* ---- fake server: per-user items, records every call */
-const server = { items: { A: [], B: [] }, calls: [], keys: {}, failNext: null, usage: { enabled: true, uploads_open: true } };
+const server = { items: { A: [], B: [], C: [] }, calls: [], keys: {}, failNext: null, usage: { uploads_open: true }, enabled: { A: true, B: true, C: false } };
 const who = h => (h.authorization || '').split('.')[1];
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 window.fetch = async (url, init = {}) => {
@@ -37,9 +37,14 @@ window.fetch = async (url, init = {}) => {
   const u = new URL(url), h = init.headers || {}, k = who(h);
   server.calls.push({ path: u.pathname, user: k, init });
   if (!k) return json(401, { error: 'unauthorized' });
-  if (u.pathname === '/rest/v1/rpc/library_usage') return json(200, { items: server.items[k].length, bytes: server.items[k].reduce((a, i) => a + i.size_bytes, 0), max_items: 100, max_bytes: 104857600, ...server.usage });
+  if (u.pathname === '/rest/v1/rpc/library_usage') return json(200, { items: server.items[k].length, bytes: server.items[k].reduce((a, i) => a + i.size_bytes, 0), max_items: 100, max_bytes: 104857600, ...server.usage, enabled: server.enabled[k] });
   if (u.pathname === '/rest/v1/library_items') return json(200, server.items[k].slice());
   if (u.pathname === '/rest/v1/rpc/library_job_status') return json(200, []);
+  if (u.pathname === '/rest/v1/rpc/beta_redeem') {
+    if (server.enabled[k]) return json(200, 'already');
+    if (JSON.parse(init.body).p_code === 'GOOD-CODE-1234-5678') { server.enabled[k] = true; return json(200, 'ok') }
+    return json(200, 'invalid');
+  }
   if (u.pathname === '/rest/v1/rpc/library_delete') { const id = JSON.parse(init.body).p_id; const n = server.items[k].length; server.items[k] = server.items[k].filter(i => i.id !== id); return json(200, n === server.items[k].length ? 'not_found' : 'deleting') }
   if (u.pathname === '/functions/v1/library-upload') {
     if (server.failNext) { const f = server.failNext; server.failNext = null; return json(f[0], { error: f[1], retryable: false }) }
@@ -144,6 +149,24 @@ async function run() {
   setUser(null);
   ok('L20 sign-out shows the signed-out view', await until(() => !$('vOut').hidden));
   L = await rings(); ok('L21 local sounds survive sign-out', L.length === before + 1);
+
+  // private beta invites (M6)
+  setUser('C');
+  ok('L23 a user outside the beta sees the invite form, and Save to cloud is disabled',
+    await until(() => !$('vMain').hidden && /c@test/.test($('who').textContent) && !$('notOnList').hidden && !$('inviteForm').hidden)
+    && [...$('localList').querySelectorAll('button')].filter(b => b.textContent.includes('Save to cloud')).every(b => b.disabled));
+  $('inviteCode').value = 'WRONG-CODE'; $('inviteForm').requestSubmit();
+  ok('L24 a wrong code shows a neutral error and changes nothing', await until(() => $('msg').classList.contains('err') && /not valid/.test($('msg').textContent)) && !server.enabled.C);
+  $('inviteCode').value = 'GOOD-CODE-1234-5678'; $('inviteForm').requestSubmit();
+  ok('L25 a valid code joins the beta: notice gone, usage shown, saving enabled',
+    await until(() => server.enabled.C && $('notOnList').hidden && !$('usage').hidden
+      && [...$('localList').querySelectorAll('button')].some(b => b.textContent.includes('Save to cloud') && !b.disabled)));
+  // an invite saved from an invite link is redeemed automatically on the next start
+  server.enabled.C = false; localStorage.setItem('snipring-invite', 'GOOD-CODE-1234-5678');
+  setUser(null); await until(() => !$('vOut').hidden); setUser('C');
+  ok('L26 a pending invite from a link is redeemed at start and then forgotten',
+    await until(() => server.enabled.C && $('notOnList').hidden && !localStorage.getItem('snipring-invite')));
+  setUser(null); await until(() => !$('vOut').hidden);
 
   // owner/disabled gate
   ok('L22 no request ever went to Storage directly', !server.calls.some(c => c.path.startsWith('/storage/')));

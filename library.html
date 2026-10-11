@@ -50,7 +50,14 @@
     <div id="vMain" class="lib-main" hidden>
       <h1 class="lib-h" data-i18n="h"></h1>
       <p class="muted lib-sub" id="who"></p>
-      <p class="notice" id="notOnList" hidden data-i18n="notOnList"></p>
+      <div class="notice lib-invite" id="notOnList" hidden>
+        <p data-i18n="notOnList"></p>
+        <form id="inviteForm" class="lib-invite-form">
+          <label class="sr" for="inviteCode" data-i18n="inviteL"></label>
+          <input class="input" id="inviteCode" autocomplete="off" autocapitalize="characters" spellcheck="false" dir="ltr" maxlength="40" placeholder="XXXX-XXXX-XXXX-XXXX">
+          <button class="btn primary" type="submit" data-i18n="inviteGo"></button>
+        </form>
+      </div>
       <p class="notice" id="closed" hidden data-i18n="closed"></p>
       <div class="lib-usage" id="usage" hidden>
         <div class="lib-bar" aria-hidden="true"><span id="usageBar"></span></div>

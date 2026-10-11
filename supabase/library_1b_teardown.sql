@@ -35,6 +35,12 @@ do $$ begin
     end if;
   end if;
 end $$;
+-- beta invites (beta_invites.sql) depend on cloud_access
+drop function if exists public.beta_redeem(text);
+drop function if exists private.create_invite(int, int, text);
+drop function if exists private.invite_hash(text);
+drop table    if exists private.beta_redemptions;
+drop table    if exists private.beta_invites;
 drop function if exists public.svc_account(text, jsonb);
 drop function if exists private.ops_health();
 drop view     if exists private.account_deletion_health;
