@@ -35,3 +35,18 @@ jobs:
         run: |
           cd supabase/functions
           node --test --test-reporter=spec tests/library.test.ts 2>&1 | grep -vE "^\s*$" | tail -40 || true
+
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Playwright Chromium
+        run: |
+          npm i --no-save --no-package-lock playwright@1.47.2
+          npx playwright install --with-deps chromium
+      - name: Browser harnesses (library page against a fake server)
+        run: node tests/frontend/run_harness.mjs
