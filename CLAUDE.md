@@ -132,7 +132,7 @@ Done on staging (2026-10-08, verified by read queries):
 Runner tips (zsh): paste one command at a time; read passwords with `read -s`; a pasted trailing newline can answer a prompt with an empty value.
 
 ### Production (2026-10-11 evening)
-`core-1.0` merged to `main` (PR #2, `0bc01aa`): design v2, legal drafts, monitor.js live. Production DB now has
+`core-1.0` merged to `main` (PR #2, `0bc01aa`): design v2, legal texts (approved by the owner the same day), monitor.js live. Production DB now has
 `schema.sql`, `auth_1a.sql`, `library_1b.sql`, `account_delete.sql`; 4 functions deployed; janitor cron every 10 min (200);
 `reservations_open = true`, allow-list = owner only, `auth.enabled` still **false** (owner mode `?me` only).
 Owner tested on the phone: save to cloud, play, delete. See docs/PRODUCTION_ROLLOUT.md.
@@ -154,7 +154,7 @@ Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core F
 ### Planned
 - **M2 leftovers:** D8 last-copy dialog is moot while local copies are never removed (re-check if that changes); blocked `deleteDatabase` and device storage shortage need manual tests.
 - Then: production rollout of 1B (owner runs production SQL), private beta via allow-list.
-- **Launch blockers (keep):** Supabase plan decision (Free vs Pro); self-service account deletion — built, staging E2E (T30) pending; legal review of Terms/Privacy. Before public: D6 decision, media backup policy, alerting, global rate limiting / Turnstile on upload.
+- **Launch blockers (status 2026-10-11):** ✅ Supabase Pro; ✅ self-service account deletion (live, T30 9/9); ✅ Terms/Privacy approved by the owner; ✅ D6 (site-wide CSP, no Meta with a session); ✅ global upload ceiling. **Open:** restore drill from a daily backup, owner listening review of the 26 Discover sounds, alerting (health views exist, nobody is paged), media backup policy (Storage objects are not in the DB backup).
 - Later phases: Pro/Studio tiers and payments, AI sound generator, creators/Discover uploads with moderation, Apple sign-in.
 
 ---
