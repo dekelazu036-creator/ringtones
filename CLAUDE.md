@@ -137,6 +137,10 @@ Runner tips (zsh): paste one command at a time; read passwords with `read -s`; a
 `reservations_open = true`, allow-list = owner only, `auth.enabled` still **false** (owner mode `?me` only).
 Owner tested on the phone: save to cloud, play, delete. See docs/PRODUCTION_ROLLOUT.md.
 M1 closed by the owner without the full 24 h watch (staging was clean for ~3 h at that point).
+PR #3 merged (`663441e`): site-wide CSP (D6), Meta never with a session, age 13, CSP violations counted.
+Production `lib_begin` + `global_per_hour = 300` + index `li_created` applied by the owner (SQL Editor, delta only),
+verified read-only: definer + search_path kept, `authenticated` cannot call it, janitor 200.
+Lesson: pasting from `pbcopy` into the dashboard SQL Editor sometimes fails; a code block in chat works.
 
 ### Core 1.0 build — branch `core-1.0` (2026-10-11, owner approved building per the master spec; **not merged** = not in production)
 Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core First; Studio gated). `core-1.0` = `phase-1b-m0` + the commits below. CI: `.github/workflows/tests.yml` runs `run_all.sh` + bundle drift check on every push (green).
