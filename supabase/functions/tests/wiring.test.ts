@@ -28,7 +28,7 @@ const fake = (globalThis as any).__fake = {
     if (a.p_op === 'due_purges') return { data: [{ id: '22222222-2222-2222-2222-222222222222', path: 'u/x.mp3' }], error: null };
     if (a.p_op === 'purged') return { data: 'purged', error: null };
     if (['expired', 'orphans', 'audit_due'].includes(a.p_op)) return { data: [], error: null };
-    if (a.p_op === 'drop_tombstones') return { data: 0, error: null };
+    if (a.p_op === 'drop_tombstones' || a.p_op === 'prune_usage') return { data: 0, error: null };
     return { data: true, error: null };
   },
   upload: async () => ({ data: null, error: { statusCode: '409', message: 'The resource already exists' } }),
@@ -66,8 +66,12 @@ test('W2 upload: rpc svc_library(p_op,p_args), measured size/sha, upsert:false, 
 });
 test('W3 rejected session never reaches rpc or storage', async () => {
   fake.calls.length = 0;
-  const res = await handlers['library-upload'](new Request('https://f', { method: 'POST', headers: { authorization: 'Bearer h.bad.s' }, body: 'x' }));
+  const meta = Buffer.from(JSON.stringify({ client_key: crypto.randomUUID(), type: 'ring', origin: 'file' })).toString('base64url');
+  const res = await handlers['library-upload'](new Request('https://f', { method: 'POST', headers: { authorization: 'Bearer h.bad.s', 'x-library-meta': meta }, body: 'x' }));
   assert.equal(res.status, 401); assert.equal(fake.calls.length, 0);
+  // no metadata: refused from the headers alone (400), before Auth is even asked
+  const res2 = await handlers['library-upload'](new Request('https://f', { method: 'POST', headers: { authorization: 'Bearer h.bad.s' }, body: 'x' }));
+  assert.equal(res2.status, 400); assert.equal(fake.calls.length, 0);
 });
 test('W4 download: signed URL lifetime fixed at 300 s by the server, with a download filename', async () => {
   const h = await load('library-download');
@@ -84,5 +88,6 @@ test('W5 janitor reads JANITOR_SECRET from env and removes through the Storage A
   const ok = await h(new Request('https://f', { method: 'POST', headers: { authorization: `Bearer ${'j'.repeat(40)}` } }));
   assert.equal(ok.status, 200, await ok.clone().text());
   assert.deepEqual(fake.calls.find((c) => c[0] === 'remove').slice(1), ['user-media', ['u/x.mp3']]);
+  assert.ok(fake.calls.some((c) => c[0] === 'rpc' && c[2].p_op === 'prune_usage'));
   assert.ok(fake.calls.some((c) => c[0] === 'rpc' && c[2].p_op === 'janitor_release'));
 });

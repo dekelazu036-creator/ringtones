@@ -33,6 +33,9 @@ export function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+// bytes readCapped already pulled from a body it then gave up on: discardBody's budget is per request
+const consumed = new WeakMap<Request, number>();
+
 // read at most `max` bytes; returns null if the body is larger (stops reading early and leaves the
 // rest unread but unlocked, so the handler's discardBody can still drain it)
 export async function readCapped(req: Request, max: number): Promise<Uint8Array | null | 'missing'> {
@@ -46,7 +49,7 @@ export async function readCapped(req: Request, max: number): Promise<Uint8Array 
     const { done, value } = await reader.read();
     if (done) break;
     total += value.byteLength;
-    if (total > max) { reader.releaseLock(); return null; }
+    if (total > max) { reader.releaseLock(); consumed.set(req, total); return null; }
     parts.push(value);
   }
   const out = new Uint8Array(total);
@@ -55,13 +58,21 @@ export async function readCapped(req: Request, max: number): Promise<Uint8Array 
   return out;
 }
 
-// read and drop a request body nobody read (at most `max` bytes, then cancel).
+// read and drop a request body nobody read (at most `max` bytes per request in total, counting what
+// readCapped already read, then cancel).
 // On the hosted runtime a response sent while the client is still sending the body never arrives:
 // staging T9b (11 MiB, 413 decided from content-length) hung until the 150 s wall clock → 503.
+// A body DECLARED larger than `max` (or with a malformed length) is cancelled without reading any
+// of it: draining part of it would not help that client and only costs this function time.
 export async function discardBody(req: Request, max: number): Promise<void> {
   if (!req.body || req.body.locked) return;            // locked = a reader is still busy with it (fully read)
+  const declared = req.headers.get('content-length');
+  if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > max)) {
+    await req.body.cancel().catch(() => {});
+    return;
+  }
   const reader = req.body.getReader();
-  let total = 0;
+  let total = consumed.get(req) ?? 0;
   try {
     for (;;) {
       const { done, value } = await reader.read();

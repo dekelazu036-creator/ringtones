@@ -60,10 +60,14 @@ async function authenticate(req: Request, deps: Deps): Promise<User | null> {
 }
 
 // ------------------------------------------------------------------ library-upload
+// largest refused body that is still drained so its answer arrives (covers an 11 MiB file);
+// anything declared larger is cancelled unread
+const UPLOAD_DRAIN_EXTRA = 1024 * 1024;
+
 export async function handleUpload(req: Request, deps: Deps, cfg: Config): Promise<Response> {
   const res = await uploadResponse(req, deps, cfg);
   // every early refusal (401, 400, 413 by content-length) leaves the file unread: drain it first
-  await discardBody(req, 2 * cfg.maxFileBytes);
+  await discardBody(req, cfg.maxFileBytes + UPLOAD_DRAIN_EXTRA);
   return res;
 }
 
@@ -72,9 +76,11 @@ async function uploadResponse(req: Request, deps: Deps, cfg: Config): Promise<Re
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return fail('bad_request', cors);
 
-  const user = await authenticate(req, deps);
-  if (!user) return fail('unauthorized', cors);
-
+  // cheap header checks first: a refused request costs no call to Auth
+  const declared = req.headers.get('content-length');
+  if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > cfg.maxFileBytes)) {
+    return fail('file_too_large', cors);
+  }
   const meta = decodeMeta(req.headers.get('x-library-meta'));
   const clientKey = typeof meta?.client_key === 'string' ? meta.client_key.toLowerCase() : '';
   const type = meta?.type, origin = meta?.origin, name = meta?.name;
@@ -83,6 +89,9 @@ async function uploadResponse(req: Request, deps: Deps, cfg: Config): Promise<Re
       || (meta.allow_duplicate !== undefined && typeof meta.allow_duplicate !== 'boolean')) {
     return fail('bad_request', cors);
   }
+
+  const user = await authenticate(req, deps);
+  if (!user) return fail('unauthorized', cors);
 
   const body = await readCapped(req, cfg.maxFileBytes);
   if (body === null) return fail('file_too_large', cors);
@@ -162,7 +171,7 @@ async function downloadResponse(req: Request, deps: Deps, cfg: Config): Promise<
 // ------------------------------------------------------------------ library-janitor
 export type JanitorReport = {
   expired: number; purged: number; purge_failed: number; orphans: number; audited: number; drift: number;
-  tombstones: number; stopped_early: boolean;
+  pruned: number; tombstones: number; stopped_early: boolean;
 };
 
 export async function handleJanitor(req: Request, deps: Deps, cfg: Config): Promise<Response> {
@@ -190,7 +199,7 @@ export async function runJanitor(deps: Deps, cfg: Config): Promise<JanitorReport
   const holder = cfg.holder ?? crypto.randomUUID();
   const deadline = Date.now() + (cfg.janitorBudgetMs ?? 100_000);
   if ((await deps.rpc('janitor_acquire', { holder, secs: 180 })) !== true) return null;
-  const r: JanitorReport = { expired: 0, purged: 0, purge_failed: 0, orphans: 0, audited: 0, drift: 0, tombstones: 0, stopped_early: false };
+  const r: JanitorReport = { expired: 0, purged: 0, purge_failed: 0, orphans: 0, audited: 0, drift: 0, pruned: 0, tombstones: 0, stopped_early: false };
   const time = () => { if (Date.now() > deadline) { r.stopped_early = true; return false; } return true; };
   try {
     // 1. expired reservations → abandoned (quota moves to "releasing")
@@ -234,6 +243,8 @@ export async function runJanitor(deps: Deps, cfg: Config): Promise<JanitorReport
     }
     // 5. tombstones older than 30 days
     if (time()) r.tombstones = Number(await deps.rpc('drop_tombstones', {}));
+    // 6. usage rows that hold nothing (no item rows left): they would block deleting the auth user
+    if (time()) r.pruned = Number(await deps.rpc('prune_usage', { limit: 100 }));
     await deps.rpc('run_log', { detail: r });
     return r;
   } finally {

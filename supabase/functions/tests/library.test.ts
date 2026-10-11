@@ -152,11 +152,31 @@ test('I4b refusals drain the unread body before answering (declared, streamed, 4
     assert.equal(s.pulled, total, `${name}: whole body read before the response was returned`);
     assert.equal(s.closed, true, name);
   }
-  // beyond the drain limit (2 × 10 MiB for uploads) the rest is cancelled, never read without end
-  const { stream, s } = slowBody(25 * MiB);
-  assert.equal((await handleUpload(streamReq('hdr.userA.sig', stream, { 'content-length': String(25 * MiB) }), deps, cfg)).status, 413);
-  assert.equal(s.cancelled, true);
-  assert.ok(s.pulled <= 20 * MiB + 512 * 1024, `pulled ${s.pulled}`);
+  // declared beyond the drain limit (10 MiB + 1 MiB for uploads): cancelled without reading it
+  const declared = slowBody(25 * MiB);
+  assert.equal((await handleUpload(streamReq('hdr.userA.sig', declared.stream, { 'content-length': String(25 * MiB) }), deps, cfg)).status, 413);
+  assert.equal(declared.s.cancelled, true);
+  assert.ok(declared.s.pulled <= 512 * 1024, `declared 25 MiB: pulled ${declared.s.pulled}`);
+  // streamed without a length: read up to the drain limit, then cancelled
+  const streamed = slowBody(25 * MiB);
+  assert.equal((await handleUpload(streamReq('hdr.userA.sig', streamed.stream), deps, cfg)).status, 413);
+  assert.equal(streamed.s.cancelled, true);
+  assert.ok(streamed.s.pulled <= 11 * MiB + 512 * 1024, `streamed 25 MiB: pulled ${streamed.s.pulled}`);
+  // malformed content-length: refused, cancelled unread
+  const bad = slowBody(3 * MiB);
+  assert.equal((await handleUpload(streamReq('hdr.userA.sig', bad.stream, { 'content-length': '12abc' }), deps, cfg)).status, 413);
+  assert.ok(bad.s.pulled <= 512 * 1024, `malformed length: pulled ${bad.s.pulled}`);
+});
+// a refusal decided from headers alone must not cost a call to Supabase Auth
+test('I4c refused by content-length or metadata → no getUser call', async () => {
+  let calls = 0;
+  const counted: Deps = { ...deps, getUser: async (t) => { calls++; return deps.getUser(t); } };
+  assert.equal((await call(handleUpload(uploadReq('hdr.userA.sig', meta(), SONG, { 'content-length': '20000000' }), counted, cfg))).status, 413);
+  assert.equal((await call(handleUpload(uploadReq('hdr.userA.sig', '%%%', SONG), counted, cfg))).status, 400);
+  assert.equal((await call(handleUpload(uploadReq(null, meta({ type: 'malware' }), SONG), counted, cfg))).status, 400);
+  assert.equal(calls, 0);
+  assert.equal((await call(handleUpload(uploadReq('hdr.forged.sig', meta(), SONG), counted, cfg))).status, 401);
+  assert.equal(calls, 1);
 });
 test('I5 not an MP3 (WAV renamed) → 415, nothing reserved', async () => {
   const r = await call(handleUpload(uploadReq('hdr.userA.sig', meta(), ffmpeg([...sine(2), '-f', 'wav'])), deps, cfg));
@@ -263,6 +283,13 @@ test('I16 janitor: deletes, expired reservations and orphans are cleaned through
   assert.equal(row(exp.body.id).state, 'abandoned');
   assert.equal(one(`select count(*) from storage.objects where name = '${B}/orphan.mp3'`), '0');
   assert.equal(one(`select bytes_releasing from private.library_usage where user_id = '${A}'`), '0');
+});
+test('I16b janitor prunes usage rows that hold nothing (stray rows would block account deletion)', async () => {
+  one(`insert into private.library_usage (user_id) values ('${C}')`);            // as the pre-fix library_delete left it
+  const r = await runJanitor(deps, { ...cfg, holder: 'prune' });
+  assert.ok(r && r.pruned >= 1, JSON.stringify(r));
+  assert.equal(one(`select count(*) from private.library_usage where user_id = '${C}'`), '0');
+  assert.equal(one(`select count(*) from private.library_usage where user_id in ('${A}', '${B}')`), '2');   // rows with data stay
 });
 test('I17 two janitor runs at once: only one does the work', async () => {
   const [x, y] = await Promise.all([runJanitor(deps, { ...cfg, holder: 'r1' }), runJanitor(deps, { ...cfg, holder: 'r2' })]);
