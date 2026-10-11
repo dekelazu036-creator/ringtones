@@ -10,7 +10,7 @@ window.SNIPRING_CONFIG = {
   // Accounts (Phase 1A). Ships switched OFF: only owner test mode (snipring.com/?me) can see it.
   // turnstileSiteKey is the PUBLIC site key; the secret lives only in Supabase.
   auth: { enabled: false, google: true, email: true, turnstileSiteKey: '0x4AAAAAAFQ0O8x3Ke3kRuTq' },
-  consentVersion: 1     // raise by 1 after a material privacy change, to ask everyone again
+  consentVersion: 2     // 2026-10-11: cloud library + account deletion. Raise by 1 after a material privacy change, to ask everyone again
 };
 /* Local staging tests only. On localhost / 127.0.0.1, localStorage 'snipring-dev-supabase' =
    {"url":"https://<staging-ref>.supabase.co","key":"sb_publishable_..."} replaces the project above
