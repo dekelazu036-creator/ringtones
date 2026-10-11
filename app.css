@@ -608,3 +608,7 @@ html[dir=rtl] .back-ic{transform:rotate(-90deg)}
 .acct-danger > * + *{margin-top:var(--s3)}
 .acct-check{display:flex;align-items:flex-start;gap:var(--s2);font-size:var(--fs-sm)}
 .acct-check input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--danger)}
+.lib-invite{flex-direction:column;align-items:stretch;gap:var(--s2);padding:var(--s3) var(--s4)}
+.lib-invite p{font-size:var(--fs-sm)}
+.lib-invite-form{display:flex;gap:var(--s2)}
+.lib-invite-form .input{flex:1;min-width:0;font-family:var(--font);letter-spacing:.04em}

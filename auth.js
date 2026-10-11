@@ -6,7 +6,8 @@
 var $ = function (id) { return document.getElementById(id) };
 var CFG = window.SNIPRING_CONFIG || {}, A = CFG.auth || {};
 var owner = false; try { owner = localStorage.getItem('umami.disabled') === '1' } catch (e) {}
-var ON = !!A.enabled || owner;
+var beta = false; try { beta = localStorage.getItem('snipring-beta') === '1' } catch (e) {}
+var ON = !!A.enabled || owner || beta;
 
 /* ---------------------------------------------------------------- text */
 var lang = (function () { try { var v = localStorage.getItem('snipring-lang'); if (v === 'he' || v === 'en') return v } catch (e) {} return /^he|^iw/i.test(navigator.language || '') ? 'he' : 'en' })();
@@ -19,7 +20,7 @@ var T = {
     perk1: 'הצלילים שלכם נשמרים בחשבון', perk2: 'גישה מכל מכשיר', perk3: 'מועדפים מהספרייה',
     inAppP: 'נראה שהאתר פתוח בתוך אפליקציה, וכאן התחברות עם Google לא עובדת. פתחו את הקישור בדפדפן Safari או Chrome, או התחברו עם קוד במייל.', copyLink: 'העתק קישור לדפדפן', copied: 'הקישור הועתק. הדביקו אותו בדפדפן Safari או Chrome.',
     google: 'המשך עם Google', or: 'או', emailL: 'כתובת מייל', sendCode: 'שלחו לי קוד',
-    legal1: 'בהתחברות אתם מסכימים', termsL: 'לתנאי השימוש', terms: 'תנאי שימוש', legal2: 'ומאשרים שקראתם את', age: 'חשבון מיועד לבני 13 ומעלה.', privacyL: 'מדיניות הפרטיות', privacy: 'מדיניות פרטיות', aStatement: 'הצהרת נגישות',
+    legal1: 'בהתחברות אתם מסכימים', termsL: 'לתנאי השימוש', terms: 'תנאי שימוש', legal2: 'ומאשרים שקראתם את', age: 'חשבון מיועד לבני 13 ומעלה.', invited: 'הוזמנתם לבטא של הספרייה בענן. התחברו כדי להצטרף.', inviteOk: 'הצטרפתם לבטא! עכשיו אפשר לשמור צלילים בענן.', inviteBad: 'קוד ההזמנה לא תקף או שכבר נוצל.', inviteRate: 'יותר מדי ניסיונות. נסו שוב בעוד שעה.', privacyL: 'מדיניות הפרטיות', privacy: 'מדיניות פרטיות', aStatement: 'הצהרת נגישות',
     codeH: 'הקלידו את הקוד', codeP: 'אם הכתובת תקינה, שלחנו קוד בן 6 ספרות אל', codeL: 'קוד בן 6 ספרות', verify: 'התחברות',
     resend: 'שליחה מחדש', resendIn: 'שליחה מחדש בעוד {n}', changeEmail: 'שינוי מייל', spamHint: 'לא הגיע? בדקו בתיקיית הספאם או קידומי מכירות.',
     inH: 'מחובר/ת', viaL: 'התחברות דרך', planL: 'חשבון', planFree: 'חינמי', via_google: 'Google', via_email: 'מייל',
@@ -42,7 +43,7 @@ var T = {
     perk1: 'Your sounds saved to your account', perk2: 'Access from any device', perk3: 'Favourites from the library',
     inAppP: 'It looks like this page is open inside an app. Google sign-in does not work here: open the link in Safari or Chrome, or sign in with an email code.', copyLink: 'Copy link for your browser', copied: 'Link copied. Paste it into Safari or Chrome.',
     google: 'Continue with Google', or: 'or', emailL: 'Email address', sendCode: 'Email me a code',
-    legal1: 'By signing in you agree to the', termsL: 'Terms of Use', terms: 'Terms of Use', legal2: 'and confirm you have read the', age: 'Accounts are for people aged 13 and over.', privacyL: 'Privacy Policy', privacy: 'Privacy Policy', aStatement: 'Accessibility statement',
+    legal1: 'By signing in you agree to the', termsL: 'Terms of Use', terms: 'Terms of Use', legal2: 'and confirm you have read the', age: 'Accounts are for people aged 13 and over.', invited: 'You are invited to the cloud library beta. Sign in to join.', inviteOk: 'You joined the beta! You can now save sounds to the cloud.', inviteBad: 'This invite code is not valid or was already used.', inviteRate: 'Too many tries. Please try again in an hour.', privacyL: 'Privacy Policy', privacy: 'Privacy Policy', aStatement: 'Accessibility statement',
     codeH: 'Enter the code', codeP: 'If the address is valid, we sent a 6-digit code to', codeL: '6-digit code', verify: 'Sign in',
     resend: 'Send again', resendIn: 'Send again in {n}', changeEmail: 'Change email', spamHint: 'Nothing yet? Check your spam or promotions folder.',
     inH: 'Signed in', viaL: 'Signed in with', planL: 'Account', planFree: 'Free', via_google: 'Google', via_email: 'Email',
@@ -186,9 +187,20 @@ function paintUser() {
   $('via').textContent = t('via_' + (prov === 'google' ? 'google' : 'email'));
   $('continue').href = RET || '/';
 }
+/* private beta: redeem a pending invite once signed in (codes are checked and counted on the server) */
+function redeemInvite() {
+  var code = ''; try { code = localStorage.getItem('snipring-invite') || '' } catch (e) {}
+  if (!code) return;
+  client().rpc('beta_redeem', { p_code: code }).then(function (r) {
+    var v = r && r.data; if (r && r.error) throw r.error;
+    if (v === 'ok' || v === 'already') { msg('inMsg', 'inviteOk'); track('beta_joined', { result: v }) }
+    else msg('inMsg', v === 'rate_limited' ? 'inviteRate' : 'inviteBad');
+    if (v !== 'rate_limited') { try { localStorage.removeItem('snipring-invite') } catch (e) {} }
+  }).catch(function () {});                                     // network trouble: keep the code, try again next visit
+}
 function signedIn(session, fresh) {
   user = session && session.user; if (!user) { show('vStart'); return }
-  paintUser();
+  paintUser(); redeemInvite();
   if (fresh) {
     var created = Date.parse(user.created_at || 0), isNew = created && Date.now() - created < 5 * 60 * 1000;
     var m = method || ((user.app_metadata && user.app_metadata.provider) === 'google' ? 'google' : 'email');
@@ -258,6 +270,7 @@ function wire() {
   if (A.google === false) { $('google').hidden = true; $('orRow').hidden = true }
   if (A.email === false) { $('emailForm').hidden = true; $('orRow').hidden = true }
   if (INAPP) { $('inApp').hidden = false; $('methods').classList.add('inapp') }   // email first; Google moves below
+  try { $('invitedNote').hidden = !localStorage.getItem('snipring-invite') } catch (e) {}
 }
 function boot() {
   applyLang(); wire();

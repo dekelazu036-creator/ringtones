@@ -1,10 +1,20 @@
 /* SnipRing account state for every page. No auth library and no network requests here:
    it only reads the session that account.html stored on this device, to show the account button.
-   The button stays hidden unless accounts are enabled in config.js or this device is in owner test mode (?me). */
+   The button stays hidden unless accounts are enabled in config.js, this device is in owner test mode (?me),
+   or it opened a private-beta invite link (?invite=CODE). */
 (function () {
   var CFG = window.SNIPRING_CONFIG || {}, A = CFG.auth || {};
+  // private beta: an invite link (?invite=CODE) unlocks the account UI on this device and is redeemed after sign-in
+  try {
+    var im = /[?&]invite=([A-Za-z0-9-]{8,40})(?:&|#|$)/.exec(location.search);
+    if (im) {
+      localStorage.setItem('snipring-invite', im[1]); localStorage.setItem('snipring-beta', '1');
+      var iu = new URL(location.href); iu.searchParams.delete('invite'); history.replaceState(null, '', iu.pathname + iu.search + iu.hash);
+    }
+  } catch (e) {}
   var owner = false; try { owner = localStorage.getItem('umami.disabled') === '1' } catch (e) {}
-  var on = !!A.enabled || owner;
+  var beta = false; try { beta = localStorage.getItem('snipring-beta') === '1' } catch (e) {}
+  var on = !!A.enabled || owner || beta;
   var ref = ''; try { ref = new URL(CFG.supabaseUrl).hostname.split('.')[0] } catch (e) {}
   var KEY = 'sb-' + ref + '-auth-token';
   function read() {

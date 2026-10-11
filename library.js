@@ -10,7 +10,8 @@
 'use strict';
 var CFG = window.SNIPRING_CONFIG || {}, A = CFG.auth || {};
 var owner = false; try { owner = localStorage.getItem('umami.disabled') === '1' } catch (e) {}
-var ON = !!A.enabled || owner;
+var beta = false; try { beta = localStorage.getItem('snipring-beta') === '1' } catch (e) {}
+var ON = !!A.enabled || owner || beta;
 var $ = function (id) { return document.getElementById(id) };
 var MAX_BYTES = 10 * 1024 * 1024;
 var TYPES = ['ring', 'text', 'alarm', 'sfx', 'intro', 'outro', 'custom'];
@@ -23,7 +24,7 @@ var T = {
     offH: 'הספרייה בענן עוד לא פתוחה', offP: 'בינתיים כל הצלילים שלכם נשמרים בטלפון הזה, בחינם ובלי הרשמה.', toCreate: 'ליצירת צליל',
     outH: 'הספרייה שלכם בענן', outP: 'התחברו כדי לשמור צלילים בענן ולפתוח אותם בכל מכשיר. הצלילים בטלפון נשארים בדיוק כמו שהם.', signIn: 'התחברות',
     h: 'הספרייה שלי', signedAs: 'מחוברים בתור {n}',
-    notOnList: 'הספרייה בענן פתוחה כרגע רק לבודקי בטא. החשבון שלכם עוד לא ברשימה.',
+    notOnList: 'הספרייה בענן פתוחה כרגע רק לבודקי בטא. יש לכם קוד הזמנה? הקלידו אותו כאן.', inviteL: 'קוד הזמנה', inviteGo: 'הצטרפות', inviteOk: 'הצטרפתם לבטא! עכשיו אפשר לשמור צלילים בענן.', inviteBad: 'קוד ההזמנה לא תקף או שכבר נוצל.', inviteRate: 'יותר מדי ניסיונות. נסו שוב בעוד שעה.',
     closed: 'שמירה חדשה בענן מושהית כרגע. אפשר להאזין, להוריד ולמחוק.',
     usage: '{i} מתוך {mi} צלילים · {b} מתוך {mb} MB',
     cloudH: 'בענן', cloudEmpty: 'עוד אין צלילים בענן. בחרו צליל מהרשימה למטה ולחצו "שמירה בענן".',
@@ -47,7 +48,7 @@ var T = {
     offH: 'The cloud library is not open yet', offP: 'For now every sound you make is kept on this phone, free and with no sign-up.', toCreate: 'Make a sound',
     outH: 'Your cloud library', outP: 'Sign in to keep sounds in the cloud and open them on any device. The sounds on this phone stay exactly as they are.', signIn: 'Sign in',
     h: 'My Library', signedAs: 'Signed in as {n}',
-    notOnList: 'The cloud library is open to beta testers only for now. Your account is not on the list yet.',
+    notOnList: 'The cloud library is open to beta testers only for now. Have an invite code? Type it here.', inviteL: 'Invite code', inviteGo: 'Join', inviteOk: 'You joined the beta! You can now save sounds to the cloud.', inviteBad: 'This invite code is not valid or was already used.', inviteRate: 'Too many tries. Please try again in an hour.',
     closed: 'New cloud saves are paused right now. You can still play, download and delete.',
     usage: '{i} of {mi} sounds · {b} of {mb} MB',
     cloudH: 'In the cloud', cloudEmpty: 'No sounds in the cloud yet. Pick one below and tap "Save to cloud".',
@@ -325,6 +326,16 @@ function render() {
 
 /* ---------------------------------------------------------------- sessions */
 function signedOutView() { gen++; if (ctl) ctl.abort(); ctl = null; stopAudio(); user = null; cloud = []; jobs = {}; show('vOut') }
+/* private beta: redeem an invite (from an invite link, or typed in the notice) */
+function redeem(code) {
+  return rpc('beta_redeem', { p_code: code }).then(function (v) {
+    if (v === 'ok' || v === 'already') { say('inviteOk'); track('beta_joined', { result: v }) }
+    else say(v === 'rate_limited' ? 'inviteRate' : 'inviteBad', null, true);
+    if (v !== 'rate_limited') { try { localStorage.removeItem('snipring-invite') } catch (e) {} }
+    return v;
+  });
+}
+function pendingInvite() { try { return localStorage.getItem('snipring-invite') || '' } catch (e) { return '' } }
 function startFor(u) {
   if (user && user.id === u.id) return;
   gen++; if (ctl) ctl.abort(); ctl = new AbortController(); stopAudio();
@@ -336,7 +347,7 @@ function startFor(u) {
   jobsDo('readonly', function (s) { return s.getAll() }).then(function (all) {
     if (my !== gen) return;
     (all || []).forEach(function (j) { jobs[j.ringId] = j });
-    return refresh().then(function () { if (my !== gen) return; show('vMain'); var h = document.querySelector('.lib-h'); h.tabIndex = -1; try { h.focus({ preventScroll: true }) } catch (e) {} return resume() }).then(function () { if (my === gen) { render(); work() } });
+    return (pendingInvite() ? redeem(pendingInvite()).catch(function () {}) : Promise.resolve()).then(refresh).then(function () { if (my !== gen) return; show('vMain'); var h = document.querySelector('.lib-h'); h.tabIndex = -1; try { h.focus({ preventScroll: true }) } catch (e) {} return resume() }).then(function () { if (my === gen) { render(); work() } });
   }).catch(function (e) { if (my !== gen) return; if (errMsg(e) === 'e_auth') signedOutView(); else { show('vMain'); say(errMsg(e), null, true) } });
 }
 
@@ -350,6 +361,12 @@ function boot() {
     setTimeout(function () { if (s && s.user) startFor(s.user); else signedOutView() }, 0);
   });
   window.addEventListener('online', function () { if (user) work() });
+  $('inviteForm').addEventListener('submit', function (e) {
+    e.preventDefault(); var c = $('inviteCode').value.trim(); if (!c || !user) return;
+    var b = this.querySelector('button'); b.disabled = true;
+    redeem(c).then(function (v) { if (v === 'ok' || v === 'already') { $('inviteCode').value = ''; return refresh() } })
+      .catch(function (err) { say(errMsg(err), null, true) }).then(function () { b.disabled = false });
+  });
   track('library_viewed');
 }
 boot();

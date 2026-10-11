@@ -27,8 +27,9 @@ echo "PASS teardown refused while library data exists"
 sudo -u postgres dropdb "$DB" && sudo -u postgres createdb "$DB"
 run -f tests/stub_supabase.sql >/dev/null; run -f schema.sql >/dev/null; run -f auth_1a.sql >/dev/null; run -f library_1b.sql >/dev/null
 run -f account_delete.sql >/dev/null; run -f account_delete.sql >/dev/null   # idempotent; teardown must remove it too
+run -f beta_invites.sql >/dev/null; run -f beta_invites.sql >/dev/null
 run -f library_1b_teardown.sql >/dev/null
-[ "$(sudo -u postgres psql -X -At -d "$DB" -c "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' or p.proname like 'library_%' or p.proname in ('svc_library','svc_account')")" = 0 ] \
+[ "$(sudo -u postgres psql -X -At -d "$DB" -c "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' or p.proname like 'library_%' or p.proname in ('svc_library','svc_account','beta_redeem')")" = 0 ] \
   && echo "PASS teardown removed every Phase 1B function" || { echo "FAIL teardown left functions"; exit 1; }
 [ "$(sudo -u postgres psql -X -At -d "$DB" -c "select to_regclass('public.profiles') is not null and exists (select 1 from pg_policies where tablename='profiles' and policyname='own profile readable')")" = t ] \
   && echo "PASS profiles (1A) untouched by teardown" || { echo "FAIL profiles changed"; exit 1; }

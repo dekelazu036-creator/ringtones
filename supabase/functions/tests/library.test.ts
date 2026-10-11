@@ -97,7 +97,7 @@ const objects = (uid: string) => Number(one(`select count(*) from storage.object
 before(() => {
   execFileSync('sudo', ['-u', 'postgres', 'dropdb', '--if-exists', DB]);
   execFileSync('sudo', ['-u', 'postgres', 'createdb', DB]);
-  for (const f of ['tests/stub_supabase.sql', 'schema.sql', 'auth_1a.sql', 'library_1b.sql', 'account_delete.sql']) {
+  for (const f of ['tests/stub_supabase.sql', 'schema.sql', 'auth_1a.sql', 'library_1b.sql', 'account_delete.sql', 'beta_invites.sql']) {
     // through stdin, not -f: the postgres OS user may not be allowed to read the checkout (CI runners)
     const r = spawnSync('sudo', ['-u', 'postgres', 'psql', '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-d', DB],
       { input: readFileSync(SQL_DIR + f, 'utf8'), encoding: 'utf8' });
@@ -446,4 +446,52 @@ test('H3 real problems flip ok to false and name the check', async () => {
   one(`update public.library_items set purge_next_at = now() where id = '${s.body.id}'`);
   await runJanitor(deps, { ...cfg, holder: 'h3' });
   assert.equal((await health(HSECRET)).body.ok, true);
+});
+
+// ------------------------------------------------------------------ beta invites (M6)
+const G = '00000000-0000-0000-0000-0000000000a7';   // invited user
+const asUser = (uid: string, sql: string) => psql(`set request.jwt.claims = '{"role":"authenticated","sub":"${uid}"}'; set role authenticated; ${sql}`);
+const redeem = (uid: string, code: string) => asUser(uid, `select public.beta_redeem('${code.replace(/'/g, "''")}');`);
+
+test('B1 owner creates a code: shown once, only its hash is stored', () => {
+  one(`insert into auth.users (id, is_anonymous) values ('${G}', false) on conflict do nothing`);
+  const code = one(`select private.create_invite(2, 14, 'test')`);
+  assert.match(code, /^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/);
+  assert.equal(one(`select count(*) from private.beta_invites where code_hash = private.invite_hash('${code}')`), '1');
+  assert.equal(one(`select count(*) from private.beta_invites where code_hash like '%${code.replace(/-/g, '')}%' or note = '${code}'`), '0');
+  (globalThis as any).__code = code;
+});
+test('B2 API roles cannot read invites or create codes', () => {
+  for (const role of ['anon', 'authenticated']) {
+    assert.throws(() => psql(`set role ${role}; select * from private.beta_invites;`), /permission denied/);
+    assert.throws(() => psql(`set role ${role}; select private.create_invite(1, 1, null);`), /permission denied/);
+  }
+  assert.throws(() => psql(`set role anon; select public.beta_redeem('x');`), /permission denied/);
+});
+test('B3 redeem: wrong code neutral, right code joins the beta (case and dashes ignored), idempotent', () => {
+  const code: string = (globalThis as any).__code;
+  assert.equal(redeem(G, 'NOPE-NOPE-NOPE-NOPE'), 'invalid');
+  assert.equal(one(`select count(*) from private.cloud_access where user_id = '${G}'`), '0');
+  assert.equal(redeem(G, code.toLowerCase().replace(/-/g, ' ')), 'ok');
+  assert.equal(one(`select count(*) from private.cloud_access where user_id = '${G}'`), '1');
+  assert.equal(redeem(G, code), 'already');
+  assert.equal(one(`select uses_left from private.beta_invites where code_hash = private.invite_hash('${code}')`), '1');
+  assert.equal(one(`select count(*) from private.library_events where user_id = '${G}' and kind = 'invite_redeemed'`), '1');
+});
+test('B4 used-up and expired codes are refused with the same answer', () => {
+  const code: string = (globalThis as any).__code;
+  one(`insert into auth.users (id, is_anonymous) values ('00000000-0000-0000-0000-0000000000a8', false), ('00000000-0000-0000-0000-0000000000a9', false) on conflict do nothing`);
+  assert.equal(redeem('00000000-0000-0000-0000-0000000000a8', code), 'ok');        // last use
+  assert.equal(redeem('00000000-0000-0000-0000-0000000000a9', code), 'invalid');   // used up
+  const old = one(`select private.create_invite(5, 1, null)`);
+  one(`update private.beta_invites set expires_at = now() - interval '1 minute' where code_hash = private.invite_hash('${old}')`);
+  assert.equal(redeem('00000000-0000-0000-0000-0000000000a9', old), 'invalid');
+});
+test('B5 ten failed tries per hour, then refused even with a valid code', () => {
+  const U = '00000000-0000-0000-0000-0000000000aa';
+  one(`insert into auth.users (id, is_anonymous) values ('${U}', false) on conflict do nothing`);
+  for (let i = 0; i < 10; i++) assert.equal(redeem(U, `BAD-${i}`), 'invalid');
+  const good = one(`select private.create_invite(1, 1, null)`);
+  assert.equal(redeem(U, good), 'rate_limited');
+  assert.equal(one(`select count(*) from private.cloud_access where user_id = '${U}'`), '0');
 });

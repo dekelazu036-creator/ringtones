@@ -67,6 +67,18 @@ try {
     await page.context().close();
   }
 
+  // private beta: an invite link unlocks the account button on this device only, and the code leaves the address bar
+  {
+    const page = await newPage(browser, { viewport: { width: 390, height: 844 }, locale: 'he-IL' });
+    await page.goto(BASE + '/?invite=ABCD-1234-ABCD-1234');
+    await until(page, () => document.querySelector('.acctbtn') && !document.querySelector('.acctbtn').hidden, 5000).catch(() => {});
+    const st = await page.evaluate(() => ({ btn: !document.querySelector('.acctbtn').hidden, url: location.search, code: localStorage.getItem('snipring-invite') }));
+    ok('[invite] link shows the account button, stores the code, removes it from the address', st.btn && !/invite/.test(st.url) && st.code === 'ABCD-1234-ABCD-1234', JSON.stringify(st));
+    const csp = await page.evaluate(() => window.__csp);
+    ok('[invite] zero CSP violations', csp.length === 0, csp.join(', '));
+    await page.context().close();
+  }
+
   // Discover → "Use" opens the sound in the editor (rights-cleared catalogue only)
   const page = await newPage(browser, { viewport: { width: 390, height: 844 }, locale: 'en-US' });
   await page.goto(BASE + '/discover.html');
