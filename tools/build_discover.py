@@ -181,3 +181,6 @@ block = '\n  <!-- discover:start -->\n' + '\n'.join(f'  <url><loc>{u}</loc></url
 sm = sm.replace('</urlset>', block + '</urlset>')
 open(sm_path, 'w', encoding='utf-8').write(sm)
 print('discover.html +', len(cat), 'sound pages, seed.sql, sitemap updated')
+# ---------------------------------------------------------------- CSP (D6): the generated pages need their policy
+import subprocess, sys
+subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'csp.py')], check=True)

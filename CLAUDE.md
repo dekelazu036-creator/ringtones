@@ -59,7 +59,7 @@ Approved decisions D1–D13:
 - **D3** Beta limits: 100 items, 100 MB counted, 150 MB physical (incl. bytes still being released), 10 MiB per file, 3 concurrent uploads, 30 per hour, 800 MB per project (Free plan has 1 GB).
 - **D4** The browser has **no Storage access at all** (no policies on bucket `user-media`). Everything goes through three Edge Functions: `library-upload`, `library-download`, `library-janitor`.
 - **D5** No recycle bin; clear confirmation + reliable server-side cleanup.
-- **D6** Residual risk of third-party script on the same origin reading the session token: accepted **for private beta only**. Before public launch an explicit security decision is required (options: mandatory CSP incl. `index.html`, no third-party scripts when signed in).
+- **D6 (decided 2026-10-11, owner approved):** every page has a CSP (`tools/csp.py`, inline scripts only by SHA-256 hash, CI `--check`); scripts only from self, Umami and (after consent) Meta; account/library pages never load Meta and have stricter hand-written CSPs; **the Meta Pixel never loads when a session exists on the device** (`hasSession()` in `index.html`). Umami stays (cookieless processor named in the privacy policy); revisit by self-hosting it. After editing any inline script: `python3 tools/csp.py`.
 - **D7** Separate staging Supabase project on Free.
 - **D8** Sign-out with the last remaining copy of an unfinished creation → default "Restore to device".
 - **D9** No independent cloud-media backups in private beta; disclose it; originals stay on the device. Revisit before public.
