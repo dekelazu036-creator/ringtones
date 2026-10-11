@@ -1,0 +1,5 @@
+# Security, Privacy, Rights
+Private by default; user-confirmed cloud uploads; user-scoped authorization, signed access, rate limits, upload validation, audit logs, data retention, privacy consent. Cross-user isolation and account-switch cache tests mandatory.
+**Phase 1B v3 historical design** (attached `Pasted text.txt`, dated 2026-10-08): proposes Edge Functions `library-upload`, `library-download`, `library-janitor`, no browser Storage permissions, immutable paths, server quotas, expiration and cleanup. Document explicitly says SQL was not run and real Supabase Storage behavior not tested. This is NOT verified implementation. Review SECURITY DEFINER, JWT, service roles, races, physical accounting, cleanup, emergency stop in staging with two users.
+**Public launch blockers:** self-service deletion including media; tested recovery/backups; rights-cleared Discover catalogue; terms/privacy review; documented operational capacity and security tests.
+For future marketplace: separate composition/master rights, ownership vs licenses, AI provenance, consented voices, takedowns, appeals, split sheets and royalty accounting.

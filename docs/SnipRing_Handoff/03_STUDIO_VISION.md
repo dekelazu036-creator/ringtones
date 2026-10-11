@@ -1,0 +1,4 @@
+# Studio Master Vision — Future Only
+Target `studio.snipring.com`; separate audio engine and responsive professional UI; shared identity and authorized library. Two UI modes (Simple/Pro) on the same project. Start via blank, template, prompt, import, or recording. Quick Generate can be imported as audio; native editable stems/MIDI only where technically supported.
+Target: Project → Tracks → Clips → Assets; timeline, mixer, MIDI/piano roll, virtual instruments, vocal takes/comping, effects, automation, undo/versioning, export, AI Producer, AI singing with voice consent, stem separation, mastering, collaboration, creator tools. Test audio latency, drift, hardware, browser and mobile constraints before implementation.
+**Gate:** no Studio Alpha development until Core 1.0 completion and separate Studio feasibility/architecture approval.
