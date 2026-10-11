@@ -404,8 +404,9 @@ select tst.ok('X9 repeated delete of the same item is idempotent',
   (select bool_and(public.library_delete((select tst.id(v) from j where k='x8')) = 'deleting') from generate_series(1, 3)));
 select tst.back();
 select tst.ok('X10 counters moved exactly once', tst.u(:D, 0, 0, 1300, 0));
+-- PostgreSQL 18 reports RESTRICT as 23001; older versions use 23503.
 select tst.ok('X11 a user with library data still cannot be deleted by accident',
-  tst.err($$delete from auth.users where id = '00000000-0000-0000-0000-0000000000d4'$$) like '23503%');
+  left(tst.err($$delete from auth.users where id = '00000000-0000-0000-0000-0000000000d4'$$), 5) in ('23503', '23001'));
 
 -- ===================================================================== K. emergency_stop fails closed
 create function tst.stop_with(p jsonb) returns text language plpgsql as $$
@@ -495,8 +496,13 @@ select tst.ok('O9 health view readable by the owner', (select stored_bytes >= 0 
 select tst.ok('M1 names are cleaned (control chars removed, 80 chars max, empty → SnipRing)',
   private.clean_name(E'a\tb\u0001c') = 'abc' and char_length(private.clean_name(repeat('א', 200))) = 80
   and private.clean_name('   ') = 'SnipRing' and private.clean_name(null) = 'SnipRing');
+-- PostgreSQL 18 reports RESTRICT as 23001; older versions use 23503.
 select tst.ok('M2 an auth user with library data cannot be deleted by accident (FK restrict)',
-  tst.err($$delete from auth.users where id = '00000000-0000-0000-0000-0000000000a1'$$) like '23503%');
+  left(tst.err($$delete from auth.users where id = '00000000-0000-0000-0000-0000000000a1'$$), 5) in ('23503', '23001'));
+select tst.ok('M2b blocked deletion preserves the auth user and library data',
+  exists (select 1 from auth.users where id = :A)
+  and exists (select 1 from private.library_usage where user_id = :A)
+  and exists (select 1 from public.library_items where user_id = :A));
 select tst.ok('M3 user without library data can still be deleted', tst.err($$delete from auth.users where id = '00000000-0000-0000-0000-0000000000c3'$$) = '');
 
 -- ===================================================================== final invariant: counters == rows for every user

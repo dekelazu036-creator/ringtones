@@ -37,7 +37,8 @@ test('M4 ffmpeg variants: VBR, mono, MPEG-2 22.05 kHz, MPEG-2.5 8 kHz, Xing head
 });
 test('M5 non-MP3 audio and random data are refused', () => {
   const wav = ffmpeg([...sine(2), '-f', 'wav']);
-  const ogg = ffmpeg([...sine(2), '-c:a', 'libvorbis', '-f', 'ogg']);
+  // Native Vorbis keeps this rejection fixture independent of optional libvorbis.
+  const ogg = ffmpeg([...sine(2), '-ac', '2', '-c:a', 'vorbis', '-strict', 'experimental', '-f', 'ogg']);
   const aac = ffmpeg([...sine(2), '-c:a', 'aac', '-f', 'adts']);
   const mp2 = ffmpeg([...sine(2), '-c:a', 'mp2', '-f', 'mp2']);              // MPEG Layer II, not III
   for (const [n, b] of [['wav', wav], ['ogg', ogg], ['aac', aac], ['mp2', mp2], ['random', new Uint8Array(randomBytes(50000))]] as const) {
