@@ -30,3 +30,8 @@ jobs:
           if grep -E "FAIL|^# fail [1-9]|^ +[0-9]+ +\| +[1-9][0-9]* *$|concurrency: [1-9]" run_all.log; then
             echo "::error::a test failed"; exit 1
           fi
+      - name: Details of failing function tests
+        if: failure()
+        run: |
+          cd supabase/functions
+          node --test --test-reporter=spec tests/library.test.ts 2>&1 | grep -vE "^\s*$" | head -80
