@@ -10,7 +10,8 @@ const env: Record<string, string> = {
   SUPABASE_SECRET_KEYS: JSON.stringify({ default: 'sb_secret_TESTONLY' }),
   SUPABASE_SERVICE_ROLE_KEY: 'legacy-should-not-be-used',
   ALLOWED_ORIGINS: 'https://snipring.com, https://staging.example',
-  JANITOR_SECRET: 'j'.repeat(40) + '\n',                // pasted in the dashboard with a trailing newline
+  JANITOR_SECRET: 'j'.repeat(40) + '\n',
+  HEALTH_SECRET: 'k'.repeat(40) + '\n',                // pasted in the dashboard with a trailing newline
 };
 const handlers: Record<string, (r: Request) => Promise<Response>> = {};
 let current = '';
@@ -35,6 +36,7 @@ const fake = (globalThis as any).__fake = {
       if (a.p_op === 'purges') return { data: [], error: null };
       if (a.p_op === 'prepare') return { data: 'ready', error: null };
       if (a.p_op === 'done') return { data: 'done', error: null };
+      if (a.p_op === 'health') return { data: { janitor_recent: true, no_stuck_deletes: true, uploads_paused: false }, error: null };
     }
     return { data: true, error: null };
   },
@@ -113,4 +115,13 @@ test('W6 account-delete: svc_account(p_op,p_args) with the session user only, gl
   assert.deepEqual(req[2].p_args, { user_id: '00000000-0000-0000-0000-0000000000a1' });   // from the session, not the body
   assert.deepEqual(fake.calls.find((c) => c[0] === 'signOut').slice(1), ['h.ok.s', 'global']);
   assert.deepEqual(fake.calls.find((c) => c[0] === 'deleteUser').slice(1), ['00000000-0000-0000-0000-0000000000a1']);
+});
+test('W7 library-health reads HEALTH_SECRET (not the janitor secret) and reports yes/no checks', async () => {
+  const h = await load('library-health');
+  assert.equal((await h(new Request('https://f', { method: 'POST', headers: { authorization: `Bearer ${'j'.repeat(40)}` } }))).status, 401);
+  const ok = await h(new Request('https://f', { method: 'POST', headers: { authorization: `Bearer ${'k'.repeat(40)}` } }));
+  assert.equal(ok.status, 200, await ok.clone().text());
+  const b = await ok.json();
+  assert.equal(b.ok, true); assert.deepEqual(b.failing, []);
+  assert.ok(fake.calls.some((c) => c[0] === 'rpc' && c[1] === 'svc_account' && c[2].p_op === 'health'));
 });

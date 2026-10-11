@@ -11,3 +11,6 @@ verify_jwt = false
 # account deletion: a user JWT, checked by the platform and again by the function
 [functions.account-delete]
 verify_jwt = true
+# health: called by the scheduled GitHub check with HEALTH_SECRET (not a user JWT)
+[functions.library-health]
+verify_jwt = false
