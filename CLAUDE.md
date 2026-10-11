@@ -131,6 +131,13 @@ Done on staging (2026-10-08, verified by read queries):
 2026-10-11 evening: functions redeployed from `core-1.0` (v7) and runner rerun: **30/30** (T9d now expects 413 since the size header is checked first; new T9e 400). Next: watch `library_health` for 24 h (from 2026-10-11 16:40 UTC); optional: T18 HTTP 503 check on staging (runner with `reservations_open = false`, expect T1 = 503); decide the Discover grant item; confirm test user B's password was changed (it appeared in screenshots). M1 exit = all of the above + owner approval. Then M2.
 Runner tips (zsh): paste one command at a time; read passwords with `read -s`; a pasted trailing newline can answer a prompt with an empty value.
 
+### Production (2026-10-11 evening)
+`core-1.0` merged to `main` (PR #2, `0bc01aa`): design v2, legal drafts, monitor.js live. Production DB now has
+`schema.sql`, `auth_1a.sql`, `library_1b.sql`, `account_delete.sql`; 4 functions deployed; janitor cron every 10 min (200);
+`reservations_open = true`, allow-list = owner only, `auth.enabled` still **false** (owner mode `?me` only).
+Owner tested on the phone: save to cloud, play, delete. See docs/PRODUCTION_ROLLOUT.md.
+M1 closed by the owner without the full 24 h watch (staging was clean for ~3 h at that point).
+
 ### Core 1.0 build — branch `core-1.0` (2026-10-11, owner approved building per the master spec; **not merged** = not in production)
 Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core First; Studio gated). `core-1.0` = `phase-1b-m0` + the commits below. CI: `.github/workflows/tests.yml` runs `run_all.sh` + bundle drift check on every push (green).
 - **Design v2** (lime/violet, dark-first) — see §2 Design. TESTED visually light/dark, mobile.
