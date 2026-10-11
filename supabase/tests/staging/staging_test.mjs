@@ -135,8 +135,12 @@ check('T9a', 'non-MP3 refused (415)', v1.status === 415, String(v1.status));
 const v2 = await req('POST', '/functions/v1/library-upload', A.token, new Uint8Array(11 * 1024 * 1024), { 'content-type': 'audio/mpeg', 'x-library-meta': b64url(meta()), origin: ORIGIN });
 check('T9b', 'over 10 MiB refused (413 from function or gateway)', v2.status === 413 || v2.status === 400, `${v2.status} in ${v2.ms} ms ${v2.text.slice(0, 120)}`);
 // a refusal decided before the body is read (here: bad metadata) must still answer promptly
+// since cabef6e the size header is checked first: an oversize body is 413 even with bad metadata
 const v2b = await req('POST', '/functions/v1/library-upload', A.token, new Uint8Array(11 * 1024 * 1024), { 'content-type': 'audio/mpeg', 'x-library-meta': 'not-base64-json', origin: ORIGIN });
-check('T9d', 'refused 11 MiB upload (bad metadata) answers 400 promptly', v2b.status === 400 && v2b.ms < 30_000, `${v2b.status} in ${v2b.ms} ms`);
+check('T9d', 'refused 11 MiB upload (bad metadata) answers 413 promptly (size checked first)', v2b.status === 413 && v2b.ms < 30_000, `${v2b.status} in ${v2b.ms} ms`);
+// within the size cap, bad metadata is refused before Auth and before reading, and the unread body is drained
+const v2e = await req('POST', '/functions/v1/library-upload', A.token, new Uint8Array(9 * 1024 * 1024), { 'content-type': 'audio/mpeg', 'x-library-meta': 'not-base64-json', origin: ORIGIN });
+check('T9e', 'refused 9 MiB upload (bad metadata) answers 400 promptly', v2e.status === 400 && v2e.ms < 30_000, `${v2e.status} in ${v2e.ms} ms`);
 const v3 = await upload('not.a.jwt', meta(), songA);
 const v4 = await upload(SB_KEY, meta(), songA);
 check('T9c', 'forged token and bare API key refused', v3.status === 401 && v4.status === 401, `${v3.status}/${v4.status}`);
