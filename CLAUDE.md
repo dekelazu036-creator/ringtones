@@ -38,7 +38,7 @@ Tagline: **"השיר שלכם. הצלצול שלכם." / "Your song. Your ringto
 | All audio processing in the browser (Web Audio, `vendor/lame.min.js` MP3 encoder, self-hosted) | Privacy promise: the guest's file never leaves the device; no server cost |
 | Local storage: IndexedDB `snipring` v1, store `rings` (keyPath `id` = `Date.now()`), record `{id,name,secs,data:ArrayBuffer,type,fav,origin,used}`, prune keeps 30 (oldest non-favourite deleted). `studio.js` also opens v1 | ArrayBuffer instead of Blob because of Safari; **do not change this structure without approval** |
 | Chorus detection by repetition (chroma self-similarity), not loudness | Loudness picked wrong parts |
-| Exported file name `<song> - ringtone.mp3`, ID3 title = chosen name | Never confused with the original |
+| Exported file name = the name in the "name the ringtone" field (`<name>.mp3`, default: the song title), ID3 title = same name (since `9a7c53c`; the older `<song> - ringtone.mp3` rule was replaced) | User controls how it appears in the phone's ringtone list |
 | Service worker `sw.js` (cache `snipring-v7`): pages network-first, static stale-while-revalidate; `config.js`, `account.html`, `auth.js`, `boot.js`, `vendor/supabase*` and `/media/` are never cached | Updates show immediately; auth always fresh |
 | Self-hosted fonts and encoder; only third-party requests are analytics | Compliance / privacy |
 | Supabase as backend (Postgres, Auth, Storage, Edge Functions), publishable key in `config.js` | Fastest safe path. **Tension:** Dekel prefers owning the stack over depending on platforms — keep Supabase usage portable (plain SQL, standard Postgres, thin Edge Functions) |
@@ -132,7 +132,7 @@ Done on staging (2026-10-08, verified by read queries):
 Runner tips (zsh): paste one command at a time; read passwords with `read -s`; a pasted trailing newline can answer a prompt with an empty value.
 
 ### Production (2026-10-11 evening)
-`core-1.0` merged to `main` (PR #2, `0bc01aa`): design v2, legal drafts, monitor.js live. Production DB now has
+`core-1.0` merged to `main` (PR #2, `0bc01aa`): design v2, legal texts (approved by the owner the same day), monitor.js live. Production DB now has
 `schema.sql`, `auth_1a.sql`, `library_1b.sql`, `account_delete.sql`; 4 functions deployed; janitor cron every 10 min (200);
 `reservations_open = true`, allow-list = owner only, `auth.enabled` still **false** (owner mode `?me` only).
 Owner tested on the phone: save to cloud, play, delete. See docs/PRODUCTION_ROLLOUT.md.
@@ -154,7 +154,7 @@ Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core F
 ### Planned
 - **M2 leftovers:** D8 last-copy dialog is moot while local copies are never removed (re-check if that changes); blocked `deleteDatabase` and device storage shortage need manual tests.
 - Then: production rollout of 1B (owner runs production SQL), private beta via allow-list.
-- **Launch blockers (keep):** Supabase plan decision (Free vs Pro); self-service account deletion — built, staging E2E (T30) pending; legal review of Terms/Privacy. Before public: D6 decision, media backup policy, alerting, global rate limiting / Turnstile on upload.
+- **Launch blockers (status 2026-10-11):** ✅ Supabase Pro; ✅ self-service account deletion (live, T30 9/9); ✅ Terms/Privacy approved by the owner; ✅ D6 (site-wide CSP, no Meta with a session); ✅ global upload ceiling. **Open:** restore drill from a daily backup, owner listening review of the 26 Discover sounds, alerting (health views exist, nobody is paged), media backup policy (Storage objects are not in the DB backup).
 - Later phases: Pro/Studio tiers and payments, AI sound generator, creators/Discover uploads with moderation, Apple sign-in.
 
 ---

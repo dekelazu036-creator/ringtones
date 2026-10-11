@@ -52,3 +52,5 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Browser harnesses (library page against a fake server)
         run: node tests/frontend/run_harness.mjs
+      - name: Guest flow regression (phone/desktop, he/en, dark/light, MP3 download, Discover, zero CSP violations)
+        run: node tests/frontend/e2e_guest.mjs
