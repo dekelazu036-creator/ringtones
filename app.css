@@ -623,7 +623,19 @@ html[dir=rtl] .back-ic{transform:rotate(-90deg)}
   /* creator: editor on the start side, my sounds + guide on the end side */
   main.create{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:var(--s6);align-items:start}
   main.create .col-main,main.create .col-side{display:flex;flex-direction:column;gap:var(--s4);min-width:0}
-  main.create:not(.editing) .drop{padding-block:var(--s8);justify-content:center;min-height:440px}
+  /* home (no song yet): a two-column hero, text and actions + a frame of the demo video */
+  main.create:not(.editing) .drop{display:grid;grid-template-columns:minmax(0,1fr) 250px;column-gap:var(--s8);row-gap:var(--s3);
+    align-content:center;align-items:start;padding:var(--s8);min-height:460px;text-align:start}
+  main.create:not(.editing) .drop>*{grid-column:1}
+  main.create:not(.editing) .droph{font-size:44px;line-height:1.1;margin-top:var(--s2)}
+  main.create:not(.editing) .dropsub{margin:0;max-width:44ch;font-size:var(--fs-lg)}
+  main.create:not(.editing) .drop .file,main.create:not(.editing) .drop .alt{margin-inline:0;max-width:440px}
+  main.create:not(.editing) .trust{justify-content:flex-start}
+  main.create:not(.editing) .droplinks{align-items:flex-start}
+  main.create:not(.editing) .dropvis{display:block;grid-column:2;grid-row:1/span 7;align-self:center}
+  /* steps get their short description on wide screens */
+  .steps{gap:var(--s4)}
+  .steps span{display:block;color:var(--muted);font-size:var(--fs-sm);line-height:1.4}
   /* discover: filters stay compact, the grid fills the width */
   .discover .dsel{max-width:560px}
   /* studio: clip settings in two columns */
@@ -635,3 +647,12 @@ html[dir=rtl] .back-ic{transform:rotate(-90deg)}
   .lib-main>:not(.lib-card){grid-column:1/-1}
   .lib-wrap:has(#vMain[hidden]){max-width:520px}
 }
+
+/* the demo frame in the home hero (desktop only, see the ≥1024px block) */
+.dropvis{display:none;position:relative;padding:0;border:1px solid var(--line-strong);border-radius:28px;overflow:hidden;background:#0A0B0D;
+  cursor:pointer;aspect-ratio:9/16;width:100%;box-shadow:var(--shadow-lg)}
+.dropvis img{display:block;width:100%;height:100%;object-fit:cover}
+html[lang=he] .dropvis .vis-en,html:not([lang=he]) .dropvis .vis-he{display:none}
+.dropvis-play{position:absolute;inset:auto 0 18px;margin:auto;width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-ink);
+  display:grid;place-items:center;box-shadow:var(--shadow-md);transition:transform .15s}
+.dropvis:hover .dropvis-play,.dropvis:focus-visible .dropvis-play{transform:scale(1.08)}
