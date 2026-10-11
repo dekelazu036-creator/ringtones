@@ -48,11 +48,14 @@ insert into private.settings (key, value) values
      'reservation_ttl_s', 300,
      'purge_grace_s',     600,
      'tombstone_days',    30,
-     'event_retention_days', 90))      -- technical log (private.library_events) kept 90 days (privacy policy)
+     'event_retention_days', 90,       -- technical log (private.library_events) kept 90 days (privacy policy)
+     'global_per_hour',  300))         -- new uploads per hour across ALL users (bot / abuse ceiling)
 on conflict (key) do nothing;
 -- projects installed before a limit existed get it added (never overwrites a value already set)
 update private.settings set value = value || '{"event_retention_days": 90}'::jsonb
  where key = 'limits' and not (value ? 'event_retention_days');
+update private.settings set value = value || '{"global_per_hour": 300}'::jsonb
+ where key = 'limits' and not (value ? 'global_per_hour');
 
 create table if not exists private.cloud_access (            -- private-beta allow-list
   user_id  uuid primary key references auth.users(id) on delete cascade,
@@ -124,6 +127,7 @@ create index if not exists li_purge  on public.library_items (purge_next_at) whe
 create index if not exists li_path   on public.library_items (storage_path);
 create index if not exists li_hour   on public.library_items (user_id, created_at);
 create index if not exists li_tomb   on public.library_items (purged_at) where state = 'purged';
+create index if not exists li_created on public.library_items (created_at);
 
 alter table public.library_items enable row level security;
 drop policy if exists "own ready items" on public.library_items;
@@ -285,6 +289,12 @@ begin
   perform pg_advisory_xact_lock(hashtextextended('snipring.library.project_physical', 0));
   select coalesce(sum(lu.bytes_active + lu.bytes_releasing), 0) into total from private.library_usage lu;
   if total + p_size > private.lim('project_physical') then return '{"error":"service_full"}'; end if;
+  -- project-wide hourly ceiling (exact: counted under the same project lock; purged rows still count)
+  if (select count(*) from public.library_items li where li.created_at > now() - interval '1 hour')
+     >= private.lim('global_per_hour') then
+    perform private.log(p_uid, null, 'global_rate_limited', null);
+    return '{"error":"service_full"}';
+  end if;
 
   insert into public.library_items
     (user_id, client_key, name, type, duration_ms, size_bytes, content_sha256, origin, state, expires_at)

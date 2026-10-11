@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PAmDteUuKHEhpVKO6Wtgjvb5SWmHlBAM3gYPNYH4fKs=' 'sha256-T+7JyTyMyxDW7IIHZ7HTxkty9bPp7pGmC363MO+D6Bg=' 'sha256-uTb6mtDnck+JtDBVOgfLbMp/W4j5qqKZQ5Sc+1r5qjs=' https://cloud.umami.is https://connect.facebook.net; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://cloud.umami.is https://api-gateway.umami.dev https://connect.facebook.net https://www.facebook.com; img-src 'self' data: blob: https://www.facebook.com; media-src 'self' blob: data: https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co; font-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <script src="/monitor.js"></script>
 <title>SnipRing</title>
 <script>/* snipring.com/?me turns analytics off on this device (owner testing); ?me=on turns it back on */
@@ -486,7 +487,9 @@ const CONSENT_K='snipring-consent';
 function readConsent(){try{const c=JSON.parse(localStorage.getItem(CONSENT_K)||'null');return c&&c.v===CFG.consentVersion?c:null}catch(e){return null}}
 function needsConsent(){return !!CFG.metaPixelId&&!OWNER}
 function adsOk(){const c=readConsent();return needsConsent()&&!!(c&&c.ads)}
-function loadMeta(){if(window.fbq||!adsOk())return;
+/* D6: a third-party script must never run next to a signed-in session (it could read the token) */
+function hasSession(){try{return Object.keys(localStorage).some(k=>/^sb-.*-auth-token/.test(k))}catch(e){return false}}
+function loadMeta(){if(window.fbq||!adsOk()||hasSession())return;
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];
     t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
   fbq('set','autoConfig',false,String(CFG.metaPixelId)); // no automatic button/form scraping: only the events we send on purpose

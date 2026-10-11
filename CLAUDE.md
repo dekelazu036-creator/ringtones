@@ -59,7 +59,7 @@ Approved decisions D1–D13:
 - **D3** Beta limits: 100 items, 100 MB counted, 150 MB physical (incl. bytes still being released), 10 MiB per file, 3 concurrent uploads, 30 per hour, 800 MB per project (Free plan has 1 GB).
 - **D4** The browser has **no Storage access at all** (no policies on bucket `user-media`). Everything goes through three Edge Functions: `library-upload`, `library-download`, `library-janitor`.
 - **D5** No recycle bin; clear confirmation + reliable server-side cleanup.
-- **D6** Residual risk of third-party script on the same origin reading the session token: accepted **for private beta only**. Before public launch an explicit security decision is required (options: mandatory CSP incl. `index.html`, no third-party scripts when signed in).
+- **D6 (decided 2026-10-11, owner approved):** every page has a CSP (`tools/csp.py`, inline scripts only by SHA-256 hash, CI `--check`); scripts only from self, Umami and (after consent) Meta; account/library pages never load Meta and have stricter hand-written CSPs; **the Meta Pixel never loads when a session exists on the device** (`hasSession()` in `index.html`). Umami stays (cookieless processor named in the privacy policy); revisit by self-hosting it. After editing any inline script: `python3 tools/csp.py`.
 - **D7** Separate staging Supabase project on Free.
 - **D8** Sign-out with the last remaining copy of an unfinished creation → default "Restore to device".
 - **D9** No independent cloud-media backups in private beta; disclose it; originals stay on the device. Revisit before public.
@@ -130,6 +130,13 @@ Done on staging (2026-10-08, verified by read queries):
 
 2026-10-11 evening: functions redeployed from `core-1.0` (v7) and runner rerun: **30/30** (T9d now expects 413 since the size header is checked first; new T9e 400). Next: watch `library_health` for 24 h (from 2026-10-11 16:40 UTC); optional: T18 HTTP 503 check on staging (runner with `reservations_open = false`, expect T1 = 503); decide the Discover grant item; confirm test user B's password was changed (it appeared in screenshots). M1 exit = all of the above + owner approval. Then M2.
 Runner tips (zsh): paste one command at a time; read passwords with `read -s`; a pasted trailing newline can answer a prompt with an empty value.
+
+### Production (2026-10-11 evening)
+`core-1.0` merged to `main` (PR #2, `0bc01aa`): design v2, legal drafts, monitor.js live. Production DB now has
+`schema.sql`, `auth_1a.sql`, `library_1b.sql`, `account_delete.sql`; 4 functions deployed; janitor cron every 10 min (200);
+`reservations_open = true`, allow-list = owner only, `auth.enabled` still **false** (owner mode `?me` only).
+Owner tested on the phone: save to cloud, play, delete. See docs/PRODUCTION_ROLLOUT.md.
+M1 closed by the owner without the full 24 h watch (staging was clean for ~3 h at that point).
 
 ### Core 1.0 build — branch `core-1.0` (2026-10-11, owner approved building per the master spec; **not merged** = not in production)
 Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core First; Studio gated). `core-1.0` = `phase-1b-m0` + the commits below. CI: `.github/workflows/tests.yml` runs `run_all.sh` + bundle drift check on every push (green).

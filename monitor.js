@@ -19,6 +19,11 @@
     if (e.target && e.target !== window) { report('resource', e.target.tagName, e.target.src || e.target.href, 0); return }  // failed script/style
     report('error', e.error && e.error.name, e.filename, e.lineno);
   }, true);
+  // the page's Content-Security-Policy blocked something: directive + blocked host only (never the full URL)
+  document.addEventListener('securitypolicyviolation', function (e) {
+    var host = 'inline'; try { if (e.blockedURI && /^https?:/.test(e.blockedURI)) host = new URL(e.blockedURI).host } catch (x) {}
+    report('csp', e.effectiveDirective || e.violatedDirective, host, 0);
+  });
   window.addEventListener('unhandledrejection', function (e) {
     var r = e.reason; report('rejection', r && (r.name || (r.constructor && r.constructor.name)) || typeof r, '', 0);
   });

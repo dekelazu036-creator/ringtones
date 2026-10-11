@@ -19,6 +19,8 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q postgresql-16 ffmpeg
           sudo systemctl start postgresql
+      - name: Content-Security-Policy is up to date on every page (D6)
+        run: python3 tools/csp.py --check
       - name: Bundles match the sources
         run: |
           node tools/bundle_functions.mjs

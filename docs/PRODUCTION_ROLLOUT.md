@@ -1,6 +1,11 @@
 # Production rollout — Core 1.0 (cloud library private beta + account deletion)
 
-**Status: NOT STARTED. Every step needs the owner's explicit approval at that moment.**
+**Status: DONE 2026-10-11 (private beta, owner only).** PR #2 merged (`0bc01aa`) and the live guest flow re-checked;
+SQL steps run by the owner in the SQL Editor (`db query --project-ref` only works for the linked project);
+functions v1 deployed by `supabase/rollout/prod_functions.sh` (verify_jwt correct); janitor secret recreated with
+`prod_janitor_secret.sh` after the first Vault paste did not land; cron active, first run 19:00 UTC = 200;
+production audit matches staging for 1B (production Discover grants are stricter than staging);
+owner saved, played and deleted a sound on the phone.
 Production project: `snipring` (ref in CLAUDE.md §5), eu-central-1, Free plan.
 Rule from CLAUDE.md: **the owner runs production SQL himself**; Claude prepares, checks and guides.
 Claude's permissions deny any command containing the production ref, so Claude cannot run these by mistake.
