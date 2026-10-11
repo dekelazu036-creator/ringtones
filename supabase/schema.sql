@@ -193,9 +193,12 @@ drop policy if exists "items of published packs are readable" on public.pack_ite
 create policy "items of published packs are readable" on public.pack_items for select to anon, authenticated
   using (exists (select 1 from public.packs p where p.id = pack_id and p.status = 'published'));
 
+-- profiles are private (Phase 1A): only the signed-in owner can read their own row.
+-- Public creator profiles, if ever needed, will come through a separate explicit view.
 drop policy if exists "active profiles are readable" on public.profiles;
-create policy "active profiles are readable" on public.profiles for select to anon, authenticated
-  using (status = 'active');
+drop policy if exists "own profile readable" on public.profiles;
+create policy "own profile readable" on public.profiles for select to authenticated
+  using (id = (select auth.uid()));
 
 drop policy if exists "own favourites" on public.favorites;
 create policy "own favourites" on public.favorites for all to authenticated
@@ -207,7 +210,9 @@ create policy "anyone can report" on public.reports for insert to anon, authenti
 
 -- Grants (new tables are not exposed automatically in this project)
 grant usage on schema public to anon, authenticated;
-grant select on public.sounds, public.packs, public.pack_items, public.profiles to anon, authenticated;
+grant select on public.sounds, public.packs, public.pack_items to anon, authenticated;
+revoke all on public.profiles from anon, authenticated;
+grant select on public.profiles to authenticated;   -- rows limited to the owner by the policy above
 grant insert on public.reports to anon, authenticated;
 grant select, insert, delete on public.favorites to authenticated;
 

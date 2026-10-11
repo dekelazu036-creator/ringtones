@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- Strict policy: only our own scripts, the auth API, Cloudflare Turnstile and Umami. No Meta Pixel, no inline scripts. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://cloud.umami.is; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://challenges.cloudflare.com https://cloud.umami.is https://api-gateway.umami.dev; frame-src https://challenges.cloudflare.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://cloud.umami.is; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://challenges.cloudflare.com https://cloud.umami.is https://api-gateway.umami.dev; frame-src https://challenges.cloudflare.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="robots" content="noindex,nofollow">
+<script src="/monitor.js"></script>
 <title>SnipRing · Account</title>
-<meta name="theme-color" content="#F4F6FA">
+<meta name="theme-color" content="#F5F6F2">
 <link rel="icon" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <script src="/boot.js"></script>
@@ -101,12 +102,26 @@
         <div><dt data-i18n="planL"></dt><dd data-i18n="planFree"></dd></div>
       </dl>
       <p class="hint" data-i18n="inNote"></p>
+      <a class="btn lg block" href="/library.html"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-cloud"/></svg><span data-i18n="library"></span></a>
       <a class="btn primary lg block" id="continue" href="/"><span data-i18n="continue"></span></a>
       <div class="pair">
         <button class="btn" id="logout" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-logout"/></svg><span data-i18n="logout"></span></button>
         <button class="btn" id="logoutAll" type="button"><span data-i18n="logoutAll"></span></button>
       </div>
       <p class="hint small" id="inMsg" role="status"></p>
+      <details class="acct-danger">
+        <summary data-i18n="delH"></summary>
+        <p class="hint" data-i18n="delP"></p>
+        <label class="acct-check"><input type="checkbox" id="delOk"> <span data-i18n="delCheck"></span></label>
+        <button class="btn danger block" id="delGo" type="button" disabled><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-trash"/></svg><span data-i18n="delGo"></span></button>
+        <p class="hint small" id="delMsg" role="status"></p>
+      </details>
+    </section>
+
+    <section class="card acct-card" id="vGone" hidden>
+      <h1 data-i18n="goneH"></h1>
+      <p class="muted" id="goneP"></p>
+      <a class="btn primary lg block" href="/" data-i18n="continue"></a>
     </section>
   </main>
 

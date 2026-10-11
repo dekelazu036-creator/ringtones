@@ -1,0 +1,8 @@
+// library-upload — see supabase/functions/_shared/library.ts for the logic and its rules.
+import { handleUpload } from '../_shared/library.ts';
+import { configFromEnv, createDeps } from '../_shared/supabase.ts';
+
+const deps = createDeps('library-upload');
+const cfg = configFromEnv();
+
+Deno.serve((req: Request) => handleUpload(req, deps, cfg));

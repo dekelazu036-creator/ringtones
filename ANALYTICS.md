@@ -89,3 +89,12 @@ utm_source=meta&utm_medium=paid_social&utm_campaign={{campaign.name}}&utm_conten
 Funnel events also carry `tier`: `guest` (not signed in) or `free` (signed in). No email, user id or name is ever sent to Umami or Meta.
 Account events are sent from `account.html` to **Umami only** (that page never loads the Meta Pixel):
 `auth_viewed`, `signup_started{method}`, `otp_sent`, `otp_failed{reason,step}`, `signup_completed{method}`, `login_completed{method}`, `logout{scope}`. See AUTH.md.
+
+## Errors and cloud library (Core 1.0)
+- `js_error` (`monitor.js`, every app page): `{kind: error|rejection|resource, name, file, line, page}`.
+  Never the error message (it can contain a song or file name), max 3 per page view. Umami report:
+  events → `js_error`, break down by `file` + `line` after each release.
+- My Library (`library.js`): `library_viewed`, `cloud_save_started`, `cloud_save_completed {result}`,
+  `cloud_save_failed {reason}` (server error code only), `cloud_download`, `cloud_restore`, `cloud_delete`.
+- Account page: `account_deleted {result: deleted|pending}`.
+None of these carry names, ids, emails or file names.

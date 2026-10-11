@@ -10,5 +10,17 @@ window.SNIPRING_CONFIG = {
   // Accounts (Phase 1A). Ships switched OFF: only owner test mode (snipring.com/?me) can see it.
   // turnstileSiteKey is the PUBLIC site key; the secret lives only in Supabase.
   auth: { enabled: false, google: true, email: true, turnstileSiteKey: '0x4AAAAAAFQ0O8x3Ke3kRuTq' },
-  consentVersion: 1     // raise by 1 after a material privacy change, to ask everyone again
+  consentVersion: 2     // 2026-10-11: cloud library + account deletion. Raise by 1 after a material privacy change, to ask everyone again
 };
+/* Local staging tests only. On localhost / 127.0.0.1, localStorage 'snipring-dev-supabase' =
+   {"url":"https://<staging-ref>.supabase.co","key":"sb_publishable_..."} replaces the project above
+   (public values only). Never active on snipring.com. Turnstile is off there: staging has no captcha. */
+(function (C) {
+  try {
+    if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+    var o = JSON.parse(localStorage.getItem('snipring-dev-supabase') || 'null');
+    if (!o || !/^https:\/\/[a-z0-9]{20}\.supabase\.co$/.test(o.url) || !/^sb_publishable_[\w-]+$/.test(o.key)) return;
+    if (/gtjtvfogqrnuiducvoqm/.test(o.url)) return;   // never production through this switch
+    C.supabaseUrl = o.url; C.supabaseKey = o.key; C.auth.turnstileSiteKey = ''; C.dev = true;
+  } catch (e) {}
+})(window.SNIPRING_CONFIG);

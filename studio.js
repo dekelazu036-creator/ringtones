@@ -240,7 +240,7 @@ function renderTimeline() {
   $('tLen').textContent = fmt(projLen());
 }
 function drawWaves() {
-  const cs = getComputedStyle(document.documentElement), col = cs.getPropertyValue('--accent').trim(), dpr = window.devicePixelRatio || 1;
+  const cs = getComputedStyle(document.documentElement), col = cs.getPropertyValue('--accent-text').trim(), dpr = window.devicePixelRatio || 1;
   document.querySelectorAll('#lanes .clip').forEach(el => {
     const f = findClip(el.dataset.id); if (!f) return; const c = f.c, s = SRC.get(c.src); if (!s) return;
     const cv = el.querySelector('canvas'), w = el.clientWidth, h = el.clientHeight; if (!w) return;

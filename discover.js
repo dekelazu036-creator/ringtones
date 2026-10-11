@@ -126,7 +126,7 @@ function waveCanvas(c, peaks, getProgress) {
     const dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight; if (!w) return;
     c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
     const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-    const cs = getComputedStyle(document.documentElement), acc = cs.getPropertyValue('--accent').trim(), base = cs.getPropertyValue('--wave').trim();
+    const cs = getComputedStyle(document.documentElement), acc = cs.getPropertyValue('--accent-text').trim(), base = cs.getPropertyValue('--wave').trim();
     const n = peaks.length, bw = w / n, p = getProgress ? getProgress() : 0;
     for (let i = 0; i < n; i++) {
       const v = Math.max(.06, peaks[i]), bh = v * (h - 2);

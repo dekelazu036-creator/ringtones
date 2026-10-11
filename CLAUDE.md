@@ -1,6 +1,6 @@
 # SnipRing — project context for Claude sessions
 
-Last updated: 2026-10-08. Owner: Dekel. Live site: https://snipring.com (GitHub Pages, repo `dekelazu036-creator/ringtones`).
+Last updated: 2026-10-11. Owner: Dekel. Live site: https://snipring.com (GitHub Pages, repo `dekelazu036-creator/ringtones`).
 This file is the single source of context. It is public (served by GitHub Pages like every repo file): never put personal data or secrets in it. Read it fully before doing anything. **No secrets belong in this file or anywhere in the repo.**
 
 ---
@@ -52,7 +52,7 @@ Tagline: **"השיר שלכם. הצלצול שלכם." / "Your song. Your ringto
 - `profiles` table is **private** (owner reads own row only; update limited to `display_name`, `locale`), created by a security-definer trigger.
 - `account.html` has a strict CSP, `noindex`, frame-busting and **never loads the Meta Pixel**.
 
-### Cloud library (Phase 1B — designed, M0 done, M1 in progress)
+### Cloud library (Phase 1B — designed, M0 done, M1 staging tests passed, 24 h watch pending)
 Approved decisions D1–D13:
 - **D1** Guest creation stays local; cloud save only on explicit choice + confirmation. No automatic or bulk upload.
 - **D2** Duplicate detection by content SHA-256 (per user), including concurrent duplicates (per-user lock).
@@ -81,9 +81,7 @@ Architecture rules (keep them):
 
 ### Design
 - Site design system lives in `app.css`: **one font, IBM Plex Sans Hebrew** (self-hosted); logo wordmark in **Karantina** ("Snip" in ink, "Ring" in accent); one SVG icon sprite (`icons.svg`); 4 px spacing scale; semantic colour tokens with **light and dark** (system preference + manual toggle).
-- Light: bg `#F4F6FA`, accent `#2546F0`. Dark (default look in brand materials): bg `#0B0F19`, surface `#131A29`, accent `#7D92FF`, text on accent dark `#0B0F19` (never white).
-- Borders over shadows, rounded (radii 8/12/16/20, pill), one accent per screen.
-- Brand kit follows the **existing site colours** (decided; the earlier orange/lime proposal was dropped). Secondary mark: a ring with a cut and an accent dot in the gap. Original vector logo file still missing.
+- **Identity v2 (decided 2026-10-11, master spec):** dark-first look, **Electric Lime `#C7FF3D`** for actions, **Violet `#8B5CF6`** reserved for AI features (tokens `--ai*`, unused until real AI exists). Dark: bg `#0A0B0D`, surface `#131518`, text on lime `#0A0B0D`. Light: bg `#F5F6F2`; lime is a fill only, text/lines use `--accent-text` `#456000` (contrast). English is the fallback language, Hebrew on Hebrew devices. Supersedes the earlier blue site colours; the brand-kit artifact is out of date.
 - Full RTL in Hebrew (logo top-right), LTR in English; language auto-detected from the device, toggle in header.
 - Incoming-call preview is generic (iPhone-style slide / Android-style swipe), **no platform assets**.
 - Accessibility: IS 5568 statement page, skip link, landmarks, keyboard waveform slider, accessibility menu.
@@ -118,25 +116,34 @@ Architecture rules (keep them):
 10. **Phase 1B M0** — branch `phase-1b-m0` (pushed, **not merged**): `supabase/library_1b.sql`, cron + teardown SQL, 3 Edge Functions (+ single-file bundles in `supabase/functions/dist/`), 168 local tests passing (`supabase/tests/run_all.sh`), `STAGING.md`, `TEST_MATRIX.md`, staging test runner. `schema.sql` fixed (profiles private).
 
 ### In progress — Phase 1B M1 (staging validation)
-Done: staging project `snipring-staging` created; two test users A/B (the owner's Gmail address with `+a` / `+b`); Supabase connector attached to Claude.
-**Blocked:** Supabase connector `apply_migration` calls return `cancelled` (reads via `execute_sql` work). Fallback: owner pastes SQL in the SQL Editor.
-Next steps, in order:
-1. Run on **staging only**: `schema.sql` → `auth_1a.sql` → `library_1b.sql` → beta snippet:
-   ```sql
-   insert into private.cloud_access (user_id)
-   select id from auth.users where email in ('<owner>+a@gmail.com','<owner>+b@gmail.com');
-   update private.settings set value = 'true' where key = 'reservations_open';
-   ```
-2. `supabase/tests/policy_audit.sql` + Supabase security advisors; compare with the expected list.
-3. Deploy the 3 functions (upload/download `verify_jwt` on, janitor off). Owner sets function secrets `ALLOWED_ORIGINS=http://localhost:8080` and `JANITOR_SECRET` (48+ random chars, password manager).
-4. Enable `pg_cron` + `pg_net`, create Vault secrets `library_project_url` and `library_janitor_secret`, run `library_1b_cron.sql`.
-5. Owner runs `node supabase/tests/staging/staging_test.mjs --slow` with env vars (passwords typed locally only), then manual checks T15, T16, T18, T19, T26 (`TEST_MATRIX.md`).
-6. Fix failures on the branch; M1 exit = all staging tests pass, audit matches, risks R1/R2 closed, `library_health` clean for 24 h.
+Tooling status (2026-10-11): the Supabase CLI on the owner's Mac (`brew install supabase`, `supabase login`, `supabase link --project-ref kavomvsvufqnqjepbevs`) applies SQL files with `supabase db query --linked -f <file>` (Management API, no DB password) and deploys functions. Connector `execute_sql` reads work and small DML/DO blocks worked on 2026-10-11; `apply_migration` was cancelled earlier. The CLI token can also reach production: always pass `--linked` (staging) or `--project-ref kavomvsvufqnqjepbevs`, and `supabase logout` when done.
+
+Done on staging (2026-10-08, verified by read queries):
+1. `schema.sql` → `auth_1a.sql` → `library_1b.sql` applied; 2 test users in `private.cloud_access`; `reservations_open = true`.
+2. `policy_audit.sql` + security advisors: every Phase 1B row matches the expected list. **Open (needs approval):** Discover tables from `schema.sql` keep Supabase's default ALL grants for anon/authenticated (incl. TRUNCATE/REFERENCES/TRIGGER; DML is still RLS-bound, TRUNCATE is not reachable through the API). Proposal: explicit revokes in `schema.sql` (affects production too).
+3. 3 functions deployed from `dist/` (upload/download `verify_jwt` on, janitor off). User tokens pass the legacy-JWT gateway check (T1 = 200), so the "legacy secret" toggle is not a problem on staging.
+4. Vault secrets `library_project_url`, `library_janitor_secret` (64 hex) + `library_1b_cron.sql` (job every 10 min). First runs returned 500 `janitor_not_configured` = the **function** secret `JANITOR_SECRET` was missing/short; being re-set by the owner.
+5. First two-account run: 25 passed, 3 failed. T14 + T11 = runner bug (192 kbps file was 390 s > 300 s cap → 422; fixed: 320 kbps). **T9b = real R1 finding:** an 11 MiB upload refused by Content-Length (body unread) hung until the 150 s wall clock → 503. Fix: all three handlers drain an unread body before answering (`discardBody`: upload ≤ 2× max, download/janitor ≤ 64 KiB; `readCapped` releases instead of cancelling so the rest is drained too); local I4b proves it byte-for-byte. Runner: 60 s request timeout with clear diagnostics, new T9d (refused 11 MiB answers fast), T11 measures this run's delta, per-run random tones, cleanup of its own items. Valid 8.9 MiB bodies reach the function in ~1.3 s.
+
+6. 2026-10-11: `JANITOR_SECRET` set; `library_1b.sql` re-applied with the CLI (commit `7709f52`: `private.stopped`, `lib_lock_existing`, `lib_prune_usage`, op `prune_usage`); audit + advisors unchanged (Phase 1B rows match; only the open grant item above). Janitor step 6 `prune_usage` (report field `pruned`) deployed: all three functions deployed from source with the CLI (`--use-api`, janitor `--no-verify-jwt`) → version 4, `verify_jwt` correct; every cron run since returns 200 with `pruned`. **Deployed code = `7709f52` + the janitor step only** (an equivalent local commit, later superseded by `cabef6e`, which has the same janitor step). The rest of `cabef6e` (upload header checks before Auth, drain cap 10 MiB + 1 MiB, cancel bodies declared oversize; tests I4b/I4c/I16b) is **not deployed and not staging-tested**.
+7. 2026-10-11 staging results: runner **29/29**, `--slow` **30/30** (incl. T14 ~9.2 MiB upload, T9b 11 MiB → 413 promptly, T17c signed URL refused after 300 s). Manual: T15 expiry (abandoned at the next run, purged 10 min later, counters back), T16 (8 test deletions purged, no object left), T18 at SQL level (`reservations_closed`, `stopped`, download works under stop, malformed `emergency_stop` fails closed; switches reset), T19 (orphan removed after 1 h, `orphan_removed` logged), T26 audit. `library_health` clean, counted = stored bytes.
+
+2026-10-11 evening: functions redeployed from `core-1.0` (v7) and runner rerun: **30/30** (T9d now expects 413 since the size header is checked first; new T9e 400). Next: watch `library_health` for 24 h (from 2026-10-11 16:40 UTC); optional: T18 HTTP 503 check on staging (runner with `reservations_open = false`, expect T1 = 503); decide the Discover grant item; confirm test user B's password was changed (it appeared in screenshots). M1 exit = all of the above + owner approval. Then M2.
+Runner tips (zsh): paste one command at a time; read passwords with `read -s`; a pasted trailing newline can answer a prompt with an empty value.
+
+### Core 1.0 build — branch `core-1.0` (2026-10-11, owner approved building per the master spec; **not merged** = not in production)
+Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core First; Studio gated). `core-1.0` = `phase-1b-m0` + the commits below. CI: `.github/workflows/tests.yml` runs `run_all.sh` + bundle drift check on every push (green).
+- **Design v2** (lime/violet, dark-first) — see §2 Design. TESTED visually light/dark, mobile.
+- **M2 My Library** `library.html`/`library.js`: cloud list/play/download/save-to-phone/delete, explicit confirm before upload, per-user queue DB + Web Lock + abort on account switch, `cloudCopy {id, sha, uid}` (uid added to D11 so A's copies never show as saved for B). TESTED with `tests/frontend/library_harness.html` (22/22, fake server). NOT TESTED with real staging Auth (owner: STAGING.md §8).
+- **Account deletion** `supabase/account_delete.sql` + `account-delete` function + janitor step 7 + UI in `account.html`. Local AD1–AD7/W6 pass; **applied and deployed on staging** (functions v7, janitor returns `accounts`). **T30 PASSED on staging 2026-10-11** (`delete_account_test.sh`, 9/9; server: Auth user, objects, items, usage, beta row, profile all gone, deletion `done`, A/B untouched, counted = stored bytes).
+- **monitor.js** error counts to Umami (no messages). **docs/RIGHTS.md** Discover rights evidence.
+- `config.js` localhost-only staging override (`localStorage['snipring-dev-supabase']`); staging host added to CSP of account/library.
+- Permissions for Claude: `.claude/settings.local.json` (git-ignored) allows staging CLI work, denies anything with the production ref, `supabase link/secrets`, push to `main`, merge.
 
 ### Planned
-- **M2:** `library.html` (separate page) + local upload queue (per-user DB `snipring-cloud-<uid>`, owner binding, Web Lock, AbortController on account switch, last-copy dialog D8, `cloudCopy` D11, blocked `deleteDatabase`, storage-shortage handling). Test against staging.
+- **M2 leftovers:** D8 last-copy dialog is moot while local copies are never removed (re-check if that changes); blocked `deleteDatabase` and device storage shortage need manual tests.
 - Then: production rollout of 1B (owner runs production SQL), private beta via allow-list.
-- **Launch blockers (keep):** Supabase plan decision (Free vs Pro); self-service account deletion including media; legal review of Terms/Privacy. Before public: D6 decision, media backup policy, alerting, global rate limiting / Turnstile on upload.
+- **Launch blockers (keep):** Supabase plan decision (Free vs Pro); self-service account deletion — built, staging E2E (T30) pending; legal review of Terms/Privacy. Before public: D6 decision, media backup policy, alerting, global rate limiting / Turnstile on upload.
 - Later phases: Pro/Studio tiers and payments, AI sound generator, creators/Discover uploads with moderation, Apple sign-in.
 
 ---
@@ -168,7 +175,7 @@ Next steps, in order:
 | **Domain** | `snipring.com` bought via **Cloudflare**. `CNAME` file → GitHub Pages. |
 | **Hosting** | GitHub Pages from `main` of `dekelazu036-creator/ringtones`. Merging to `main` = deploying. |
 | **Supabase production** | Project `snipring`, ref `gtjtvfogqrnuiducvoqm`, region **eu-central-1**, Free plan, org `fwbpzcottjvuyqcwwkci`. `schema.sql` (older version) and `auth_1a.sql` run by the owner. Auth: Site URL `https://snipring.com`, redirect `https://snipring.com/account.html**`, Email OTP 6 digits / 600 s, Confirm email on, anonymous sign-ins off, OTP template from `supabase/email-templates/otp.html` in "Magic link" and "Confirm signup". Custom SMTP via Resend. Turnstile secret in Attack Protection. Google provider on. No 1B objects in production. |
-| **Supabase staging** | Project `snipring-staging`, ref `kavomvsvufqnqjepbevs`, region **eu-west-1** (differs from production; fine for correctness tests), Free. Email provider, Confirm email off. Two test users A (`+a`) and B (`+b`); look up their UUIDs in Auth → Users. Nothing migrated yet. Default privileges on `public` still grant new tables/functions to API roles — our SQL revokes explicitly. |
+| **Supabase staging** | Project `snipring-staging`, ref `kavomvsvufqnqjepbevs`, region **eu-west-1** (differs from production; fine for correctness tests), Free. Email provider, Confirm email off. Two test users A (`+a`) and B (`+b`); look up their UUIDs in Auth → Users. Phase 1B applied (M1 in progress). Default privileges on `public` still grant new tables/functions to API roles — our SQL revokes explicitly. |
 | **Resend** | Domain `mail.snipring.com` verified (DKIM + SPF, eu-west-1); sender `SnipRing <noreply@mail.snipring.com>`; restricted sending key used only as Supabase SMTP password. |
 | **Cloudflare Turnstile** | Widget "SnipRing auth", Managed, hostname `snipring.com`; public site key `0x4AAAAAAFQ0O8x3Ke3kRuTq` in `config.js`. |
 | **Google Cloud** | Project "SnipRing", OAuth consent External, **In production**, basic scopes, web client with origin `https://snipring.com` + Supabase callback. Consent screen shows the Supabase domain (custom auth domain is a paid add-on). |
@@ -177,7 +184,7 @@ Next steps, in order:
 | **Claude artifacts** | Brand kit: `https://claude.ai/artifact/7istGkWd44Q5SnruYLVPW5`. Phase 1B plan v3: `https://claude.ai/code/artifact/4b761e93-3f5c-47d0-9386-8227ab69163f`. M0 report: `https://claude.ai/code/artifact/544f8657-c9b9-443a-a6a5-46a9d6dca077`. Marketing plan doc lives in the "מערך שיווק" chat. |
 | **Claude scheduled tasks** | 3 marketing agents (see §2 Marketing), drafts only. |
 
-Secrets that exist **only** in dashboards / password manager: Supabase DB passwords and secret keys (both projects), Google OAuth client secret, Resend key, Turnstile secret, staging test-user passwords, future `JANITOR_SECRET`.
+Secrets that exist **only** in dashboards / password manager: Supabase DB passwords and secret keys (both projects), Google OAuth client secret, Resend key, Turnstile secret, staging test-user passwords, staging `JANITOR_SECRET` (also in Vault as `library_janitor_secret`).
 
 ---
 
@@ -206,10 +213,11 @@ Secrets that exist **only** in dashboards / password manager: Supabase DB passwo
 - Postgres `jsonb` rejects `\u0000` → strip control characters before RPC.
 - Within one SQL statement a volatile function's writes are invisible to sibling subqueries (snapshot) — split assertions in tests.
 - Supabase connector: `apply_migration` returned `cancelled` repeatedly even after permissions were set to allow; cause unknown.
+- Local tests on the owner's Mac (Homebrew Postgres 18, no `postgres` OS user): scratch cluster under the session scratchpad with `LC_ALL=en_US.UTF-8`, TCP on 127.0.0.1 (socket path too long), and a `sudo` shim that drops `-u postgres`. On Postgres 18 an `ON DELETE RESTRICT` violation reports SQLSTATE `23001` instead of `23503`, so X11/M2 fail there only (staging/production run 17). Homebrew ffmpeg has no `libvorbis` → MP3 test M5 cannot build its OGG fixture.
 - Local git: branch upstream had to be set manually (`remote.origin.fetch` only listed `main` and `phase-1a-auth`).
 
 ### Open risks (Phase 1B)
-R1 unknown request-body limit for 10 MiB through Edge Functions · R2 hosted behaviour (sb_secret → `service_role` claim in PostgREST; `postgres` reading `storage.objects`) not yet verified · R3 Edge Functions hold the secret key · R4 signed URL shareable for 300 s · R5 MP3 check is structural, not a decode · R6 per-user rate limits only · R7 no alerting · R8 = D6 · R9 = D9 · R10 no TypeScript type-check / Deno run yet.
+R1 closed on staging (9.2 MiB upload OK, 11 MiB refused promptly) · R2 verified on staging (functions with the secret key reach `svc_library`; janitor reads `storage.objects` and removes orphans) · R3 Edge Functions hold the secret key · R4 signed URL shareable for 300 s · R5 MP3 check is structural, not a decode · R6 per-user rate limits only · R7 no alerting · R8 = D6 · R9 = D9 · R10 functions run on hosted Deno (staging), still no TypeScript type-check.
 
 ---
 
