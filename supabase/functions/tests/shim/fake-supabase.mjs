@@ -15,6 +15,7 @@ export function createClient(url, key, opts) {
       from: (bucket) => ({
         upload: async (path, bytes, o) => { f.calls.push(['upload', bucket, path, bytes.byteLength, o]); return f.upload(path); },
         createSignedUrl: async (path, secs, o) => { f.calls.push(['sign', bucket, path, secs, o]); return { data: { signedUrl: 'https://signed/' + path }, error: null }; },
+        download: async (path) => { f.calls.push(['download', bucket, path]); return { data: new Blob([new Uint8Array(1234)]), error: null }; },
         remove: async (paths) => { f.calls.push(['remove', bucket, paths]); return { data: paths.map((name) => ({ name })), error: null }; },
       }),
     },

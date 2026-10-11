@@ -518,3 +518,66 @@ test('P2 with cloud_for_all on, an account being deleted still cannot start uplo
   one(`delete from private.account_deletions where user_id = '${Q}'`);
   one(`update private.settings set value = 'false' where key = 'cloud_for_all'`);
 });
+
+// ------------------------------------------------------------------ media backup (Cloudflare R2)
+const r2 = new Map<string, { size: number; modified: number }>();
+const r2fault = { delFails: 0 };
+const depsB: Deps = {
+  ...deps,
+  async download(path) {
+    const size = one(`select (metadata ->> 'size') from storage.objects where bucket_id = 'user-media' and name = '${path}'`);
+    return size ? new Uint8Array(Number(size)) : null;
+  },
+  backup: {
+    async put(key, bytes) { r2.set(key, { size: bytes.byteLength, modified: Date.now() }); return 'ok'; },
+    async del(key) { if (r2fault.delFails > 0) { r2fault.delFails--; return { error: 'r2 delete 500' }; } r2.delete(key); return 'ok'; },
+    async list() { return { keys: [...r2.entries()].map(([key, v]) => ({ key, modified: v.modified })) }; },
+  },
+};
+
+test('R1 janitor copies every ready object to the backup once and marks it', async () => {
+  const s1 = await call(handleUpload(uploadReq('hdr.userA.sig', meta(), siteMp3(44100, 3)), deps, cfg));
+  assert.equal(s1.status, 200);
+  const r1 = await runJanitor(depsB, { ...cfg, holder: 'r1' });
+  assert.ok(r1 && r1.backup === 'on' && (r1.backed_up ?? 0) >= 1, JSON.stringify(r1));
+  assert.ok(r2.has(row(s1.body.id).storage_path));
+  assert.ok(row(s1.body.id).backup_at);
+  assert.equal(one(`select count(*) from public.library_items where state = 'ready' and backup_at is null`), '0');
+  const r1b = await runJanitor(depsB, { ...cfg, holder: 'r1b' });
+  assert.equal(r1b!.backed_up, 0);
+  (globalThis as any).__r1 = s1.body.id;
+});
+test('R2 deleting: the backup copy goes first; if it cannot be removed the item is NOT purged', async () => {
+  const id = (globalThis as any).__r1, path = row(id).storage_path;
+  assert.equal(asUser(A, `select public.library_delete('${id}')`), 'deleting');
+  one(`update public.library_items set purge_next_at = now() where id = '${id}'`);
+  r2fault.delFails = 1;
+  await runJanitor(depsB, { ...cfg, holder: 'r2a' });
+  assert.equal(row(id).state, 'deleting'); assert.ok(r2.has(path));
+  assert.equal(one(`select count(*) from storage.objects where name = '${path}'`), '1');      // Storage copy kept too
+  one(`update public.library_items set purge_next_at = now() where id = '${id}'`);
+  await runJanitor(depsB, { ...cfg, holder: 'r2b' });
+  assert.equal(row(id).state, 'purged'); assert.ok(!r2.has(path));
+  assert.equal(one(`select count(*) from storage.objects where name = '${path}'`), '0');
+});
+test('R3 backup orphans: old keys with no live row are removed; recent ones and live ones stay', async () => {
+  const s2 = await call(handleUpload(uploadReq('hdr.userB.sig', meta(), siteMp3(44100, 2)), deps, cfg));
+  await runJanitor(depsB, { ...cfg, holder: 'r3a' });
+  const live = row(s2.body.id).storage_path;
+  r2.set(`${B}/gone-old.mp3`, { size: 1, modified: Date.now() - 2 * 3600_000 });
+  r2.set(`${B}/gone-new.mp3`, { size: 1, modified: Date.now() });
+  r2.set(live, { size: 1, modified: Date.now() - 2 * 3600_000 });
+  const r = await runJanitor(depsB, { ...cfg, holder: 'r3b' });
+  assert.equal(r!.backup_orphans, 1);
+  assert.ok(!r2.has(`${B}/gone-old.mp3`)); assert.ok(r2.has(`${B}/gone-new.mp3`)); assert.ok(r2.has(live));
+  r2.delete(`${B}/gone-new.mp3`);
+});
+test('R4 health: backup lag counts only when the backup is enabled', () => {
+  one(`update public.library_items set backup_at = null, created_at = created_at - interval '3 hours' where state = 'ready' and user_id = '${B}'`);
+  const h = () => JSON.parse(one(`set request.jwt.claims = '{"role":"service_role"}'; select private.ops_health()`));
+  assert.equal(h().backup_current, true);                                   // backup_enabled false
+  one(`update private.settings set value = 'true' where key = 'backup_enabled'`);
+  assert.equal(h().backup_current, false);
+  one(`update private.settings set value = 'false' where key = 'backup_enabled'`);
+  one(`update public.library_items set backup_at = now() where state = 'ready' and user_id = '${B}'`);
+});

@@ -1,0 +1,50 @@
+#!/bin/zsh
+# PRODUCTION media backup to Cloudflare R2. OWNER RUNS THIS.
+# Asks for the R2 S3 endpoint (visible) and the bucket-scoped API token keys (hidden), PROVES they work with a
+# real write + delete of a tiny test object, then stores them as production function secrets and redeploys
+# library-janitor. The keys are never printed, never written to disk except a mode-600 temp file removed at once.
+set -u
+PROD=gtjtvfogqrnuiducvoqm
+BUCKET=snipring-media-backup
+cd "$(dirname "$0")/../.." || exit 1
+echo "Media backup setup for PRODUCTION ($PROD), R2 bucket $BUCKET."
+read -r "R2_ENDPOINT?R2 S3 endpoint (for an EU bucket it contains .eu., e.g. https://<account>.eu.r2.cloudflarestorage.com): "
+R2_ENDPOINT=${R2_ENDPOINT%/}
+[[ "$R2_ENDPOINT" =~ '^https://[a-z0-9]+(\.eu)?\.r2\.cloudflarestorage\.com$' ]] || { echo "That does not look like an R2 endpoint."; exit 1; }
+read -rs "R2_ACCESS_KEY_ID?Access Key ID (hidden): "; echo
+read -rs "R2_SECRET_ACCESS_KEY?Secret Access Key (hidden): "; echo
+[[ -n "$R2_ACCESS_KEY_ID" && -n "$R2_SECRET_ACCESS_KEY" ]] || { echo "Both keys are needed."; exit 1; }
+export R2_ENDPOINT R2_BUCKET=$BUCKET R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY
+
+echo "== testing write + delete on R2"
+node --input-type=module -e '
+  import { r2Client } from "./supabase/functions/_shared/r2.ts";
+  const c = r2Client({ endpoint: process.env.R2_ENDPOINT, bucket: process.env.R2_BUCKET,
+    accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY });
+  const key = "_selftest/" + Date.now() + ".mp3";
+  const put = await c.put(key, new Uint8Array([73, 68, 51]));
+  if (put !== "ok") { console.log("   write FAILED: " + put.error + " (wrong endpoint for the bucket region, or keys without write access)"); process.exit(1); }
+  const del = await c.del(key);
+  if (del !== "ok") { console.log("   delete FAILED: " + del.error); process.exit(1); }
+  const list = await c.list();
+  if ("error" in list) { console.log("   list FAILED: " + list.error); process.exit(1); }
+  console.log("   write, delete and list work");
+' || { unset R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; exit 1; }
+
+read -r "OK?Store these as PRODUCTION secrets and turn the backup on? Type the word production: "
+[[ "$OK" == "production" ]] || { unset R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; echo "Cancelled. Nothing stored."; exit 1; }
+TMP=$(mktemp); chmod 600 "$TMP"
+{ print -r -- "R2_ENDPOINT=$R2_ENDPOINT"; print -r -- "R2_BUCKET=$BUCKET"
+  print -r -- "R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID"; print -r -- "R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY"; } > "$TMP"
+supabase secrets set --project-ref "$PROD" --env-file "$TMP" >/dev/null 2>&1; code=$?
+rm -f "$TMP"; unset R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY
+(( code == 0 )) || { echo "FAILED: supabase secrets set"; exit 1; }
+echo "   function secrets set"
+for f in library-janitor library-health; do
+  supabase functions deploy $f --project-ref "$PROD" --use-api --no-verify-jwt >/dev/null 2>&1 || { echo "FAILED: deploy $f"; exit 1; }
+done
+for f in library-upload library-download account-delete; do
+  supabase functions deploy $f --project-ref "$PROD" --use-api >/dev/null 2>&1 || { echo "FAILED: deploy $f"; exit 1; }
+done
+echo "   functions redeployed"
+echo "DONE. Tell Claude: R2 done. (Claude then runs the database part and turns on the backup health check.)"
