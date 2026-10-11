@@ -141,6 +141,10 @@ PR #3 merged (`663441e`): site-wide CSP (D6), Meta never with a session, age 13,
 Production `lib_begin` + `global_per_hour = 300` + index `li_created` applied by the owner (SQL Editor, delta only),
 verified read-only: definer + search_path kept, `authenticated` cannot call it, janitor 200.
 Lesson: pasting from `pbcopy` into the dashboard SQL Editor sometimes fails; a code block in chat works.
+Alerting live (PR #6, `3a8ad3b`): `private.ops_health()` + `library-health` function (own `HEALTH_SECRET`, also a GitHub
+Actions secret) + `.github/workflows/health.yml` hourly; first run ok=true. Production was upgraded to **Pro**; staging moved
+to its own free org. On 2026-10-11 the owner removed Claude's deny rules for `gh pr merge` and `supabase secrets`
+(Claude may now merge PRs and set function secrets when asked; the production-ref Bash rule stays).
 
 ### Core 1.0 build — branch `core-1.0` (2026-10-11, owner approved building per the master spec; **not merged** = not in production)
 Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core First; Studio gated). `core-1.0` = `phase-1b-m0` + the commits below. CI: `.github/workflows/tests.yml` runs `run_all.sh` + bundle drift check on every push (green).
@@ -154,7 +158,7 @@ Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core F
 ### Planned
 - **M2 leftovers:** D8 last-copy dialog is moot while local copies are never removed (re-check if that changes); blocked `deleteDatabase` and device storage shortage need manual tests.
 - Then: production rollout of 1B (owner runs production SQL), private beta via allow-list.
-- **Launch blockers (status 2026-10-11):** ✅ Supabase Pro; ✅ self-service account deletion (live, T30 9/9); ✅ Terms/Privacy approved by the owner; ✅ D6 (site-wide CSP, no Meta with a session); ✅ global upload ceiling. **Open:** restore drill from a daily backup, owner listening review of the 26 Discover sounds, alerting (health views exist, nobody is paged), media backup policy (Storage objects are not in the DB backup).
+- **Launch blockers (status 2026-10-11):** ✅ Supabase Pro; ✅ self-service account deletion (live, T30 9/9); ✅ Terms/Privacy approved by the owner; ✅ D6 (site-wide CSP, no Meta with a session); ✅ global upload ceiling. ✅ alerting (library-health + hourly GitHub check, a failed run emails the owner). **Open:** restore drill from a daily backup, owner listening review of the 26 Discover sounds, media backup policy (Storage objects are not in the DB backup).
 - Later phases: Pro/Studio tiers and payments, AI sound generator, creators/Discover uploads with moderation, Apple sign-in.
 
 ---
@@ -228,7 +232,7 @@ Secrets that exist **only** in dashboards / password manager: Supabase DB passwo
 - Local git: branch upstream had to be set manually (`remote.origin.fetch` only listed `main` and `phase-1a-auth`).
 
 ### Open risks (Phase 1B)
-R1 closed on staging (9.2 MiB upload OK, 11 MiB refused promptly) · R2 verified on staging (functions with the secret key reach `svc_library`; janitor reads `storage.objects` and removes orphans) · R3 Edge Functions hold the secret key · R4 signed URL shareable for 300 s · R5 MP3 check is structural, not a decode · R6 per-user rate limits only · R7 no alerting · R8 = D6 · R9 = D9 · R10 functions run on hosted Deno (staging), still no TypeScript type-check.
+R1 closed on staging (9.2 MiB upload OK, 11 MiB refused promptly) · R2 verified on staging (functions with the secret key reach `svc_library`; janitor reads `storage.objects` and removes orphans) · R3 Edge Functions hold the secret key · R4 signed URL shareable for 300 s · R5 MP3 check is structural, not a decode · R6 per-user rate limits only · R7 alerting via hourly GitHub check · R8 = D6 · R9 = D9 · R10 functions run on hosted Deno (staging), still no TypeScript type-check.
 
 ---
 
