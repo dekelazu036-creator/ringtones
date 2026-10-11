@@ -34,7 +34,7 @@ Status: **L** = passed locally (stub), **S** = staging. First staging run 2026-1
   after > 1 h the janitor removes it and logs `orphan_removed`.
 - **T26 audit**: run `supabase/tests/policy_audit.sql`; output must match the expected list.
 
-- **T30 account deletion** (needs a third, disposable test user C on staging, in `private.cloud_access`):
+- **T30 account deletion** — PASSED 2026-10-11 with `supabase/tests/staging/delete_account_test.sh` (9/9). Manual variant (needs a third, disposable test user C on staging, in `private.cloud_access`):
   sign in as C on `localhost:8080` (STAGING.md §8), save 2 sounds in My Library, then Account →
   Delete account. Expect: page shows "Account deleted"; in Auth → Users, C is gone;
   `select * from private.account_deletion_health;` → `pending = 0`; no object under `user-media/<uuid C>/`;
