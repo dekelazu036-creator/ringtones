@@ -185,8 +185,8 @@ Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core F
 |---|---|
 | **Domain** | `snipring.com` bought via **Cloudflare**. `CNAME` file → GitHub Pages. |
 | **Hosting** | GitHub Pages from `main` of `dekelazu036-creator/ringtones`. Merging to `main` = deploying. |
-| **Supabase production** | Project `snipring`, ref `gtjtvfogqrnuiducvoqm`, region **eu-central-1**, Free plan, org `fwbpzcottjvuyqcwwkci`. `schema.sql` (older version) and `auth_1a.sql` run by the owner. Auth: Site URL `https://snipring.com`, redirect `https://snipring.com/account.html**`, Email OTP 6 digits / 600 s, Confirm email on, anonymous sign-ins off, OTP template from `supabase/email-templates/otp.html` in "Magic link" and "Confirm signup". Custom SMTP via Resend. Turnstile secret in Attack Protection. Google provider on. No 1B objects in production. |
-| **Supabase staging** | Project `snipring-staging`, ref `kavomvsvufqnqjepbevs`, region **eu-west-1** (differs from production; fine for correctness tests), Free. Email provider, Confirm email off. Two test users A (`+a`) and B (`+b`); look up their UUIDs in Auth → Users. Phase 1B applied (M1 in progress). Default privileges on `public` still grant new tables/functions to API roles — our SQL revokes explicitly. |
+| **Supabase production** | Project `snipring`, ref `gtjtvfogqrnuiducvoqm`, region **eu-central-1**, **Pro plan since 2026-10-11** (daily backups, no pausing), org `fwbpzcottjvuyqcwwkci` (contains only production). `schema.sql` (older version) and `auth_1a.sql` run by the owner. Auth: Site URL `https://snipring.com`, redirect `https://snipring.com/account.html**`, Email OTP 6 digits / 600 s, Confirm email on, anonymous sign-ins off, OTP template from `supabase/email-templates/otp.html` in "Magic link" and "Confirm signup". Custom SMTP via Resend. Turnstile secret in Attack Protection. Google provider on. No 1B objects in production. |
+| **Supabase staging** | Project `snipring-staging`, ref `kavomvsvufqnqjepbevs`, region **eu-west-1** (differs from production; fine for correctness tests), **Free, in its own org "SnipRing Staging"** (moved 2026-10-11 so Pro bills one project). The Supabase connector is scoped to the production org: use the CLI (`--linked`) for staging. Email provider, Confirm email off. Two test users A (`+a`) and B (`+b`); look up their UUIDs in Auth → Users. Phase 1B applied (M1 in progress). Default privileges on `public` still grant new tables/functions to API roles — our SQL revokes explicitly. |
 | **Resend** | Domain `mail.snipring.com` verified (DKIM + SPF, eu-west-1); sender `SnipRing <noreply@mail.snipring.com>`; restricted sending key used only as Supabase SMTP password. |
 | **Cloudflare Turnstile** | Widget "SnipRing auth", Managed, hostname `snipring.com`; public site key `0x4AAAAAAFQ0O8x3Ke3kRuTq` in `config.js`. |
 | **Google Cloud** | Project "SnipRing", OAuth consent External, **In production**, basic scopes, web client with origin `https://snipring.com` + Supabase callback. Consent screen shows the Supabase domain (custom auth domain is a paid add-on). |
@@ -234,7 +234,7 @@ R1 closed on staging (9.2 MiB upload OK, 11 MiB refused promptly) · R2 verified
 
 ## 7. Open ideas and undecided questions
 
-- Supabase plan: stay Free (no backups, pauses after 7 days idle, 150 s function limit) or Pro $25/month — launch blocker.
+- Supabase plan: **decided — Pro** (2026-10-11). Next: a restore drill from a daily backup into a scratch database (never restore over production).
 - D6 security decision before public launch (site-wide CSP vs. no third-party scripts when signed in).
 - Recreate staging in eu-central-1 to match production latency? (optional)
 - How to unblock the Supabase connector writes, or keep using manual SQL Editor runs.
