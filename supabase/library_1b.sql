@@ -47,8 +47,12 @@ insert into private.settings (key, value) values
      'project_physical', 838860800,   -- 800 MB for the whole project (Free plan = 1 GB)
      'reservation_ttl_s', 300,
      'purge_grace_s',     600,
-     'tombstone_days',    30))
+     'tombstone_days',    30,
+     'event_retention_days', 90))      -- technical log (private.library_events) kept 90 days (privacy policy)
 on conflict (key) do nothing;
+-- projects installed before a limit existed get it added (never overwrites a value already set)
+update private.settings set value = value || '{"event_retention_days": 90}'::jsonb
+ where key = 'limits' and not (value ? 'event_retention_days');
 
 create table if not exists private.cloud_access (            -- private-beta allow-list
   user_id  uuid primary key references auth.users(id) on delete cascade,
@@ -479,14 +483,20 @@ begin
   return n;
 end $$;
 
+-- also drops technical log rows older than event_retention_days (the privacy policy promises a limit)
 create or replace function private.lib_drop_tombstones() returns int
-language sql security definer set search_path = '' as $$
+language plpgsql security definer set search_path = '' as $$
+declare n int;
+begin
+  delete from private.library_events
+   where at < now() - make_interval(days => private.lim('event_retention_days')::int);
   with d as (delete from public.library_items
               where state = 'purged'
                 and purged_at < now() - make_interval(days => private.lim('tombstone_days')::int)
              returning 1)
-  select count(*)::int from d
-$$;
+  select count(*)::int into n from d;
+  return n;
+end $$;
 
 create or replace view private.library_health as
 select

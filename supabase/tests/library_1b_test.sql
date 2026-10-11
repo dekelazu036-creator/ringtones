@@ -483,7 +483,11 @@ select tst.ok('O3 audit detects and repairs drift', tst.svc('audit_user', jsonb_
 select tst.ok('O4 audit never lowers releasing below what is still stored (orphan bytes kept counted)',
   (tst.usage(:A) ->> 'bytes_releasing')::bigint >= 200);
 update public.library_items set purged_at = now() - interval '31 days' where state = 'purged' and user_id = :A;
+insert into private.library_events (at, user_id, kind) values (now() - interval '91 days', :A, 'old_test_event'), (now() - interval '89 days', :A, 'recent_test_event');
 select tst.ok('O5 tombstones older than 30 days are dropped', (tst.svc('drop_tombstones', '{}'))::int >= 3);
+select tst.ok('O5b log rows older than 90 days are dropped, younger ones kept',
+  not exists (select 1 from private.library_events where kind = 'old_test_event')
+  and exists (select 1 from private.library_events where kind = 'recent_test_event'));
 select tst.ok('O6 janitor lease is exclusive',
   tst.svc('janitor_acquire', '{"holder":"h1","secs":60}') = 'true'::jsonb
   and tst.svc('janitor_acquire', '{"holder":"h2","secs":60}') = 'false'::jsonb);
