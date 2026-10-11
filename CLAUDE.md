@@ -81,9 +81,7 @@ Architecture rules (keep them):
 
 ### Design
 - Site design system lives in `app.css`: **one font, IBM Plex Sans Hebrew** (self-hosted); logo wordmark in **Karantina** ("Snip" in ink, "Ring" in accent); one SVG icon sprite (`icons.svg`); 4 px spacing scale; semantic colour tokens with **light and dark** (system preference + manual toggle).
-- Light: bg `#F4F6FA`, accent `#2546F0`. Dark (default look in brand materials): bg `#0B0F19`, surface `#131A29`, accent `#7D92FF`, text on accent dark `#0B0F19` (never white).
-- Borders over shadows, rounded (radii 8/12/16/20, pill), one accent per screen.
-- Brand kit follows the **existing site colours** (decided; the earlier orange/lime proposal was dropped). Secondary mark: a ring with a cut and an accent dot in the gap. Original vector logo file still missing.
+- **Identity v2 (decided 2026-10-11, master spec):** dark-first look, **Electric Lime `#C7FF3D`** for actions, **Violet `#8B5CF6`** reserved for AI features (tokens `--ai*`, unused until real AI exists). Dark: bg `#0A0B0D`, surface `#131518`, text on lime `#0A0B0D`. Light: bg `#F5F6F2`; lime is a fill only, text/lines use `--accent-text` `#456000` (contrast). English is the fallback language, Hebrew on Hebrew devices. Supersedes the earlier blue site colours; the brand-kit artifact is out of date.
 - Full RTL in Hebrew (logo top-right), LTR in English; language auto-detected from the device, toggle in header.
 - Incoming-call preview is generic (iPhone-style slide / Android-style swipe), **no platform assets**.
 - Accessibility: IS 5568 statement page, skip link, landmarks, keyboard waveform slider, accessibility menu.

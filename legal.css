@@ -1,7 +1,7 @@
 @import url("fonts/fonts.css");
-:root{--bg:#F4F6FA;--paper:#FFFFFF;--ink:#0F172A;--muted:#5A6478;--line:#DDE2EC;--accent:#2546F0;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B0F19;--paper:#131A29;--ink:#E8ECF5;--muted:#9AA5BC;--line:#26314A;--accent:#7D92FF;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0B0F19;--paper:#131A29;--ink:#E8ECF5;--muted:#9AA5BC;--line:#26314A;--accent:#7D92FF;color-scheme:dark}
+:root{--bg:#F5F6F2;--paper:#FFFFFF;--ink:#0E100C;--muted:#5C6355;--line:#DCE0D4;--accent:#456000;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A0B0D;--paper:#131518;--ink:#F2F4EF;--muted:#9AA096;--line:#2A2E35;--accent:#C7FF3D;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0A0B0D;--paper:#131518;--ink:#F2F4EF;--muted:#9AA096;--line:#2A2E35;--accent:#C7FF3D;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "IBM Plex Sans Hebrew",system-ui,-apple-system,"Segoe UI",sans-serif;padding:env(safe-area-inset-top,0px) 16px 0}
