@@ -36,6 +36,7 @@ do $$ begin
   end if;
 end $$;
 drop function if exists public.svc_account(text, jsonb);
+drop function if exists private.ops_health();
 drop view     if exists private.account_deletion_health;
 drop function if exists private.acct_request(uuid);
 drop function if exists private.acct_purges(uuid);

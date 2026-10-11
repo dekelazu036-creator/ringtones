@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import { handleAccountDelete, handleDownload, handleJanitor, handleUpload, runJanitor, type Config, type Deps } from '../_shared/library.ts';
+import { handleAccountDelete, handleDownload, handleHealth, handleJanitor, handleUpload, runJanitor, type Config, type Deps } from '../_shared/library.ts';
 import { ffmpeg, sine, siteMp3 } from './fixtures.ts';
 
 const DB = 'snipring_fn_test';
@@ -408,4 +408,42 @@ test('AD7 end state after deletions: counters equal rows for every remaining use
   assert.equal(one(`set request.jwt.claims = '{"role":"service_role"}';
     select count(*) filter (where public.svc_library('audit_user', jsonb_build_object('user_id', user_id)) = 'true'::jsonb)
       from private.library_usage`), '0');
+});
+
+// ------------------------------------------------------------------ health (alerting)
+const HSECRET = 'h'.repeat(40);
+const health = (token: string | null, c: Partial<Config> = {}) =>
+  call(handleHealth(new Request('https://fn.test/library-health', { method: 'POST', headers: token ? { authorization: `Bearer ${token}` } : {} }), deps, { ...cfg, healthSecret: HSECRET, ...c }));
+
+test('H1 health refuses without its secret, with the janitor secret, and when not configured', async () => {
+  assert.equal((await health(null)).status, 401);
+  assert.equal((await health(SECRET)).status, 401);
+  assert.equal((await health(HSECRET, { healthSecret: 'short' })).status, 500);
+});
+test('H2 healthy after a janitor run: ok, only yes/no fields, no user data', async () => {
+  await runJanitor(deps, { ...cfg, holder: 'h2' });
+  const r = await health(HSECRET);
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.ok, true, JSON.stringify(r.body));
+  assert.ok(Object.values(r.body.checks).every((v) => typeof v === 'boolean'));
+  assert.ok(!JSON.stringify(r.body).match(/[0-9a-f]{8}-[0-9a-f]{4}-/));        // no ids anywhere
+});
+test('H3 real problems flip ok to false and name the check', async () => {
+  // a stuck deletion (older than 24 h) and an untracked object (stored > counted)
+  const s = await call(handleUpload(uploadReq('hdr.userB.sig', meta(), siteMp3(44100, 2)), deps, cfg));
+  one(`update public.library_items set state = 'deleting', deleted_at = now() - interval '2 days', updated_at = now() - interval '2 days',
+         purge_next_at = now() + interval '1 day' where id = '${s.body.id}'`);
+  one(`insert into storage.objects (bucket_id, name, metadata) values ('user-media', '${B}/untracked.mp3', '{"size":999999,"mimetype":"audio/mpeg"}')`);
+  const r = await health(HSECRET);
+  assert.equal(r.body.ok, false);
+  assert.ok(r.body.failing.includes('no_stuck_deletes'), JSON.stringify(r.body));
+  assert.ok(r.body.failing.includes('bytes_tracked'), JSON.stringify(r.body));
+  // janitor silence is a problem too
+  one(`delete from private.library_events where kind = 'janitor_run'`);
+  assert.ok((await health(HSECRET)).body.failing.includes('janitor_recent'));
+  // clean up for later tests
+  one(`delete from storage.objects where name = '${B}/untracked.mp3'`);
+  one(`update public.library_items set purge_next_at = now() where id = '${s.body.id}'`);
+  await runJanitor(deps, { ...cfg, holder: 'h3' });
+  assert.equal((await health(HSECRET)).body.ok, true);
 });

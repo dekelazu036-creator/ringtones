@@ -1,0 +1,24 @@
+# Hourly production health check. A failed run = GitHub emails the repository owner.
+# Needs the repository secret HEALTH_SECRET (same value as the library-health function secret).
+# Until it is set, the job passes with a notice instead of failing.
+name: production health
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  health:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check library-health
+        env:
+          HEALTH_SECRET: ${{ secrets.HEALTH_SECRET }}
+        run: |
+          if [ -z "$HEALTH_SECRET" ]; then echo "::notice::HEALTH_SECRET not set yet: skipping"; exit 0; fi
+          body=$(curl -sS --max-time 60 -X POST -H "Authorization: Bearer $HEALTH_SECRET" \
+                 https://gtjtvfogqrnuiducvoqm.supabase.co/functions/v1/library-health) || { echo "::error::health endpoint unreachable"; exit 1; }
+          echo "$body"
+          echo "$body" | grep -q '"ok":true' || { echo "::error::SnipRing production needs attention: $body"; exit 1; }

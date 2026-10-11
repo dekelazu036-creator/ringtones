@@ -152,6 +152,8 @@ begin
     when 'done'    then return to_jsonb(private.acct_done(v_uid));
     when 'failed'  then perform private.acct_failed(v_uid, a ->> 'error'); return 'true'::jsonb;
     when 'later'   then perform private.acct_later(v_uid); return 'true'::jsonb;
+    -- monitoring: yes/no checks only (no user data), consumed by the library-health function
+    when 'health'  then return private.ops_health();
     else raise exception 'svc_account: unknown op %', p_op using errcode = '22023';
   end case;
 end $$;
@@ -164,9 +166,24 @@ select
   (select count(*) from private.library_events where kind = 'account_deletion_stuck' and at > now() - interval '7 days')   as stuck_7d,
   (select count(*) from private.account_deletions where state = 'done' and done_at > now() - interval '30 days')            as done_30d;
 
+-- one place that says whether the cloud library and account deletion are healthy (for alerting)
+create or replace function private.ops_health() returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object(
+    'janitor_recent',    coalesce(h.last_janitor_run > now() - interval '30 minutes', false),
+    'no_stuck_deletes',  h.stuck_deletions = 0,
+    'no_stuck_uploads',  h.stuck_uploads = 0,
+    'no_stuck_purges',   h.purge_stuck_7d = 0,
+    'bytes_tracked',     h.stored_bytes <= h.counted_bytes,          -- an object nobody counts = leak
+    'deletions_on_time', a.overdue = 0 and a.stuck_7d = 0,
+    'uploads_paused',    not private.flag('reservations_open') or private.stopped())
+  from private.library_health h, private.account_deletion_health a
+$$;
+
 -- privileges: functions get EXECUTE for PUBLIC by default, so revoke explicitly
 revoke all on private.account_deletions from public, anon, authenticated, service_role;
 revoke all on private.account_deletion_health from public, anon, authenticated, service_role;
+revoke all on function private.ops_health() from public, anon, authenticated, service_role;
 revoke all on function private.acct_request(uuid), private.acct_purges(uuid), private.acct_due(int),
                        private.acct_prepare(uuid), private.acct_done(uuid), private.acct_failed(uuid, text),
                        private.acct_later(uuid)

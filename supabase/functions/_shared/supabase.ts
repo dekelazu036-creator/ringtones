@@ -83,6 +83,7 @@ export function configFromEnv(): Config {
     maxFileBytes: 10 * 1024 * 1024,
     signedUrlSeconds: 300,
     janitorSecret: (Deno.env.get('JANITOR_SECRET') ?? '').trim(),   // dashboard pastes often end in a newline
+    healthSecret: (Deno.env.get('HEALTH_SECRET') ?? '').trim(),
     janitorBudgetMs: 100_000,
     holder: Deno.env.get('SB_EXECUTION_ID') ?? undefined,
   };

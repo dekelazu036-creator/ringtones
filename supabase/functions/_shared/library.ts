@@ -29,6 +29,7 @@ export type Config = {
   maxFileBytes: number;          // must equal limits.max_file and the bucket limit (10 MiB)
   signedUrlSeconds: number;      // fixed on the server (300)
   janitorSecret?: string;
+  healthSecret?: string;         // library-health: separate secret, so the alerting side never holds the janitor's
   janitorBudgetMs?: number;      // stop starting new work after this (Free plan wall clock is 150 s)
   holder?: string;
 };
@@ -332,4 +333,31 @@ export async function finishAccount(uid: string, deps: Deps, time: () => boolean
   const d = await deps.deleteUser(uid);
   if (d !== 'ok') { await deps.acct('failed', { user_id: uid, error: d.error }); return 'failed'; }
   return (await deps.acct('done', { user_id: uid })) === 'done' ? 'done' : 'failed';
+}
+
+// ------------------------------------------------------------------ library-health (alerting)
+// Answers only yes/no checks, never user data. ok=false when something needs a human; an external
+// scheduled check (GitHub Actions) fails on ok=false and GitHub emails the owner.
+const INFO_ONLY = new Set(['uploads_paused']);
+
+export async function handleHealth(req: Request, deps: Deps, cfg: Config): Promise<Response> {
+  const res = await healthResponse(req, deps, cfg);
+  await discardBody(req, 64 * 1024);                   // verify_jwt is off here
+  return res;
+}
+
+async function healthResponse(req: Request, deps: Deps, cfg: Config): Promise<Response> {
+  if (req.method !== 'POST' && req.method !== 'GET') return json({ error: 'bad_request' }, 400);
+  const secret = cfg.healthSecret ?? '';
+  if (secret.length < 32) return json({ error: 'health_not_configured' }, 500);
+  if (!safeEqual(bearer(req) ?? '', secret)) return json({ error: 'unauthorized' }, 401);
+  if (!deps.acct) return json({ error: 'server_error' }, 500);
+  try {
+    const checks = (await deps.acct('health', {})) as Record<string, boolean>;
+    const failing = Object.entries(checks).filter(([k, v]) => !INFO_ONLY.has(k) && v !== true).map(([k]) => k);
+    return json({ ok: failing.length === 0, failing, checks, at: new Date().toISOString() }, 200);
+  } catch (e) {
+    deps.log?.({ fn: 'library-health', event: 'exception', error: String(e) });
+    return json({ ok: false, failing: ['health_query'], error: 'server_error' }, 500);
+  }
 }
