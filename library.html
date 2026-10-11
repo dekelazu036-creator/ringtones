@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Strict policy like account.html: own scripts, the Supabase API (production; staging for local tests), Umami. No Meta Pixel, no inline scripts. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cloud.umami.is; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://cloud.umami.is https://api-gateway.umami.dev; media-src 'self' blob: https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex,nofollow">
+<title>SnipRing · My Library</title>
+<meta name="theme-color" content="#F5F6F2">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="/boot.js"></script>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/app.css">
+<script src="/config.js"></script>
+<!-- official @supabase/supabase-js 2.109.0 (dist/umd), verified against jsDelivr: sha256 nMtwuZhgu4FZO9gIcI9uHthhRu8TjxlCo37rOFGdWoE= -->
+<script src="/vendor/supabase-2.109.0.js" integrity="sha384-QBRYTjAPttRJE6VS+3BZ2pbh2K1WYNBwquAji9CwlJx1Uwk9QxbOQ5GpBhBoj1xg" crossorigin="anonymous"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="db897ad6-80a9-43c7-9b29-d7474d5f4b73" data-domains="snipring.com,www.snipring.com"></script>
+</head>
+<body data-page="library">
+<a class="skip" href="#main" data-i18n="skip"></a>
+<div class="wrap acct-wrap">
+  <header class="top">
+    <a class="logo" href="/" aria-label="SnipRing" dir="ltr">Snip<span class="ring">Ring</span></a>
+    <div class="hbtns"><button class="textbtn" id="lang" type="button">English</button></div>
+  </header>
+
+  <main id="main" tabindex="-1" class="acct lib">
+    <a class="linkbtn back" href="/"><svg class="ic sm back-ic" aria-hidden="true"><use href="/icons.svg#i-chevron"/></svg><span data-i18n="back"></span></a>
+
+    <section class="card acct-card" id="vOff" hidden>
+      <h1 data-i18n="offH"></h1>
+      <p class="muted" data-i18n="offP"></p>
+      <a class="btn primary block" href="/" data-i18n="toCreate"></a>
+    </section>
+
+    <section class="card acct-card" id="vBusy" hidden aria-busy="true">
+      <p class="lib-busy"><span class="spin" aria-hidden="true"></span><span data-i18n="loading"></span></p>
+    </section>
+
+    <section class="card acct-card" id="vOut" hidden>
+      <h1 data-i18n="outH"></h1>
+      <p class="muted" data-i18n="outP"></p>
+      <a class="btn primary block" id="signIn" href="/account.html?return=%2Flibrary.html" data-i18n="signIn"></a>
+    </section>
+
+    <div id="vMain" class="lib-main" hidden>
+      <h1 class="lib-h" data-i18n="h"></h1>
+      <p class="muted lib-sub" id="who"></p>
+      <p class="notice" id="notOnList" hidden data-i18n="notOnList"></p>
+      <p class="notice" id="closed" hidden data-i18n="closed"></p>
+      <div class="lib-usage" id="usage" hidden>
+        <div class="lib-bar" aria-hidden="true"><span id="usageBar"></span></div>
+        <p class="muted num" id="usageTxt"></p>
+      </div>
+      <p class="lib-msg" id="msg" role="status" aria-live="polite"></p>
+
+      <section class="card lib-card" aria-labelledby="cloudH">
+        <h2 id="cloudH"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-cloud"/></svg><span data-i18n="cloudH"></span></h2>
+        <p class="muted lib-empty" id="cloudEmpty" hidden data-i18n="cloudEmpty"></p>
+        <ul class="lib-list" id="cloudList"></ul>
+      </section>
+
+      <section class="card lib-card" aria-labelledby="localH">
+        <h2 id="localH"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-phone"/></svg><span data-i18n="localH"></span></h2>
+        <p class="muted" data-i18n="localP"></p>
+        <p class="muted lib-empty" id="localEmpty" hidden data-i18n="localEmpty"></p>
+        <ul class="lib-list" id="localList"></ul>
+      </section>
+
+      <p class="muted lib-foot" data-i18n="privacy"></p>
+    </div>
+  </main>
+
+  <footer class="sitefoot"><a href="/terms.html" data-i18n="termsLink"></a><a href="/privacy.html" data-i18n="privacyLink"></a><a href="/accessibility.html" data-i18n="aStatement"></a><span dir="ltr">hello@snipring.com</span></footer>
+</div>
+
+<dialog class="dlg" id="confirm" aria-labelledby="cfH">
+  <form method="dialog" class="lib-dlg">
+    <h2 id="cfH"></h2>
+    <p id="cfP" class="muted"></p>
+    <div class="pair"><button class="btn" value="no" id="cfNo"></button><button class="btn primary" value="yes" id="cfYes"></button></div>
+  </form>
+</dialog>
+
+<script src="/library.js"></script>
+</body>
+</html>

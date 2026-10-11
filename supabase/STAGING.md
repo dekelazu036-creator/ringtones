@@ -70,3 +70,13 @@ Then the manual SQL checks in `supabase/tests/TEST_MATRIX.md` (T15, T16, T18, T1
 ## Tear down staging
 Delete the staging project in the dashboard (Settings → General → Delete project). Nothing in
 production depends on it.
+
+## 8. My Library page (M2) against staging — owner's computer
+`library.html` + `library.js` talk only to the three Edge Functions and the three granted RPCs.
+1. Serve the repo locally: `python3 -m http.server 8080 --bind 127.0.0.1` (the staging functions allow `http://localhost:8080`).
+2. In that browser tab's console, point the site at staging (public values only; localhost only, see `config.js`):
+   `localStorage.setItem('snipring-dev-supabase', JSON.stringify({url:'https://kavomvsvufqnqjepbevs.supabase.co', key:'<staging sb_publishable_…>'}))`
+3. Open `http://localhost:8080/?me` (owner mode = accounts visible), then `/account.html`, sign in as test user A with the email code.
+4. Make a sound on `/`, then open `/library.html`: save to cloud, play, download, save to phone, delete. Repeat as B in a second browser profile (B must not see A's sounds).
+5. Undo: `localStorage.removeItem('snipring-dev-supabase')`.
+Automated UI regression without any server: `http://localhost:8080/tests/frontend/library_harness.html` (fake server, isolated IndexedDB names).

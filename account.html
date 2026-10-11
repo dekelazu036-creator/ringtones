@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- Strict policy: only our own scripts, the auth API, Cloudflare Turnstile and Umami. No Meta Pixel, no inline scripts. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://cloud.umami.is; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://challenges.cloudflare.com https://cloud.umami.is https://api-gateway.umami.dev; frame-src https://challenges.cloudflare.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://cloud.umami.is; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://challenges.cloudflare.com https://cloud.umami.is https://api-gateway.umami.dev; frame-src https://challenges.cloudflare.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="robots" content="noindex,nofollow">
 <title>SnipRing · Account</title>
@@ -101,6 +101,7 @@
         <div><dt data-i18n="planL"></dt><dd data-i18n="planFree"></dd></div>
       </dl>
       <p class="hint" data-i18n="inNote"></p>
+      <a class="btn lg block" href="/library.html"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-cloud"/></svg><span data-i18n="library"></span></a>
       <a class="btn primary lg block" id="continue" href="/"><span data-i18n="continue"></span></a>
       <div class="pair">
         <button class="btn" id="logout" type="button"><svg class="ic" aria-hidden="true"><use href="/icons.svg#i-logout"/></svg><span data-i18n="logout"></span></button>

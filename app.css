@@ -569,3 +569,36 @@ html[dir=rtl] .back-ic{transform:rotate(-90deg)}
 .acct-facts{grid-template-columns:1fr 1fr}
 #startMsg:empty,#codeMsg:empty,#inMsg:empty{display:none}
 #startMsg,#codeMsg{color:var(--ink);font-weight:500}
+
+/* ---------- My Library (library.html) ---------- */
+.lib{gap:var(--s4)}
+.lib-h{font-size:var(--fs-2xl);line-height:1.2}
+.lib-h:focus{outline:none}
+.lib-main{display:flex;flex-direction:column;gap:var(--s4)}
+.lib-sub{margin-top:calc(-1 * var(--s3))}
+.lib-busy{display:flex;align-items:center;gap:var(--s3)}
+.lib-usage{display:flex;flex-direction:column;gap:var(--s1)}
+.lib-bar{height:8px;border-radius:var(--r-pill);background:var(--surface-3);overflow:hidden}
+.lib-bar span{display:block;height:100%;width:0;background:var(--accent);border-radius:inherit}
+.lib-msg:empty{display:none}
+.lib-msg{font-size:var(--fs-sm);color:var(--ink-2)}
+.lib-msg.err{color:var(--danger)}
+.lib-card{display:flex;flex-direction:column;gap:var(--s3)}
+.lib-card h2{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-lg)}
+.lib-card h2 .ic{color:var(--accent-text)}
+.lib-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2)}
+.lib-item{display:flex;flex-direction:column;gap:var(--s2);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s3)}
+.lib-top{display:flex;align-items:center;gap:var(--s3);min-width:0}
+.lib-name{flex:1;min-width:0;display:flex;flex-direction:column}
+.lib-name bdi{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lib-name small{color:var(--muted);font-size:var(--fs-xs)}
+.lib-state{font-size:var(--fs-xs);font-weight:600;color:var(--ok);display:inline-flex;align-items:center;gap:var(--s1)}
+.lib-state.wait{color:var(--muted)}
+.lib-state.err{color:var(--danger)}
+.lib-acts{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.lib-acts .btn{min-height:var(--h-sm);padding-inline:var(--s3);font-size:var(--fs-sm)}
+.lib-play{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.lib-play:disabled{opacity:.5;cursor:default}
+.lib-dlg{display:flex;flex-direction:column;gap:var(--s4)}
+.lib-dlg h2{font-size:var(--fs-xl)}
+.lib-foot{text-align:center}

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<title>library.js harness</title>
+<!-- Local regression harness for library.js (Phase 1B M2). Fake Supabase client + fake fetch, real IndexedDB.
+     Open http://localhost:8080/tests/frontend/library_harness.html — results print in #results and the console.
+     It uses its own IndexedDB names (prefix "h-") so it never touches the real 'snipring' database. -->
+<link rel="stylesheet" href="/app.css">
+<style>#results{font:13px/1.5 ui-monospace,monospace;white-space:pre-wrap;padding:12px;border-top:1px solid #888}</style>
+</head>
+<body>
+<div id="app"></div>
+<pre id="results">running…</pre>
+<script>
+/* ---- isolate IndexedDB: library.js opens 'snipring' and 'snipring-cloud-<uid>'; prefix them */
+const realOpen = indexedDB.open.bind(indexedDB);
+indexedDB.open = (name, v) => realOpen('h-' + name, v);
+window.SNIPRING_CONFIG = { supabaseUrl: 'https://aaaaaaaaaaaaaaaaaaaa.supabase.co', supabaseKey: 'sb_publishable_test', auth: { enabled: true } };
+
+/* ---- fake auth */
+const USERS = { A: { id: '00000000-0000-4000-8000-00000000000a', email: 'a@test.invalid' }, B: { id: '00000000-0000-4000-8000-00000000000b', email: 'b@test.invalid' } };
+let current = null, listeners = [];
+function setUser(k) { current = k ? USERS[k] : null; const s = current ? { user: current, access_token: 'jwt.' + (k || '') + '.sig' } : null; listeners.forEach(f => f(current ? 'SIGNED_IN' : 'SIGNED_OUT', s)) }
+window.supabase = { createClient: () => ({ auth: {
+  getSession: async () => ({ data: { session: current ? { user: current, access_token: 'jwt.' + (current === USERS.A ? 'A' : 'B') + '.sig' } : null } }),
+  onAuthStateChange: f => { listeners.push(f); setTimeout(() => f('INITIAL_SESSION', current ? { user: current } : null), 0); return { data: { subscription: { unsubscribe() {} } } } }
+} }) };
+
+/* ---- fake server: per-user items, records every call */
+const server = { items: { A: [], B: [] }, calls: [], keys: {}, failNext: null, usage: { enabled: true, uploads_open: true } };
+const who = h => (h.authorization || '').split('.')[1];
+const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+window.fetch = async (url, init = {}) => {
+  if (String(url).startsWith('data:')) return new Response(new Uint8Array(64).fill(9).buffer, { status: 200 });
+  const u = new URL(url), h = init.headers || {}, k = who(h);
+  server.calls.push({ path: u.pathname, user: k, init });
+  if (!k) return json(401, { error: 'unauthorized' });
+  if (u.pathname === '/rest/v1/rpc/library_usage') return json(200, { items: server.items[k].length, bytes: server.items[k].reduce((a, i) => a + i.size_bytes, 0), max_items: 100, max_bytes: 104857600, ...server.usage });
+  if (u.pathname === '/rest/v1/library_items') return json(200, server.items[k].slice());
+  if (u.pathname === '/rest/v1/rpc/library_job_status') return json(200, []);
+  if (u.pathname === '/rest/v1/rpc/library_delete') { const id = JSON.parse(init.body).p_id; const n = server.items[k].length; server.items[k] = server.items[k].filter(i => i.id !== id); return json(200, n === server.items[k].length ? 'not_found' : 'deleting') }
+  if (u.pathname === '/functions/v1/library-upload') {
+    if (server.failNext) { const f = server.failNext; server.failNext = null; return json(f[0], { error: f[1], retryable: false }) }
+    const meta = JSON.parse(decodeURIComponent(escape(atob(h['x-library-meta'].replace(/-/g, '+').replace(/_/g, '/')))));
+    if (server.keys[meta.client_key]) return json(200, { status: 'ready', id: server.keys[meta.client_key] });
+    const id = crypto.randomUUID(); server.keys[meta.client_key] = id;
+    server.items[k].push({ id, name: meta.name, type: meta.type, origin: meta.origin, duration_ms: 3000, size_bytes: init.body.byteLength, created_at: new Date().toISOString(), _meta: meta });
+    return json(200, { status: 'ready', id });
+  }
+  if (u.pathname === '/functions/v1/library-download') return json(200, { url: 'data:audio/mpeg;base64,AAAA', expires_in: 300 });
+  return json(404, { error: 'not_found' });
+};
+
+/* ---- helpers */
+const out = []; let fails = 0;
+function ok(name, cond) { out.push((cond ? 'PASS ' : 'FAIL ') + name); if (!cond) fails++ }
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function until(fn, ms = 3000) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (fn()) return true } catch (e) {} await wait(25) } return false }
+const $ = id => document.getElementById(id);
+function idb(name) { return new Promise((res, rej) => { const r = realOpen(name, 1); r.onupgradeneeded = () => r.result.createObjectStore('rings', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) }) }
+async function rings() { const d = await idb('h-snipring'); return new Promise(res => { const q = d.transaction('rings').objectStore('rings').getAll(); q.onsuccess = () => { d.close(); res(q.result) } }) }
+async function seed(rec) { const d = await idb('h-snipring'); await new Promise(res => { const tx = d.transaction('rings', 'readwrite'); tx.objectStore('rings').put(rec); tx.oncomplete = res }); d.close() }
+function wipe(name) { return new Promise(res => { const r = indexedDB.deleteDatabase(name); r.onsuccess = r.onerror = r.onblocked = () => res() }) }
+function clickText(root, txt) { const b = [...$(root).querySelectorAll('button')].find(b => b.textContent.includes(txt)); if (!b) throw new Error('no button ' + txt); b.click(); return b }
+async function confirmYes() { await until(() => $('confirm').open); $('cfYes').click() }
+
+async function run() {
+  await wipe('h-snipring'); await wipe('h-snipring-cloud-' + USERS.A.id); await wipe('h-snipring-cloud-' + USERS.B.id);
+  const mp3 = new Uint8Array(4096).fill(7).buffer;
+  await seed({ id: 1000, name: 'Song one', secs: 20, data: mp3, type: 'ring', fav: false, origin: 'file', used: 1 });
+  await seed({ id: 2000, name: 'Weird origin', secs: 5, data: new Uint8Array(100).buffer, type: 'zzz', fav: true, origin: 'zzz', used: 2 });
+  localStorage.setItem('snipring-lang', 'en');
+
+  // load the page body and script
+  const html = await (await window.__realFetch('/library.html')).text();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  document.body.insertBefore(doc.querySelector('.wrap'), $('results'));
+  document.body.insertBefore(doc.querySelector('#confirm'), $('results'));
+  current = USERS.A;
+  const s = document.createElement('script'); s.src = '/library.js'; document.body.appendChild(s);
+
+  ok('L1 signed-in user sees the library', await until(() => !$('vMain').hidden));
+  ok('L2 both local sounds listed, cloud empty', $('localList').children.length === 2 && !$('cloudEmpty').hidden);
+  ok('L3 usage shown', /0 of 100 sounds/.test($('usageTxt').textContent));
+  ok('L4 nothing uploaded without a choice (D1)', !server.calls.some(c => c.path.includes('upload')));
+
+  // cancel → nothing happens
+  clickText('localList', 'Save to cloud'); await until(() => $('confirm').open); $('cfNo').click(); await wait(150);
+  ok('L5 cancelling the confirmation uploads nothing', !server.calls.some(c => c.path.includes('upload')));
+
+  // save Song one (newest first: id 2000 "Weird origin" is first, Song one second)
+  const songRow = [...$('localList').children].find(li => li.textContent.includes('Song one'));
+  [...songRow.querySelectorAll('button')].find(b => b.textContent.includes('Save to cloud')).click(); await confirmYes();
+  ok('L6 upload done and listed in the cloud', await until(() => $('cloudList').children.length === 1));
+  const up = server.calls.find(c => c.path.includes('upload'));
+  const meta = server.items.A[0]._meta;
+  ok('L7 upload sends raw bytes + meta (client_key uuid, type, origin, name), no hash/size headers', up.init.body.byteLength === 4096 && /^[0-9a-f-]{36}$/.test(meta.client_key) && meta.type === 'ring' && meta.origin === 'file' && meta.name === 'Song one' && !Object.keys(up.init.headers).some(h => /sha|size|duration/i.test(h)));
+  await until(() => songRow.isConnected === false);
+  let L = await rings(); let r1 = L.find(r => r.id === 1000);
+  ok('L8 local record kept intact + cloudCopy {id, sha, uid} (D11)', r1 && r1.data.byteLength === 4096 && r1.name === 'Song one' && r1.cloudCopy && r1.cloudCopy.id === server.items.A[0].id && r1.cloudCopy.uid === USERS.A.id && /^[0-9a-f]{64}$/.test(r1.cloudCopy.sha));
+  ok('L9 local row shows "Saved in the cloud"', await until(() => [...$('localList').children].some(li => li.textContent.includes('Song one') && li.textContent.includes('Saved in the cloud'))));
+
+  // unknown type/origin are mapped to allowed values
+  const weird = [...$('localList').children].find(li => li.textContent.includes('Weird origin'));
+  [...weird.querySelectorAll('button')].find(b => b.textContent.includes('Save to cloud')).click(); await confirmYes();
+  await until(() => server.items.A.length === 2);
+  ok('L10 unknown type/origin mapped to ring/mine', server.items.A[1] && server.items.A[1]._meta.type === 'ring' && server.items.A[1]._meta.origin === 'mine');
+
+  // server error → failed state + message, local record untouched
+  await seed({ id: 3000, name: 'Third', secs: 5, data: new Uint8Array(200).buffer, type: 'text', fav: false, origin: 'record', used: 3 });
+  setUser(null); await until(() => !$('vOut').hidden); current = USERS.A; setUser('A'); await until(() => !$('vMain').hidden && $('localList').children.length === 3);
+  server.failNext = [403, 'quota_items'];
+  const third = () => [...$('localList').children].find(li => li.textContent.includes('Third'));
+  [...third().querySelectorAll('button')].find(b => b.textContent.includes('Save to cloud')).click(); await confirmYes();
+  ok('L11 quota error shown, item marked failed with a retry button', await until(() => third() && third().textContent.includes('Save failed') && third().textContent.includes('Try again')) && $('msg').classList.contains('err'));
+  L = await rings(); ok('L12 failed upload leaves local sound untouched', L.length === 3);
+
+  // account switch: B sees nothing of A
+  setUser('B');
+  ok('L13 switching to B shows B\'s empty cloud', await until(() => !$('vMain').hidden && $('cloudList').children.length === 0 && /b@test/.test($('who').textContent)));
+  ok('L14 A\'s cloud mark is not shown as saved for B', ![...$('localList').children].some(li => li.textContent.includes('Saved in the cloud')));
+  ok('L15 A\'s failed job is not shown to B (queue per user)', !$('localList').textContent.includes('Save failed'));
+  ok('L16 B\'s requests carry B\'s token only', server.calls.filter(c => c.user === 'B').length > 0 && server.items.B.length === 0);
+
+  // back to A: delete
+  setUser('A'); await until(() => $('cloudList').children.length === 2);
+  clickText('cloudList', 'Delete from cloud'); await confirmYes();
+  ok('L17 delete removes it from the cloud list', await until(() => $('cloudList').children.length === 1));
+  L = await rings();
+  ok('L18 delete keeps all local sounds; mark removed only from the deleted one', L.length === 3 && L.filter(r => r.cloudCopy).length === 1);
+
+  // restore to device
+  const before = (await rings()).length;
+  // make the remaining cloud item have no local copy: remove its mark
+  const d = await idb('h-snipring'); await new Promise(res => { const tx = d.transaction('rings', 'readwrite'), st = tx.objectStore('rings'); st.getAll().onsuccess = e => e.target.result.forEach(r => { delete r.cloudCopy; st.put(r) }); tx.oncomplete = res }); d.close();
+  setUser(null); await until(() => !$('vOut').hidden); setUser('A'); await until(() => !$('vMain').hidden && $('cloudList').textContent.includes('Save to this phone'));
+  clickText('cloudList', 'Save to this phone');
+  await wait(600); const R = await rings();
+  ok('L19 restore adds a new local record with cloudCopy for A', R.length === before + 1 && R.some(r => r.data.byteLength === 64 && r.cloudCopy && r.cloudCopy.uid === USERS.A.id));
+
+  // sign out keeps everything local
+  setUser(null);
+  ok('L20 sign-out shows the signed-out view', await until(() => !$('vOut').hidden));
+  L = await rings(); ok('L21 local sounds survive sign-out', L.length === before + 1);
+
+  // owner/disabled gate
+  ok('L22 no request ever went to Storage directly', !server.calls.some(c => c.path.startsWith('/storage/')));
+
+  out.push('', fails ? fails + ' FAILED' : 'ALL PASSED (' + out.length + ')');
+  $('results').textContent = out.join('\n'); console.log(out.join('\n'));
+  window.__done = { fails, out };
+}
+window.__realFetch = window.fetch.bind(window);
+</script>
+<script>
+// keep a handle on the browser's fetch for loading library.html itself
+(function () { const f = window.fetch; window.__realFetch = (u, i) => (typeof u === 'string' && u.startsWith('/')) ? XMLHttpRequestFetch(u) : f(u, i) })();
+function XMLHttpRequestFetch(u) { return new Promise(res => { const x = new XMLHttpRequest(); x.open('GET', u); x.onload = () => res(new Response(x.responseText)); x.send() }) }
+run().catch(e => { document.getElementById('results').textContent = 'HARNESS ERROR ' + e.stack; console.error(e); window.__done = { fails: 1, err: String(e) } });
+</script>
+</body>
+</html>

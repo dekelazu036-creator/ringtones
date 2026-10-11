@@ -2,7 +2,7 @@
    Pages: network first (so updates show up right away), cached copy when offline.
    Static files: served from cache, refreshed in the background.
    Nothing the user creates passes through here; analytics and other sites are never touched. */
-const CACHE = 'snipring-v8';
+const CACHE = 'snipring-v9';
 const CORE = [
   './', 'index.html', 'auth-state.js', 'app.css', 'icons.svg', 'discover.html', 'discover.js', 'studio.html', 'studio.js', 'sounds/catalog.json', 'manifest.webmanifest', 'fonts/fonts.css',
   'fonts/karantina-400.woff', 'fonts/karantina-700.woff', 'fonts/plexhe-400.woff', 'fonts/plexhe-500.woff',
@@ -22,7 +22,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET' || url.origin !== location.origin) return;   // analytics etc. go straight to the network
   if (url.pathname.startsWith('/media/') || req.headers.has('range')) return; // demo video streams normally
   if (url.pathname.endsWith('/config.js')) return;                       // marketing config: always fresh
-  if (/^\/(account\.html|auth\.js|boot\.js|vendor\/supabase)/.test(url.pathname)) return; // sign-in always comes straight from the network
+  if (/^\/(account\.html|auth\.js|boot\.js|library\.(html|js)|vendor\/supabase)/.test(url.pathname)) return; // sign-in always comes straight from the network
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req).then(res => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(url.pathname, copy)); }

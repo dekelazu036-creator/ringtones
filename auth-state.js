@@ -16,7 +16,7 @@
     } catch (e) { return null }
   }
   var S = window.SNIPRING_AUTH = { on: on, owner: owner, user: null, tier: 'guest' };
-  var L = { he: { in: 'התחברות', me: 'החשבון שלי' }, en: { in: 'Sign in', me: 'My account' } };
+  var L = { he: { in: 'התחברות', me: 'החשבון שלי', lib: 'הספרייה שלי בענן' }, en: { in: 'Sign in', me: 'My account', lib: 'My cloud library' } };
   function paint() {
     S.user = on ? read() : null; S.tier = S.user ? 'free' : 'guest';
     var lang = document.documentElement.lang === 'en' ? 'en' : 'he', ret = location.pathname + location.search;
@@ -30,6 +30,8 @@
       else { init.hidden = true; ic.style.display = ''; b.setAttribute('aria-label', L[lang].in) }
       b.title = b.getAttribute('aria-label');
     }
+    var libs = document.querySelectorAll('.liblink');                    // My Library link: only where accounts are on
+    for (var j = 0; j < libs.length; j++) { libs[j].hidden = !on; var lt = libs[j].querySelector('.liblink-t'); if (lt) lt.textContent = L[lang].lib }
     document.documentElement.classList.toggle('auth-on', on);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', paint); else paint();
