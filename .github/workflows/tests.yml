@@ -34,4 +34,4 @@ jobs:
         if: failure()
         run: |
           cd supabase/functions
-          node --test --test-reporter=spec tests/library.test.ts 2>&1 | grep -vE "^\s*$" | head -80
+          node --test --test-reporter=spec tests/library.test.ts 2>&1 | grep -vE "^\s*$" | tail -40 || true
