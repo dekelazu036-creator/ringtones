@@ -131,10 +131,19 @@ Done on staging (2026-10-08, verified by read queries):
 Next: (approval) redeploy the three functions from `cabef6e`+ and rerun the runner (incl. T9b/T9d) and `--slow`; watch `library_health` for 24 h (from 2026-10-11 16:40 UTC); optional: T18 HTTP 503 check on staging (runner with `reservations_open = false`, expect T1 = 503); decide the Discover grant item; confirm test user B's password was changed (it appeared in screenshots). M1 exit = all of the above + owner approval. Then M2.
 Runner tips (zsh): paste one command at a time; read passwords with `read -s`; a pasted trailing newline can answer a prompt with an empty value.
 
+### Core 1.0 build — branch `core-1.0` (2026-10-11, owner approved building per the master spec; **not merged** = not in production)
+Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core First; Studio gated). `core-1.0` = `phase-1b-m0` + the commits below. CI: `.github/workflows/tests.yml` runs `run_all.sh` + bundle drift check on every push (green).
+- **Design v2** (lime/violet, dark-first) — see §2 Design. TESTED visually light/dark, mobile.
+- **M2 My Library** `library.html`/`library.js`: cloud list/play/download/save-to-phone/delete, explicit confirm before upload, per-user queue DB + Web Lock + abort on account switch, `cloudCopy {id, sha, uid}` (uid added to D11 so A's copies never show as saved for B). TESTED with `tests/frontend/library_harness.html` (22/22, fake server). NOT TESTED with real staging Auth (owner: STAGING.md §8).
+- **Account deletion** `supabase/account_delete.sql` + `account-delete` function + janitor step 7 + UI in `account.html`. Local AD1–AD7/W6 pass; **applied and deployed on staging** (functions v7, janitor returns `accounts`). Real end-to-end = TEST_MATRIX T30 (needs a disposable test user C).
+- **monitor.js** error counts to Umami (no messages). **docs/RIGHTS.md** Discover rights evidence.
+- `config.js` localhost-only staging override (`localStorage['snipring-dev-supabase']`); staging host added to CSP of account/library.
+- Permissions for Claude: `.claude/settings.local.json` (git-ignored) allows staging CLI work, denies anything with the production ref, `supabase link/secrets`, push to `main`, merge.
+
 ### Planned
-- **M2:** `library.html` (separate page) + local upload queue (per-user DB `snipring-cloud-<uid>`, owner binding, Web Lock, AbortController on account switch, last-copy dialog D8, `cloudCopy` D11, blocked `deleteDatabase`, storage-shortage handling). Test against staging.
+- **M2 leftovers:** D8 last-copy dialog is moot while local copies are never removed (re-check if that changes); blocked `deleteDatabase` and device storage shortage need manual tests.
 - Then: production rollout of 1B (owner runs production SQL), private beta via allow-list.
-- **Launch blockers (keep):** Supabase plan decision (Free vs Pro); self-service account deletion including media; legal review of Terms/Privacy. Before public: D6 decision, media backup policy, alerting, global rate limiting / Turnstile on upload.
+- **Launch blockers (keep):** Supabase plan decision (Free vs Pro); self-service account deletion — built, staging E2E (T30) pending; legal review of Terms/Privacy. Before public: D6 decision, media backup policy, alerting, global rate limiting / Turnstile on upload.
 - Later phases: Pro/Studio tiers and payments, AI sound generator, creators/Discover uploads with moderation, Apple sign-in.
 
 ---
