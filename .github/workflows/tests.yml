@@ -1,0 +1,32 @@
+# Runs every local check on each push and pull request. Touches no Supabase project and uses no secrets.
+name: tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Postgres 16 and ffmpeg
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-16 ffmpeg
+          sudo systemctl start postgresql
+      - name: Bundles match the sources
+        run: |
+          node tools/bundle_functions.mjs
+          git diff --exit-code -- supabase/functions/dist
+      - name: All local suites
+        run: |
+          supabase/tests/run_all.sh 2>&1 | tee run_all.log
+          # run_all.sh prints summaries; any failure line or non-zero fail count fails the job
+          if grep -E "FAIL|^# fail [1-9]|^ +[0-9]+ +\| +[1-9][0-9]* *$|concurrency: [1-9]" run_all.log; then
+            echo "::error::a test failed"; exit 1
+          fi
