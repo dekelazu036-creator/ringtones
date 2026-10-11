@@ -20,6 +20,13 @@ Merging `core-1.0` → `main` publishes: the new design (lime/violet), updated p
 Claude lists production tables/policies/functions with read-only queries to confirm the starting point
 (older `schema.sql` + `auth_1a.sql`, no 1B objects). Nothing is written.
 
+**Done 2026-10-11 (read-only, approved):** 10 public tables from `schema.sql` (sounds, packs, pack_items, profiles,
+favorites, reports, sound_sources, sound_stats_daily, moderation_actions, ai_generations); `profiles` already private
+(policies `own profile readable/editable`, anon has no SELECT); 26 sounds; 1 Auth user; **no** `private` schema
+objects, **no** Storage buckets, **no** `pg_cron`/`pg_net` (Step 4 enables them). Difference from staging: production
+has Supabase's `ensure_rls` event trigger (`public.rls_auto_enable`, auto-enables RLS on new public tables).
+Harmless for our SQL, which enables RLS explicitly; noted so the advisors output is not a surprise.
+
 ## Step 1 — website (owner merges)
 1. Merge the PR `core-1.0` → `main` on GitHub (= deploy to GitHub Pages).
 2. `consentVersion` in `config.js` is already 2 on `core-1.0` (material privacy change): visitors are asked again.
