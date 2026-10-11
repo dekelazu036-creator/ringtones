@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const FN = new URL('../supabase/functions/', import.meta.url);
-const SHARED = ['mp3.ts', 'http.ts', 'library.ts', 'supabase.ts'];
+const SHARED = ['mp3.ts', 'http.ts', 'r2.ts', 'library.ts', 'supabase.ts'];
 const NPM = "import { createClient } from 'npm:@supabase/supabase-js@2.109.0';";
 
 const strip = (src) => src.split('\n')

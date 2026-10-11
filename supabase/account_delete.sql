@@ -176,6 +176,7 @@ language sql stable security definer set search_path = '' as $$
     'no_stuck_purges',   h.purge_stuck_7d = 0,
     'bytes_tracked',     h.stored_bytes <= h.counted_bytes,          -- an object nobody counts = leak
     'deletions_on_time', a.overdue = 0 and a.stuck_7d = 0,
+    'backup_current',    not private.flag('backup_enabled') or h.backup_lag = 0,
     'uploads_paused',    not private.flag('reservations_open') or private.stopped())
   from private.library_health h, private.account_deletion_health a
 $$;

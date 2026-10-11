@@ -11,7 +11,9 @@ const env: Record<string, string> = {
   SUPABASE_SERVICE_ROLE_KEY: 'legacy-should-not-be-used',
   ALLOWED_ORIGINS: 'https://snipring.com, https://staging.example',
   JANITOR_SECRET: 'j'.repeat(40) + '\n',
-  HEALTH_SECRET: 'k'.repeat(40) + '\n',                // pasted in the dashboard with a trailing newline
+  HEALTH_SECRET: 'k'.repeat(40) + '\n',
+  R2_ENDPOINT: 'https://acct123.eu.r2.cloudflarestorage.com', R2_BUCKET: 'snipring-media-backup',
+  R2_ACCESS_KEY_ID: 'AKIDTEST', R2_SECRET_ACCESS_KEY: 'r2secretTEST',                // pasted in the dashboard with a trailing newline
 };
 const handlers: Record<string, (r: Request) => Promise<Response>> = {};
 let current = '';
@@ -30,6 +32,9 @@ const fake = (globalThis as any).__fake = {
     if (a.p_op === 'purged') return { data: 'purged', error: null };
     if (['expired', 'orphans', 'audit_due'].includes(a.p_op)) return { data: [], error: null };
     if (a.p_op === 'drop_tombstones' || a.p_op === 'prune_usage') return { data: 0, error: null };
+    if (a.p_op === 'backup_due') return { data: [{ id: '33333333-3333-3333-3333-333333333333', path: 'u/b.mp3' }], error: null };
+    if (a.p_op === 'backup_done') return { data: true, error: null };
+    if (a.p_op === 'live_paths') return { data: [], error: null };
     if (_fn === 'svc_account') {
       if (a.p_op === 'due') return { data: [], error: null };
       if (a.p_op === 'request') return { data: { status: 'pending', items: 0 }, error: null };
@@ -42,6 +47,14 @@ const fake = (globalThis as any).__fake = {
   },
   upload: async () => ({ data: null, error: { statusCode: '409', message: 'The resource already exists' } }),
 };
+
+// R2 (S3 API) is reached with fetch: a recording stub for every test, so nothing leaves the machine
+const r2seen: { url: string; method: string; auth: string; body: number }[] = [];
+globalThis.fetch = (async (url: string, init: any = {}) => {
+  r2seen.push({ url: String(url), method: init.method, auth: init.headers?.authorization ?? '', body: init.body?.byteLength ?? 0 });
+  if (init.method === 'GET') return new Response('<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>', { status: 200 });
+  return new Response('', { status: 200 });
+}) as any;
 
 // TARGET=dist checks the generated single-file bundles instead of the source entry points
 const dist = process.env.TARGET === 'dist';
@@ -124,4 +137,17 @@ test('W7 library-health reads HEALTH_SECRET (not the janitor secret) and reports
   const b = await ok.json();
   assert.equal(b.ok, true); assert.deepEqual(b.failing, []);
   assert.ok(fake.calls.some((c) => c[0] === 'rpc' && c[1] === 'svc_account' && c[2].p_op === 'health'));
+});
+test('W8 janitor backs up to R2 with SigV4 (keys from env, EU endpoint, bucket in the path), secret never sent', async () => {
+  r2seen.length = 0;
+  const h = await load('library-janitor');
+  const ok = await h(new Request('https://f', { method: 'POST', headers: { authorization: `Bearer ${'j'.repeat(40)}` } }));
+  const rep = await ok.json();
+  assert.equal(rep.backup, 'on'); assert.equal(rep.backed_up, 1);
+  const put = r2seen.find((x) => x.method === 'PUT');
+  assert.equal(put!.url, 'https://acct123.eu.r2.cloudflarestorage.com/snipring-media-backup/u/b.mp3');
+  assert.match(put!.auth, /^AWS4-HMAC-SHA256 Credential=AKIDTEST\/\d{8}\/auto\/s3\/aws4_request, SignedHeaders=[a-z0-9;-]+, Signature=[0-9a-f]{64}$/);
+  assert.equal(put!.body, 1234);
+  assert.ok(!JSON.stringify(r2seen).includes('r2secretTEST'));
+  assert.ok(r2seen.some((x) => x.method === 'DELETE' && x.url.endsWith('/snipring-media-backup/u/x.mp3')));   // purge removes the backup first
 });

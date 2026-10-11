@@ -59,6 +59,9 @@ drop function if exists public.library_job_status(uuid[]);
 drop function if exists public.library_usage();
 
 drop view     if exists private.library_health;
+drop function if exists private.lib_backup_due(int);
+drop function if exists private.lib_backup_done(uuid);
+drop function if exists private.lib_live_paths(text[]);
 drop function if exists private.lib_drop_tombstones();
 drop function if exists private.lib_prune_usage(int);
 drop function if exists private.lib_audit_due(int);

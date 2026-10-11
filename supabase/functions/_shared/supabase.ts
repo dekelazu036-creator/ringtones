@@ -2,6 +2,7 @@
 // Secrets come from the environment Supabase injects into every function; nothing is hard-coded.
 import { createClient } from 'npm:@supabase/supabase-js@2.109.0';
 import type { Config, Deps } from './library.ts';
+import { r2Client } from './r2.ts';
 
 const BUCKET = 'user-media';
 
@@ -69,6 +70,12 @@ export function createDeps(fn: string): Deps {
     async signOutAll(token) {
       await admin.auth.admin.signOut(token, 'global');                  // revokes every refresh token of the user
     },
+    async download(path) {
+      const { data, error } = await storage().download(path);
+      if (error || !data) return null;
+      return new Uint8Array(await data.arrayBuffer());
+    },
+    backup: backupFromEnv(),
     log(event) {
       console.log(JSON.stringify({ fn, at: new Date().toISOString(), ...event }));
     },
@@ -87,4 +94,12 @@ export function configFromEnv(): Config {
     janitorBudgetMs: 100_000,
     holder: Deno.env.get('SB_EXECUTION_ID') ?? undefined,
   };
+}
+
+// media backup to Cloudflare R2: on only when all four secrets exist (S3 keys scoped to one bucket)
+function backupFromEnv() {
+  const endpoint = (Deno.env.get('R2_ENDPOINT') ?? '').trim(), bucket = (Deno.env.get('R2_BUCKET') ?? '').trim();
+  const accessKeyId = (Deno.env.get('R2_ACCESS_KEY_ID') ?? '').trim(), secretAccessKey = (Deno.env.get('R2_SECRET_ACCESS_KEY') ?? '').trim();
+  if (!/^https:\/\/[a-z0-9.-]+\.r2\.cloudflarestorage\.com$/.test(endpoint) || !bucket || !accessKeyId || !secretAccessKey) return undefined;
+  return r2Client({ endpoint, bucket, accessKeyId, secretAccessKey });
 }

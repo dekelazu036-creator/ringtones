@@ -36,6 +36,7 @@ create table if not exists private.settings (
 insert into private.settings (key, value) values
   ('reservations_open', 'false'),   -- may NEW uploads start?        (missing row = closed)
   ('cloud_for_all',     'false'),   -- true = every signed-in user may save (public launch); false = allow-list only
+  ('backup_enabled',    'false'),   -- true once the R2 media backup is configured (health then watches the lag)
   ('emergency_stop',    'false'),   -- anything but JSON false = no start and no finish (missing/malformed = stopped;
                                     -- download/delete/janitor keep working)
   ('limits', jsonb_build_object(
@@ -129,6 +130,9 @@ create index if not exists li_path   on public.library_items (storage_path);
 create index if not exists li_hour   on public.library_items (user_id, created_at);
 create index if not exists li_tomb   on public.library_items (purged_at) where state = 'purged';
 create index if not exists li_created on public.library_items (created_at);
+-- media backup (Cloudflare R2): when the object was copied; NULL = not yet. Not readable by API roles (column grants).
+alter table public.library_items add column if not exists backup_at timestamptz;
+create index if not exists li_backup on public.library_items (created_at) where state = 'ready' and backup_at is null;
 
 alter table public.library_items enable row level security;
 drop policy if exists "own ready items" on public.library_items;
@@ -501,6 +505,25 @@ begin
 end $$;
 
 -- also drops technical log rows older than event_retention_days (the privacy policy promises a limit)
+-- media backup: ready items not copied yet / mark copied / which of these paths still belong to a live row
+create or replace function private.lib_backup_due(p_limit int)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', t.id, 'path', t.storage_path)), '[]'::jsonb)
+    from (select li.id, li.storage_path from public.library_items li
+           where li.state = 'ready' and li.backup_at is null
+           order by li.created_at limit least(greatest(p_limit, 1), 50)) t
+$$;
+create or replace function private.lib_backup_done(p_id uuid) returns boolean
+language sql security definer set search_path = '' as $$
+  with u as (update public.library_items set backup_at = now() where id = p_id and state = 'ready' returning 1)
+  select exists (select 1 from u)
+$$;
+create or replace function private.lib_live_paths(p_paths text[])
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select coalesce(jsonb_agg(li.storage_path), '[]'::jsonb) from public.library_items li
+   where li.storage_path = any (p_paths[1:1000]) and li.state in ('uploading','ready','deleting','abandoned')
+$$;
+
 create or replace function private.lib_drop_tombstones() returns int
 language plpgsql security definer set search_path = '' as $$
 declare n int;
@@ -530,7 +553,10 @@ select
   (select max(at) from private.library_events where kind = 'janitor_run')        as last_janitor_run,
   (select coalesce(sum(bytes_active + bytes_releasing), 0) from private.library_usage) as counted_bytes,
   (select coalesce(sum((metadata ->> 'size')::bigint), 0) from storage.objects
-      where bucket_id = 'user-media')                                            as stored_bytes;
+      where bucket_id = 'user-media')                                            as stored_bytes,
+  -- appended last: CREATE OR REPLACE VIEW may only add columns at the end
+  (select count(*) from public.library_items where state = 'ready' and backup_at is null
+      and created_at < now() - interval '2 hours')                               as backup_lag;
 
 -- ============================================================ 7. Edge Function entry point (service_role only)
 create or replace function public.svc_library(p_op text, p_args jsonb)
@@ -578,6 +604,12 @@ begin
       return to_jsonb(private.lib_audit_user(v_uid));
     when 'drop_tombstones' then
       n := private.lib_drop_tombstones(); return to_jsonb(n);
+    when 'backup_due' then
+      return private.lib_backup_due(coalesce((a ->> 'limit')::int, 20));
+    when 'backup_done' then
+      return to_jsonb(private.lib_backup_done((a ->> 'id')::uuid));
+    when 'live_paths' then
+      return private.lib_live_paths(array(select jsonb_array_elements_text(coalesce(a -> 'paths', '[]'::jsonb))));
     when 'prune_usage' then
       n := private.lib_prune_usage(coalesce((a ->> 'limit')::int, 100)); return to_jsonb(n);
     when 'run_log' then

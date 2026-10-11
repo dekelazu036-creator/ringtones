@@ -23,6 +23,13 @@ export type Deps = {
   acct?(op: string, args: Record<string, unknown>): Promise<any>;          // public.svc_account
   deleteUser?(id: string): Promise<'ok' | { error: string }>;              // Auth admin API
   signOutAll?(token: string): Promise<void>;                               // revoke every session of that user
+  // media backup (Cloudflare R2), optional: absent = backup off
+  download?(path: string): Promise<Uint8Array | null>;                     // read an object from the user-media bucket
+  backup?: {
+    put(key: string, bytes: Uint8Array): Promise<'ok' | { error: string }>;
+    del(key: string): Promise<'ok' | { error: string }>;
+    list(token?: string): Promise<{ keys: { key: string; modified: number }[]; next?: string } | { error: string }>;
+  };
 };
 export type Config = {
   allowedOrigins: string[];
@@ -177,6 +184,7 @@ async function downloadResponse(req: Request, deps: Deps, cfg: Config): Promise<
 export type JanitorReport = {
   expired: number; purged: number; purge_failed: number; orphans: number; audited: number; drift: number;
   pruned: number; tombstones: number; accounts?: number; stopped_early: boolean;
+  backup?: 'off' | 'on'; backed_up?: number; backup_failed?: number; backup_orphans?: number;
 };
 
 export async function handleJanitor(req: Request, deps: Deps, cfg: Config): Promise<Response> {
@@ -200,6 +208,21 @@ async function janitorResponse(req: Request, deps: Deps, cfg: Config): Promise<R
   }
 }
 
+// Deleting media: the backup copy goes FIRST, so a row only becomes 'purged' when no copy is left anywhere.
+// Paths whose backup copy could not be removed stay out of this batch (the caller records a purge failure).
+async function removeEverywhere(paths: string[], deps: Deps): Promise<{ removed: string[]; failed: Record<string, string> }> {
+  const failed: Record<string, string> = {};
+  let ok = paths;
+  if (deps.backup) {
+    ok = [];
+    for (const p of paths) { const r = await deps.backup.del(p); if (r === 'ok') ok.push(p); else failed[p] = r.error; }
+  }
+  if (!ok.length) return { removed: [], failed };
+  const res = await deps.remove(ok);
+  if ('error' in res) { for (const p of ok) failed[p] = res.error; return { removed: [], failed }; }
+  return { removed: ok, failed };
+}
+
 export async function runJanitor(deps: Deps, cfg: Config): Promise<JanitorReport | null> {
   const holder = cfg.holder ?? crypto.randomUUID();
   const deadline = Date.now() + (cfg.janitorBudgetMs ?? 100_000);
@@ -216,13 +239,13 @@ export async function runJanitor(deps: Deps, cfg: Config): Promise<JanitorReport
     while (time()) {
       const due = (await deps.rpc('due_purges', { limit: 50 })) as { id: string; path: string }[];
       if (!due.length) break;
-      const res = await deps.remove(due.map((d) => d.path));
+      const res = await removeEverywhere(due.map((d) => d.path), deps);
       for (const d of due) {
-        const out = 'error' in res ? 'remove_failed' : await deps.rpc('purged', { id: d.id });
+        const out = d.path in res.failed ? 'remove_failed' : await deps.rpc('purged', { id: d.id });
         if (out === 'purged') r.purged++;
         else {
           r.purge_failed++;
-          await deps.rpc('purge_failed', { id: d.id, error: 'error' in res ? res.error : String(out) });
+          await deps.rpc('purge_failed', { id: d.id, error: res.failed[d.path] ?? String(out) });
         }
       }
       if (due.length < 50) break;
@@ -261,6 +284,32 @@ export async function runJanitor(deps: Deps, cfg: Config): Promise<JanitorReport
         }
       } catch (e) {
         deps.log?.({ fn: 'library-janitor', event: 'accounts_step_failed', error: String(e) });
+      }
+    }
+    // 8. media backup: copy ready objects to R2 (once each), then 9. remove R2 copies that no live row owns
+    r.backup = deps.backup && deps.download ? 'on' : 'off';
+    if (deps.backup && deps.download && time()) {
+      r.backed_up = 0; r.backup_failed = 0; r.backup_orphans = 0;
+      try {
+        for (const x of (await deps.rpc('backup_due', { limit: 20 })) as { id: string; path: string }[]) {
+          if (!time()) break;
+          const bytes = await deps.download(x.path);
+          const put = bytes ? await deps.backup.put(x.path, bytes) : { error: 'download failed' };
+          if (put === 'ok' && (await deps.rpc('backup_done', { id: x.id })) === true) r.backed_up++;
+          else { r.backup_failed++; deps.log?.({ fn: 'library-janitor', event: 'backup_failed', item: x.id, error: put === 'ok' ? 'row changed' : put.error }); }
+        }
+        if (time()) {
+          const page = await deps.backup.list();
+          if (!('error' in page)) {
+            const old = page.keys.filter((k) => k.modified < Date.now() - 3600_000).map((k) => k.key);
+            if (old.length) {
+              const live = new Set((await deps.rpc('live_paths', { paths: old })) as string[]);
+              for (const k of old) if (!live.has(k) && (await deps.backup.del(k)) === 'ok') r.backup_orphans++;
+            }
+          }
+        }
+      } catch (e) {
+        deps.log?.({ fn: 'library-janitor', event: 'backup_step_failed', error: String(e) });
       }
     }
     await deps.rpc('run_log', { detail: r });
@@ -318,12 +367,12 @@ export async function finishAccount(uid: string, deps: Deps, time: () => boolean
     const due = (await deps.acct('purges', { user_id: uid })) as { id: string; path: string }[];
     if (!due.length) break;
     if (due.some((d) => !d.path.startsWith(`${uid}/`))) throw new Error('account purge: foreign path');
-    const res = await deps.remove(due.map((d) => d.path));
+    const res = await removeEverywhere(due.map((d) => d.path), deps);
     let progressed = false;
     for (const d of due) {
-      const out = 'error' in res ? 'remove_failed' : await deps.rpc('purged', { id: d.id });
+      const out = d.path in res.failed ? 'remove_failed' : await deps.rpc('purged', { id: d.id });
       if (out === 'purged') progressed = true;
-      else await deps.rpc('purge_failed', { id: d.id, error: 'error' in res ? res.error : String(out) });
+      else await deps.rpc('purge_failed', { id: d.id, error: res.failed[d.path] ?? String(out) });
     }
     if (!progressed) break;
   }
