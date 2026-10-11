@@ -1,4 +1,7 @@
-# Phase 1B staging (M0 prepared — nothing created or run yet)
+# Phase 1B staging
+
+Status 2026-10-11: project `snipring-staging` set up through step 6; runner 29/29 and `--slow` 30/30;
+manual T15, T16, T18 (SQL level), T19, T26 passed. Details in `CLAUDE.md` (Phase 1B M1).
 
 Staging is a **separate Supabase project on the Free plan**. It never uses production credentials
 or production user data. Every step marked **[approval]** waits for the owner's explicit OK.
@@ -29,10 +32,16 @@ or production user data. Every step marked **[approval]** waits for the owner's 
    update private.settings set value = 'true' where key = 'reservations_open';
    ```
 
+CLI alternative (owner's computer, after `supabase login` and `supabase link --project-ref <staging-ref>`):
+`supabase db query --linked -f supabase/library_1b.sql` (Management API, no DB password; the file is idempotent).
+
 ## 4. Edge Functions **[approval]**
 Either the CLI (`supabase functions deploy library-upload --project-ref <staging-ref>`, same for
 download and janitor, with `supabase/functions/config.toml.snippet`) or the dashboard editor,
 pasting the single-file bundles from `supabase/functions/dist/` (rebuild: `node tools/bundle_functions.mjs`).
+Without a `supabase/config.toml` in the repo, pass the flags instead (used on 2026-10-11):
+`supabase functions deploy library-upload --project-ref <staging-ref> --use-api` (same for download),
+`supabase functions deploy library-janitor --project-ref <staging-ref> --use-api --no-verify-jwt`.
 
 | Function | Verify JWT | Secrets it needs |
 |---|---|---|

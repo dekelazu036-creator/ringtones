@@ -1,6 +1,6 @@
 # SnipRing — project context for Claude sessions
 
-Last updated: 2026-10-08. Owner: Dekel. Live site: https://snipring.com (GitHub Pages, repo `dekelazu036-creator/ringtones`).
+Last updated: 2026-10-11. Owner: Dekel. Live site: https://snipring.com (GitHub Pages, repo `dekelazu036-creator/ringtones`).
 This file is the single source of context. It is public (served by GitHub Pages like every repo file): never put personal data or secrets in it. Read it fully before doing anything. **No secrets belong in this file or anywhere in the repo.**
 
 ---
@@ -52,7 +52,7 @@ Tagline: **"השיר שלכם. הצלצול שלכם." / "Your song. Your ringto
 - `profiles` table is **private** (owner reads own row only; update limited to `display_name`, `locale`), created by a security-definer trigger.
 - `account.html` has a strict CSP, `noindex`, frame-busting and **never loads the Meta Pixel**.
 
-### Cloud library (Phase 1B — designed, M0 done, M1 in progress)
+### Cloud library (Phase 1B — designed, M0 done, M1 staging tests passed, 24 h watch pending)
 Approved decisions D1–D13:
 - **D1** Guest creation stays local; cloud save only on explicit choice + confirmation. No automatic or bulk upload.
 - **D2** Duplicate detection by content SHA-256 (per user), including concurrent duplicates (per-user lock).
@@ -118,7 +118,7 @@ Architecture rules (keep them):
 10. **Phase 1B M0** — branch `phase-1b-m0` (pushed, **not merged**): `supabase/library_1b.sql`, cron + teardown SQL, 3 Edge Functions (+ single-file bundles in `supabase/functions/dist/`), 168 local tests passing (`supabase/tests/run_all.sh`), `STAGING.md`, `TEST_MATRIX.md`, staging test runner. `schema.sql` fixed (profiles private).
 
 ### In progress — Phase 1B M1 (staging validation)
-Connector status: reads (`execute_sql` selects, `list_*`, `get_*`, logs, advisors) work; **every write times out or is cancelled** (`apply_migration`, `execute_sql` DDL/DML). The owner runs all writes in the SQL Editor / dashboard; Claude verifies each step with reads.
+Tooling status (2026-10-11): the Supabase CLI on the owner's Mac (`brew install supabase`, `supabase login`, `supabase link --project-ref kavomvsvufqnqjepbevs`) applies SQL files with `supabase db query --linked -f <file>` (Management API, no DB password) and deploys functions. Connector `execute_sql` reads work and small DML/DO blocks worked on 2026-10-11; `apply_migration` was cancelled earlier. The CLI token can also reach production: always pass `--linked` (staging) or `--project-ref kavomvsvufqnqjepbevs`, and `supabase logout` when done.
 
 Done on staging (2026-10-08, verified by read queries):
 1. `schema.sql` → `auth_1a.sql` → `library_1b.sql` applied; 2 test users in `private.cloud_access`; `reservations_open = true`.
@@ -127,7 +127,10 @@ Done on staging (2026-10-08, verified by read queries):
 4. Vault secrets `library_project_url`, `library_janitor_secret` (64 hex) + `library_1b_cron.sql` (job every 10 min). First runs returned 500 `janitor_not_configured` = the **function** secret `JANITOR_SECRET` was missing/short; being re-set by the owner.
 5. First two-account run: 25 passed, 3 failed. T14 + T11 = runner bug (192 kbps file was 390 s > 300 s cap → 422; fixed: 320 kbps). **T9b = real R1 finding:** an 11 MiB upload refused by Content-Length (body unread) hung until the 150 s wall clock → 503. Fix: all three handlers drain an unread body before answering (`discardBody`: upload ≤ 2× max, download/janitor ≤ 64 KiB; `readCapped` releases instead of cancelling so the rest is drained too); local I4b proves it byte-for-byte. Runner: 60 s request timeout with clear diagnostics, new T9d (refused 11 MiB answers fast), T11 measures this run's delta, per-run random tones, cleanup of its own items. Valid 8.9 MiB bodies reach the function in ~1.3 s.
 
-Next: redeploy **all three** functions from the new `dist/` (check the `sha256:` header line), rerun the runner (then `--slow`), manual checks T15, T16, T18, T19; change test user B's password (it appeared in screenshots). M1 exit = all staging tests pass, audit matches (or the grant item is decided), risks R1/R2 closed, `library_health` clean for 24 h.
+6. 2026-10-11: `JANITOR_SECRET` set; `library_1b.sql` re-applied with the CLI (commit `7709f52`: `private.stopped`, `lib_lock_existing`, `lib_prune_usage`, op `prune_usage`); audit + advisors unchanged (Phase 1B rows match; only the open grant item above). Janitor step 6 `prune_usage` (report field `pruned`) deployed: all three functions deployed from source with the CLI (`--use-api`, janitor `--no-verify-jwt`) → version 4, `verify_jwt` correct; every cron run since returns 200 with `pruned`. **Deployed code = `7709f52` + the janitor step only** (an equivalent local commit, later superseded by `cabef6e`, which has the same janitor step). The rest of `cabef6e` (upload header checks before Auth, drain cap 10 MiB + 1 MiB, cancel bodies declared oversize; tests I4b/I4c/I16b) is **not deployed and not staging-tested**.
+7. 2026-10-11 staging results: runner **29/29**, `--slow` **30/30** (incl. T14 ~9.2 MiB upload, T9b 11 MiB → 413 promptly, T17c signed URL refused after 300 s). Manual: T15 expiry (abandoned at the next run, purged 10 min later, counters back), T16 (8 test deletions purged, no object left), T18 at SQL level (`reservations_closed`, `stopped`, download works under stop, malformed `emergency_stop` fails closed; switches reset), T19 (orphan removed after 1 h, `orphan_removed` logged), T26 audit. `library_health` clean, counted = stored bytes.
+
+Next: (approval) redeploy the three functions from `cabef6e`+ and rerun the runner (incl. T9b/T9d) and `--slow`; watch `library_health` for 24 h (from 2026-10-11 16:40 UTC); optional: T18 HTTP 503 check on staging (runner with `reservations_open = false`, expect T1 = 503); decide the Discover grant item; confirm test user B's password was changed (it appeared in screenshots). M1 exit = all of the above + owner approval. Then M2.
 Runner tips (zsh): paste one command at a time; read passwords with `read -s`; a pasted trailing newline can answer a prompt with an empty value.
 
 ### Planned
@@ -203,10 +206,11 @@ Secrets that exist **only** in dashboards / password manager: Supabase DB passwo
 - Postgres `jsonb` rejects `\u0000` → strip control characters before RPC.
 - Within one SQL statement a volatile function's writes are invisible to sibling subqueries (snapshot) — split assertions in tests.
 - Supabase connector: `apply_migration` returned `cancelled` repeatedly even after permissions were set to allow; cause unknown.
+- Local tests on the owner's Mac (Homebrew Postgres 18, no `postgres` OS user): scratch cluster under the session scratchpad with `LC_ALL=en_US.UTF-8`, TCP on 127.0.0.1 (socket path too long), and a `sudo` shim that drops `-u postgres`. On Postgres 18 an `ON DELETE RESTRICT` violation reports SQLSTATE `23001` instead of `23503`, so X11/M2 fail there only (staging/production run 17). Homebrew ffmpeg has no `libvorbis` → MP3 test M5 cannot build its OGG fixture.
 - Local git: branch upstream had to be set manually (`remote.origin.fetch` only listed `main` and `phase-1a-auth`).
 
 ### Open risks (Phase 1B)
-R1 unknown request-body limit for 10 MiB through Edge Functions · R2 hosted behaviour (sb_secret → `service_role` claim in PostgREST; `postgres` reading `storage.objects`) not yet verified · R3 Edge Functions hold the secret key · R4 signed URL shareable for 300 s · R5 MP3 check is structural, not a decode · R6 per-user rate limits only · R7 no alerting · R8 = D6 · R9 = D9 · R10 no TypeScript type-check / Deno run yet.
+R1 closed on staging (9.2 MiB upload OK, 11 MiB refused promptly) · R2 verified on staging (functions with the secret key reach `svc_library`; janitor reads `storage.objects` and removes orphans) · R3 Edge Functions hold the secret key · R4 signed URL shareable for 300 s · R5 MP3 check is structural, not a decode · R6 per-user rate limits only · R7 no alerting · R8 = D6 · R9 = D9 · R10 functions run on hosted Deno (staging), still no TypeScript type-check.
 
 ---
 
