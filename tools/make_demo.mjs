@@ -46,14 +46,25 @@ async function caption(page, html, dir) {
   }, [html, dir]);
 }
 
+// intro/end cards as 720x1280 stills (recording a static page gives the wrong scale at the start of a capture)
+async function stills(browser, lang, out) {
+  const t = TXT[lang];
+  const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  const shot = async (html, file) => { await page.setContent(html, { waitUntil: 'load' }); await page.evaluate(() => document.fonts.ready); await page.screenshot({ path: file }); };
+  await shot(card(t.title, [], t.dir), join(out, 'intro.png'));
+  await shot(card([t.title[1]], t.end, t.dir), join(out, 'outro.png'));
+  await ctx.close();
+}
+
 async function record(browser, lang, out) {
   const t = TXT[lang];
-  const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2, colorScheme: 'dark', locale: lang === 'he' ? 'he-IL' : 'en-US',
-    isMobile: true, hasTouch: true, recordVideo: { dir: out, size: { width: 720, height: 1280 } } });
+  // recording: frames exactly the viewport size (with a 2x device scale Playwright sometimes captures a quarter frame)
+  const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1, colorScheme: 'dark', locale: lang === 'he' ? 'he-IL' : 'en-US',
+    isMobile: true, hasTouch: true, recordVideo: { dir: out, size: { width: W, height: H } } });
   await ctx.route(/cloud\.umami\.is|umami\.dev|facebook|supabase\.co/, (r) => r.abort());
   await ctx.addInitScript(() => { try { localStorage.setItem('snipring-theme', 'dark'); localStorage.setItem('snipring-device', 'iphone') } catch (e) {} });
   const page = await ctx.newPage();
-  await page.setContent(card(t.title, [], t.dir)); await sleep(2600);
   await page.goto(BASE + '/'); await page.waitForSelector('#tryDemo'); await sleep(600);
   await caption(page, t.s1, t.dir); await sleep(1700);
   await page.click('#tryDemo');
@@ -67,7 +78,6 @@ async function record(browser, lang, out) {
   await page.evaluate(() => document.getElementById('dl').scrollIntoView({ block: 'center', behavior: 'smooth' }));
   await sleep(900);
   await caption(page, t.s4, t.dir); await sleep(3000);
-  await page.setContent(card([t.title[1]], t.end, t.dir)); await sleep(3000);
   const video = page.video(); await ctx.close();
   return video.path();
 }
@@ -81,9 +91,14 @@ try {
     const webm = await record(browser, lang, tmp);
     const mp4 = join(ROOT, 'media', `how-${lang}.mp4`), jpg = join(ROOT, 'media', `how-${lang}.jpg`);
     // drop the first blank frames, H.264 for every phone, no audio track, fast start for streaming
-    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '0.3', '-i', webm, '-an', '-c:v', 'libx264', '-preset', 'slow', '-crf', '27',
-      '-pix_fmt', 'yuv420p', '-r', '30', '-movflags', '+faststart', '-vf', 'scale=720:1280', mp4]);
-    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '1.2', '-i', mp4, '-frames:v', '1', '-q:v', '4', jpg]);
+    await stills(browser, lang, tmp);
+    execFileSync('ffmpeg', ['-y', '-loglevel', 'error',
+      '-loop', '1', '-t', '2.6', '-i', join(tmp, 'intro.png'),
+      '-ss', '0.8', '-i', webm,
+      '-loop', '1', '-t', '3', '-i', join(tmp, 'outro.png'),
+      '-filter_complex', '[0:v]scale=720:1280,fps=30,setsar=1[a];[1:v]scale=720:1280:flags=lanczos,fps=30,setsar=1[b];[2:v]scale=720:1280,fps=30,setsar=1[c];[a][b][c]concat=n=3:v=1:a=0[v]',
+      '-map', '[v]', '-an', '-c:v', 'libx264', '-preset', 'slow', '-crf', '27', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', mp4]);
+    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '1.0', '-i', mp4, '-frames:v', '1', '-q:v', '4', jpg]);
     rmSync(tmp, { recursive: true, force: true });
     console.log(`media/how-${lang}.mp4 + .jpg`);
   }

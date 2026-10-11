@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PAmDteUuKHEhpVKO6Wtgjvb5SWmHlBAM3gYPNYH4fKs=' 'sha256-peRiLZMuqWga65jsXL60ezu41y7rPa3nCQMSjhA4r84=' 'sha256-uTb6mtDnck+JtDBVOgfLbMp/W4j5qqKZQ5Sc+1r5qjs=' https://cloud.umami.is https://connect.facebook.net; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://cloud.umami.is https://api-gateway.umami.dev https://connect.facebook.net https://www.facebook.com; img-src 'self' data: blob: https://www.facebook.com; media-src 'self' blob: data: https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co; font-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PAmDteUuKHEhpVKO6Wtgjvb5SWmHlBAM3gYPNYH4fKs=' 'sha256-naP4C69esTeYK23pgQIiDtbPq93DvZmXd/oeHsAqi4M=' 'sha256-uTb6mtDnck+JtDBVOgfLbMp/W4j5qqKZQ5Sc+1r5qjs=' https://cloud.umami.is https://connect.facebook.net; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://cloud.umami.is https://api-gateway.umami.dev https://connect.facebook.net https://www.facebook.com; img-src 'self' data: blob: https://www.facebook.com; media-src 'self' blob: data: https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co; font-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <script src="/monitor.js"></script>
 <title>SnipRing</title>
 <script>/* snipring.com/?me turns analytics off on this device (owner testing); ?me=on turns it back on */
@@ -215,6 +215,12 @@
       <button class="linkbtn" id="tryDemo" type="button" data-i18n="tryDemo"></button>
       <a class="linkbtn" id="studioLink" href="studio.html"><svg class="ic sm" aria-hidden="true"><use href="#i-sliders"/></svg><span data-i18n="studioLink"></span></a>
     </div>
+    <!-- desktop only: a frame of the demo video; opens it (images load lazily and never on phones, where it is hidden) -->
+    <button class="dropvis" id="dropVis" type="button" data-i18n-aria="watch">
+      <img class="vis-he" src="media/how-he.jpg" alt="" width="720" height="1280" loading="lazy" decoding="async">
+      <img class="vis-en" src="media/how-en.jpg" alt="" width="720" height="1280" loading="lazy" decoding="async">
+      <span class="dropvis-play" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg></span>
+    </button>
   </section>
 
   <ol class="steps" id="steps">
@@ -1298,7 +1304,7 @@ function openDemo(from){const d=$('demo'),v=$('demoVid'),src='media/how-'+lang+'
   if($('help').open)$('help').close();
   d.showModal?d.showModal():d.setAttribute('open','');v.currentTime=0;v.play().catch(()=>{});track('demo_video_opened',{from})}
 function closeDemo(){const d=$('demo');$('demoVid').pause();d.close?d.close():d.removeAttribute('open')}
-$('watchBtn').addEventListener('click',()=>openDemo('hero'));
+$('watchBtn').addEventListener('click',()=>openDemo('hero'));$('dropVis').addEventListener('click',()=>openDemo('hero_visual'));
 $('watchHelp').addEventListener('click',()=>openDemo('help'));
 $('demoClose').addEventListener('click',closeDemo);
 $('demo').addEventListener('close',()=>$('demoVid').pause());
