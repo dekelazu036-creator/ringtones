@@ -80,3 +80,8 @@ production depends on it.
 4. Make a sound on `/`, then open `/library.html`: save to cloud, play, download, save to phone, delete. Repeat as B in a second browser profile (B must not see A's sounds).
 5. Undo: `localStorage.removeItem('snipring-dev-supabase')`.
 Automated UI regression without any server: `http://localhost:8080/tests/frontend/library_harness.html` (fake server, isolated IndexedDB names).
+
+## 9. Account deletion (applied to staging 2026-10-11)
+`supabase db query --linked -f supabase/account_delete.sql`, then deploy `account-delete` (verify_jwt on, same
+`ALLOWED_ORIGINS`) and redeploy `library-janitor` (step 7 finishes pending deletions). Manual check: TEST_MATRIX T30.
+Health: `select * from private.account_deletion_health;` (`overdue` must stay 0).

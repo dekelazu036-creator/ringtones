@@ -34,7 +34,17 @@ Status: **L** = passed locally (stub), **S** = staging. First staging run 2026-1
   after > 1 h the janitor removes it and logs `orphan_removed`.
 - **T26 audit**: run `supabase/tests/policy_audit.sql`; output must match the expected list.
 
-## Not covered yet (client side, later milestones)
-Local queue ownership, sign-out with last copy (D8), originals vs `cloudCopy` (D11), blocked
-`deleteDatabase`, local storage shortage, AbortController on account switch — they belong to the
-library page and queue, which are not part of M0.
+- **T30 account deletion** (needs a third, disposable test user C on staging, in `private.cloud_access`):
+  sign in as C on `localhost:8080` (STAGING.md §8), save 2 sounds in My Library, then Account →
+  Delete account. Expect: page shows "Account deleted"; in Auth → Users, C is gone;
+  `select * from private.account_deletion_health;` → `pending = 0`; no object under `user-media/<uuid C>/`;
+  A and B unchanged. Sounds on the device stay in My sounds.
+- **T31 deletion with Storage down**: not reproducible on hosted staging; covered locally by AD5.
+
+## Client side (M2) — covered locally
+`tests/frontend/library_harness.html` (fake server, real IndexedDB, 22 checks): explicit confirmation
+before any upload (D1), `cloudCopy {id, sha, uid}` (D11), per-user queue, account switch A→B hides A's
+marks and jobs, failed upload keeps the local sound, delete keeps local sounds, restore to device,
+sign-out keeps local sounds, no direct Storage access.
+Still manual on staging: the same flows with real Auth/Storage (STAGING.md §8), blocked `deleteDatabase`,
+device storage shortage.
