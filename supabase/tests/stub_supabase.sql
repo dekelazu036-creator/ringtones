@@ -2,7 +2,7 @@
 -- LOCAL TEST STUB ONLY. Never run on staging or production.
 -- Recreates the parts of a hosted Supabase database that SnipRing's SQL relies on,
 -- so migrations and security tests can run on a scratch Postgres:
---   roles (anon, authenticated, service_role), auth.users + auth.uid()/auth.role(),
+--   roles (anon, authenticated, service_role), auth.users + auth.uid()/auth.role()/auth.jwt(),
 --   storage.buckets + storage.objects (RLS on, broad grants like hosted Supabase),
 --   and Supabase's DEFAULT PRIVILEGES on schema public (new tables/functions are
 --   granted to anon/authenticated automatically — the trap our migration must undo).
@@ -35,8 +35,12 @@ create or replace function auth.role() returns text language sql stable as $$
   select coalesce(nullif(current_setting('request.jwt.claim.role', true), ''),
                   (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'))::text
 $$;
+create or replace function auth.jwt() returns jsonb language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claim', true), ''),
+                  nullif(current_setting('request.jwt.claims', true), ''))::jsonb
+$$;
 grant usage on schema auth to anon, authenticated, service_role;
-grant execute on function auth.uid(), auth.role() to anon, authenticated, service_role;
+grant execute on function auth.uid(), auth.role(), auth.jwt() to anon, authenticated, service_role;
 
 -- ---------- storage ----------
 create schema if not exists storage;

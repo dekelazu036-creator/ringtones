@@ -15,6 +15,9 @@
 --   * One per-user lock (private.library_usage row, FOR UPDATE) is taken first by every
 --     writer, then the item row. Storage I/O never happens while a lock is held
 --     (each SQL call is its own short transaction).
+--   * Only lib_begin (after the beta allow-list check) may CREATE a usage row; every other
+--     path locks an existing row or answers not_found, so refused calls never leave a row
+--     behind (a usage row blocks deleting the auth user).
 --   * Physical quota is released only after the object is confirmed gone.
 --
 -- Additive. Rollback: library_1b_teardown.sql (refuses while any media exists).
@@ -32,7 +35,8 @@ create table if not exists private.settings (
   updated_at timestamptz not null default now());
 insert into private.settings (key, value) values
   ('reservations_open', 'false'),   -- may NEW uploads start?        (missing row = closed)
-  ('emergency_stop',    'false'),   -- true = no start and no finish (download/delete/janitor keep working)
+  ('emergency_stop',    'false'),   -- anything but JSON false = no start and no finish (missing/malformed = stopped;
+                                    -- download/delete/janitor keep working)
   ('limits', jsonb_build_object(
      'max_items',        100,
      'max_bytes',        104857600,   -- 100 MB counted per user
@@ -128,9 +132,16 @@ grant select (id, name, type, duration_ms, size_bytes, origin, created_at)
   on public.library_items to authenticated;
 
 -- ============================================================ 3. helpers
+-- only for switches whose safe default is OFF (reservations_open): missing or malformed = false
 create or replace function private.flag(p_key text) returns boolean
 language sql stable security definer set search_path = '' as $$
   select coalesce((select s.value = 'true'::jsonb from private.settings s where s.key = p_key), false)
+$$;
+
+-- emergency_stop fails CLOSED: only an explicit JSON false means "running"
+create or replace function private.stopped() returns boolean
+language sql stable security definer set search_path = '' as $$
+  select not coalesce((select s.value = 'false'::jsonb from private.settings s where s.key = 'emergency_stop'), false)
 $$;
 
 -- fails CLOSED: a missing limit raises instead of comparing against NULL (which would let everything through)
@@ -148,14 +159,30 @@ returns void language sql security definer set search_path = '' as $$
   insert into private.library_events (user_id, item_id, kind, detail) values (p_uid, p_item, p_kind, p_detail)
 $$;
 
--- LOCK 1 (the only per-user lock). Every writer calls this before touching that user's items.
+-- LOCK 1 (the only per-user lock), CREATING the usage row if needed. Only lib_begin calls this,
+-- after the allow-list check. The retry covers a row removed by lib_prune_usage between the
+-- insert and the lock (the next insert then succeeds).
 create or replace function private.lib_lock(p_uid uuid) returns private.library_usage
 language plpgsql security definer set search_path = '' as $$
 declare u private.library_usage;
 begin
   if p_uid is null then raise exception 'lib_lock: null user' using errcode = '22004'; end if;
-  insert into private.library_usage (user_id) values (p_uid) on conflict (user_id) do nothing;
-  select * into strict u from private.library_usage where user_id = p_uid for update;
+  for i in 1..3 loop
+    insert into private.library_usage (user_id) values (p_uid) on conflict (user_id) do nothing;
+    select * into u from private.library_usage where user_id = p_uid for update;
+    if found then return u; end if;
+  end loop;
+  raise exception 'lib_lock: usage row for % vanished repeatedly', p_uid using errcode = '40001';
+end $$;
+
+-- LOCK 1 on an EXISTING usage row; never creates one. Returns NULL fields when the user has no
+-- library data (callers answer not_found). Every writer except lib_begin uses this.
+create or replace function private.lib_lock_existing(p_uid uuid) returns private.library_usage
+language plpgsql security definer set search_path = '' as $$
+declare u private.library_usage;
+begin
+  if p_uid is null then raise exception 'lib_lock: null user' using errcode = '22004'; end if;
+  select * into u from private.library_usage where user_id = p_uid for update;
   return u;
 end $$;
 
@@ -168,9 +195,10 @@ $$;
 -- uploading -> abandoned (caller already holds, or will take, lock 1; re-entrant inside one transaction)
 create or replace function private.lib_abandon(p_uid uuid, p_id uuid, p_reason text)
 returns text language plpgsql security definer set search_path = '' as $$
-declare r public.library_items;
+declare u private.library_usage; r public.library_items;
 begin
-  perform private.lib_lock(p_uid);
+  u := private.lib_lock_existing(p_uid);
+  if u.user_id is null then return 'not_found'; end if;                       -- no library data: nothing to abandon
   select * into r from public.library_items where id = p_id and user_id = p_uid for update;
   if not found then return 'not_found'; end if;
   if r.state <> 'uploading' then return r.state; end if;                       -- idempotent
@@ -196,7 +224,7 @@ returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   u private.library_usage; r public.library_items; x record; n_hour int; total bigint;
 begin
-  if private.flag('emergency_stop') then return '{"error":"stopped"}'; end if;
+  if private.stopped() then return '{"error":"stopped"}'; end if;
   if p_client_key is null then return '{"error":"bad_request"}'; end if;
   -- allow-list BEFORE the lock: users outside the beta never get a usage row (which would block account deletion)
   if not exists (select 1 from private.cloud_access a where a.user_id = p_uid) then
@@ -269,15 +297,16 @@ end $$;
 
 create or replace function private.lib_finish(p_uid uuid, p_id uuid)
 returns jsonb language plpgsql security definer set search_path = '' as $$
-declare r public.library_items; o_size bigint; o_type text;
+declare u private.library_usage; r public.library_items; o_size bigint; o_type text;
 begin
-  perform private.lib_lock(p_uid);                                             -- lock 1
+  u := private.lib_lock_existing(p_uid);                                       -- lock 1
+  if u.user_id is null then return '{"error":"not_found"}'; end if;
   select * into r from public.library_items
    where id = p_id and user_id = p_uid for update;                            -- lock 2
   if not found then return '{"error":"not_found"}'; end if;
   if r.state = 'ready' then return jsonb_build_object('status','done','id',r.id); end if;
   if r.state <> 'uploading' then return jsonb_build_object('error','job_closed','state',r.state); end if;
-  if private.flag('emergency_stop') then return '{"error":"stopped"}'; end if; -- row expires, janitor cleans
+  if private.stopped() then return '{"error":"stopped"}'; end if;             -- row expires, janitor cleans
   if r.expires_at <= now() then
     perform private.lib_abandon(p_uid, p_id, 'expired');
     return '{"error":"expired"}';
@@ -337,12 +366,14 @@ $$;
 -- called AFTER storage remove(); releases quota only if the object is really gone
 create or replace function private.lib_purged(p_id uuid) returns text
 language plpgsql security definer set search_path = '' as $$
-declare v_uid uuid; r public.library_items;
+declare v_uid uuid; u private.library_usage; r public.library_items;
 begin
   select li.user_id into v_uid from public.library_items li where li.id = p_id;
   if v_uid is null then return 'not_found'; end if;
-  perform private.lib_lock(v_uid);
+  u := private.lib_lock_existing(v_uid);
+  if u.user_id is null then return 'no_usage_row'; end if;                     -- cannot happen while items exist; janitor backs off
   select * into r from public.library_items where id = p_id for update;
+  if not found then return 'not_found'; end if;
   if r.state = 'purged' then return 'purged'; end if;
   if r.state not in ('deleting','abandoned') then return r.state; end if;
   if exists (select 1 from storage.objects o where o.bucket_id = 'user-media' and o.name = r.storage_path) then
@@ -388,7 +419,8 @@ create or replace function private.lib_audit_user(p_uid uuid) returns boolean
 language plpgsql security definer set search_path = '' as $$
 declare u private.library_usage; c record; s bigint; drift boolean;
 begin
-  u := private.lib_lock(p_uid);
+  u := private.lib_lock_existing(p_uid);
+  if u.user_id is null then return false; end if;                             -- no usage row (never used, or pruned)
   select count(*) filter (where state in ('uploading','ready'))::int                      as items,
          coalesce(sum(size_bytes) filter (where state in ('uploading','ready')), 0)       as active,
          coalesce(sum(size_bytes) filter (where state in ('deleting','abandoned')), 0)    as releasing,
@@ -419,6 +451,33 @@ returns jsonb language sql stable security definer set search_path = '' as $$
            where lu.audited_at is null or lu.audited_at < now() - interval '1 hour'
            order by lu.audited_at nulls first limit least(greatest(p_limit, 1), 200)) t
 $$;
+
+-- remove usage rows that hold nothing (all counters 0, no item rows at all, tombstones included),
+-- e.g. rows left by the pre-fix library_delete. Such a row would block deleting the auth user.
+-- Safety: rows are locked FOR UPDATE SKIP LOCKED (a row an in-flight writer holds is skipped), and
+-- the "no items" check is repeated AFTER the lock in its own statement (fresh snapshot). New items
+-- are inserted only by lib_begin while it holds this same row lock, so none can appear in between.
+-- lib_lock retries if its row disappears between its insert and its lock.
+create or replace function private.lib_prune_usage(p_limit int) returns int
+language plpgsql security definer set search_path = '' as $$
+declare x record; n int := 0;
+begin
+  for x in select lu.user_id from private.library_usage lu
+            where lu.items_active = 0 and lu.bytes_active = 0 and lu.bytes_releasing = 0 and lu.uploading_count = 0
+              and not exists (select 1 from public.library_items li where li.user_id = lu.user_id)
+            order by lu.updated_at limit least(greatest(p_limit, 1), 200)
+            for update of lu skip locked loop
+    continue when exists (select 1 from public.library_items li where li.user_id = x.user_id);
+    delete from private.library_usage lu
+     where lu.user_id = x.user_id and lu.items_active = 0 and lu.bytes_active = 0
+       and lu.bytes_releasing = 0 and lu.uploading_count = 0;
+    if found then
+      n := n + 1;
+      perform private.log(x.user_id, null, 'usage_pruned', null);
+    end if;
+  end loop;
+  return n;
+end $$;
 
 create or replace function private.lib_drop_tombstones() returns int
 language sql security definer set search_path = '' as $$
@@ -492,6 +551,8 @@ begin
       return to_jsonb(private.lib_audit_user(v_uid));
     when 'drop_tombstones' then
       n := private.lib_drop_tombstones(); return to_jsonb(n);
+    when 'prune_usage' then
+      n := private.lib_prune_usage(coalesce((a ->> 'limit')::int, 100)); return to_jsonb(n);
     when 'run_log' then
       perform private.log(null, null, 'janitor_run', a -> 'detail'); return 'true'::jsonb;
     else
@@ -500,14 +561,20 @@ begin
 end $$;
 
 -- ============================================================ 8. browser-callable (auth.uid() only)
+-- No allow-list check on purpose: a user removed from the beta can still delete what they uploaded.
 create or replace function public.library_delete(p_id uuid) returns text
 language plpgsql security definer set search_path = '' as $$
-declare v_uid uuid := auth.uid(); r public.library_items;
+declare v_uid uuid := auth.uid(); u private.library_usage; r public.library_items;
 begin
-  if v_uid is null then raise exception 'not_authenticated' using errcode = '28000'; end if;
-  perform private.lib_lock(v_uid);                                             -- lock 1
+  if v_uid is null or coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) then
+    raise exception 'not_authenticated' using errcode = '28000'; end if;
+  -- unknown id or someone else's item: answer before taking (or creating) any lock or row
+  if not exists (select 1 from public.library_items li where li.id = p_id and li.user_id = v_uid) then
+    return 'not_found'; end if;
+  u := private.lib_lock_existing(v_uid);                                       -- lock 1
+  if u.user_id is null then return 'not_found'; end if;
   select * into r from public.library_items where id = p_id and user_id = v_uid for update;  -- lock 2
-  if not found then return 'not_found'; end if;
+  if not found then return 'not_found'; end if;                               -- re-checked under the lock
   if r.state = 'uploading' then return private.lib_abandon(v_uid, p_id, 'cancelled'); end if;
   if r.state <> 'ready' then return r.state; end if;                           -- already going away
   update public.library_items
@@ -526,6 +593,7 @@ returns table (client_key uuid, id uuid, state text)
 language sql stable security definer set search_path = '' as $$
   select li.client_key, li.id, li.state from public.library_items li
    where li.user_id = auth.uid() and li.client_key = any (p_client_keys[1:100])
+     and not coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false)
 $$;
 
 create or replace function public.library_usage() returns jsonb
@@ -533,11 +601,11 @@ language sql stable security definer set search_path = '' as $$
   select jsonb_build_object(
     'items', coalesce(u.items_active, 0), 'bytes', coalesce(u.bytes_active, 0),
     'max_items', private.lim('max_items'), 'max_bytes', private.lim('max_bytes'),
-    'uploads_open', private.flag('reservations_open') and not private.flag('emergency_stop'),
+    'uploads_open', private.flag('reservations_open') and not private.stopped(),
     'enabled', exists (select 1 from private.cloud_access a where a.user_id = x.uid))
   from (select auth.uid() as uid) x
   left join private.library_usage u on u.user_id = x.uid
-  where x.uid is not null
+  where x.uid is not null and not coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false)
 $$;
 
 -- ============================================================ 9. privileges

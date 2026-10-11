@@ -34,6 +34,7 @@ drop function if exists public.library_usage();
 
 drop view     if exists private.library_health;
 drop function if exists private.lib_drop_tombstones();
+drop function if exists private.lib_prune_usage(int);
 drop function if exists private.lib_audit_due(int);
 drop function if exists private.lib_audit_user(uuid);
 drop function if exists private.lib_orphans(int);
@@ -49,9 +50,11 @@ drop function if exists private.lib_begin(uuid, uuid, text, public.sound_type, i
 drop function if exists private.lib_abandon(uuid, uuid, text);
 drop function if exists private.clean_name(text);
 drop function if exists private.lib_lock(uuid);
+drop function if exists private.lib_lock_existing(uuid);
 drop function if exists private.log(uuid, uuid, text, jsonb);
 drop function if exists private.lim(text);
 drop function if exists private.flag(text);
+drop function if exists private.stopped();
 
 drop table if exists public.library_items;
 drop table if exists private.janitor_lease;

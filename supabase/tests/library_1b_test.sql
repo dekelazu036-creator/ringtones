@@ -362,6 +362,112 @@ select tst.ok('W8 emergency stop: janitor still works',
   jsonb_typeof(tst.svc('due_purges', '{}')) = 'array' and jsonb_typeof(tst.svc('expired', '{}')) = 'array');
 update private.settings set value = 'false' where key = 'emergency_stop';
 
+-- ===================================================================== X. refused deletes leave nothing behind
+-- (a usage row is FK-restrict on auth.users: a stray one would block deleting the account)
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000d4', 'd@example.test'),
+  ('00000000-0000-0000-0000-0000000000e5', 'e@example.test');
+\set D '''00000000-0000-0000-0000-0000000000d4'''
+\set E '''00000000-0000-0000-0000-0000000000e5'''
+insert into j select 'xb', tst.usage(:B);
+select tst.act('authenticated', :C);
+select tst.ok('X1 user outside the beta deleting an unknown id → not_found', public.library_delete(gen_random_uuid()) = 'not_found');
+select tst.ok('X2 deleting another user''s item → not_found', public.library_delete((select tst.id(v) from j where k='w3')) = 'not_found');
+select tst.ok('X3 repeated refused deletes stay not_found',
+  (select bool_and(public.library_delete(gen_random_uuid()) = 'not_found') from generate_series(1, 3)));
+select tst.back();
+select tst.ok('X4 refused deletes created no usage row and left the owner untouched',
+  tst.usage(:C) is null and tst.state((select tst.id(v) from j where k='w3')) = 'uploading'
+  and tst.usage(:B) = (select v from j where k='xb'));
+select set_config('role', 'authenticated', false),
+       set_config('request.jwt.claims', jsonb_build_object('role', 'authenticated', 'sub', :E, 'is_anonymous', true)::text, false);
+select tst.ok('X5 anonymous session cannot delete', tst.err('select public.library_delete(gen_random_uuid())') like '28000%');
+select tst.ok('X5b anonymous session gets no usage and no job status',
+  public.library_usage() is null and (select count(*) from public.library_job_status(array[gen_random_uuid()])) = 0);
+select tst.back();
+select tst.ok('X6 service finish/abandon/audit for a user with no library data → not_found, nothing created',
+  tst.svc('finish', jsonb_build_object('user_id', :E, 'id', gen_random_uuid())) ->> 'error' = 'not_found'
+  and tst.svc('abandon', jsonb_build_object('user_id', :E, 'id', gen_random_uuid())) = '"not_found"'
+  and tst.svc('audit_user', jsonb_build_object('user_id', :E)) = 'false'::jsonb);
+select tst.ok('X6b … and no usage row for that user', tst.usage(:E) is null);
+select tst.ok('X7 account deletion ready: users touched only by refused calls can be deleted',
+  tst.err($$delete from auth.users where id = '00000000-0000-0000-0000-0000000000e5'$$) = '');
+-- a user removed from the beta keeps the right to delete what they stored
+insert into private.cloud_access (user_id) values (:D);
+insert into j select 'x8', tst.reserve(:D, gen_random_uuid(), tst.sha('x8'), 1300);
+select tst.put(tst.path((select tst.id(v) from j where k='x8')), 1300);
+select tst.svc('finish', jsonb_build_object('user_id', :D, 'id', (select tst.id(v) from j where k='x8')));
+delete from private.cloud_access where user_id = :D;
+select tst.act('authenticated', :D);
+select tst.ok('X8 user removed from the beta can still delete own item', public.library_delete((select tst.id(v) from j where k='x8')) = 'deleting');
+select tst.ok('X9 repeated delete of the same item is idempotent',
+  (select bool_and(public.library_delete((select tst.id(v) from j where k='x8')) = 'deleting') from generate_series(1, 3)));
+select tst.back();
+select tst.ok('X10 counters moved exactly once', tst.u(:D, 0, 0, 1300, 0));
+select tst.ok('X11 a user with library data still cannot be deleted by accident',
+  tst.err($$delete from auth.users where id = '00000000-0000-0000-0000-0000000000d4'$$) like '23503%');
+
+-- ===================================================================== K. emergency_stop fails closed
+create function tst.stop_with(p jsonb) returns text language plpgsql as $$
+begin
+  insert into private.settings (key, value) values ('emergency_stop', p) on conflict (key) do update set value = excluded.value;
+  return coalesce(tst.reserve('00000000-0000-0000-0000-0000000000b2', gen_random_uuid(), tst.sha('stop ' || p::text)) ->> 'error', 'started');
+end $$;
+insert into j select 'ks0', tst.reserve(:B, gen_random_uuid(), tst.sha('ks0'), 1100);
+select tst.put(tst.path((select tst.id(v) from j where k='ks0')), 1100);
+select tst.svc('finish', jsonb_build_object('user_id', :B, 'id', (select tst.id(v) from j where k='ks0')));
+insert into j select 'ks1', tst.reserve(:B, gen_random_uuid(), tst.sha('ks1'), 1100);
+select tst.put(tst.path((select tst.id(v) from j where k='ks1')), 1100);
+delete from private.settings where key = 'emergency_stop';
+select tst.ok('K1 MISSING emergency_stop → begin refused', tst.reserve(:B, gen_random_uuid(), tst.sha('k2')) ->> 'error' = 'stopped');
+select tst.ok('K2 MISSING emergency_stop → finish refused, item still uploading',
+  tst.svc('finish', jsonb_build_object('user_id', :B, 'id', (select tst.id(v) from j where k='ks1'))) ->> 'error' = 'stopped'
+  and tst.state((select tst.id(v) from j where k='ks1')) = 'uploading');
+select tst.ok('K3 MISSING emergency_stop → download and janitor still work',
+  tst.svc('ready_item', jsonb_build_object('user_id', :B, 'id', (select tst.id(v) from j where k='ks0'))) ? 'path'
+  and jsonb_typeof(tst.svc('due_purges', '{}')) = 'array' and jsonb_typeof(tst.svc('expired', '{}')) = 'array'
+  and tst.svc('abandon', jsonb_build_object('user_id', :B, 'id', (select tst.id(v) from j where k='ks1'), 'reason', 'test')) = '"abandoned"');
+select tst.act('authenticated', :B);
+select tst.ok('K4 MISSING emergency_stop → usage reports uploads closed', (public.library_usage() ->> 'uploads_open')::boolean = false);
+select tst.ok('K5 MISSING emergency_stop → delete still works', public.library_delete((select tst.id(v) from j where k='ks0')) = 'deleting');
+select tst.back();
+select tst.ok('K6 malformed emergency_stop values all mean stopped',
+  (select bool_and(tst.stop_with(x::jsonb) = 'stopped')
+     from unnest(array['"false"', '0', 'null', '"true"', 'true', '"FALSE"', '{}', '[]']) x));
+select tst.ok('K7 only an explicit JSON false lets uploads start again', tst.stop_with('false') = 'started');
+
+-- ===================================================================== U. pruning usage rows that hold nothing (A3)
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000f6', 'g@example.test'),
+  ('00000000-0000-0000-0000-0000000000a7', 'h@example.test'),
+  ('00000000-0000-0000-0000-0000000000b8', 'i@example.test');
+\set G '''00000000-0000-0000-0000-0000000000f6'''
+\set H '''00000000-0000-0000-0000-0000000000a7'''
+\set I '''00000000-0000-0000-0000-0000000000b8'''
+-- G: stray row as left by the pre-fix library_delete; I: beta user with an empty row
+insert into private.library_usage (user_id) values (:G), (:I);
+insert into private.cloud_access (user_id) values (:H), (:I);
+-- H: counters back to 0 but a tombstone remains (reserved, never uploaded, cancelled, purged)
+insert into j select 'u1', tst.reserve(:H, gen_random_uuid(), tst.sha('u1'), 900);
+select tst.svc('abandon', jsonb_build_object('user_id', :H, 'id', (select tst.id(v) from j where k='u1')));
+update public.library_items set purge_next_at = now() - interval '1 second' where id = (select tst.id(v) from j where k='u1');
+select tst.svc('purged', jsonb_build_object('id', (select tst.id(v) from j where k='u1')));
+select tst.ok('U0 setup: H has zero counters and one tombstone',
+  tst.u(:H, 0, 0, 0, 0) and tst.state((select tst.id(v) from j where k='u1')) = 'purged');
+insert into j select 'up', tst.svc('prune_usage', '{}');
+select tst.ok('U1 prune removes exactly the rows with zero counters and no item rows (G, I)',
+  (select v = '2'::jsonb from j where k='up') and tst.usage(:G) is null and tst.usage(:I) is null);
+select tst.ok('U2 prune keeps rows with tombstones (H) or live data (A, B, D)',
+  tst.usage(:H) is not null and tst.usage(:A) is not null and tst.usage(:B) is not null and tst.usage(:D) is not null);
+select tst.ok('U3 prune is logged', (select count(*) = 2 from private.library_events where kind = 'usage_pruned'));
+select tst.ok('U4 prune again finds nothing', tst.svc('prune_usage', '{}') = '0'::jsonb);
+select tst.ok('U5 a pruned beta user can upload again (row recreated)',
+  tst.reserve(:I, gen_random_uuid(), tst.sha('u5'), 700) ->> 'status' = 'upload');
+select tst.ok('U5b … with correct counters', tst.u(:I, 1, 700, 0, 1));
+select tst.ok('U6 a user whose stray row was pruned can be deleted',
+  tst.err($$delete from auth.users where id = '00000000-0000-0000-0000-0000000000f6'$$) = '');
+select tst.ok('U7 prune is service-only like every op', tst.err($$select public.svc_library('prune_usage', '{}')$$) like '42501%');
+
 -- ===================================================================== O. orphans, audit, tombstones, lease
 select tst.put(:A || '/' || gen_random_uuid() || '.mp3', 100, 'audio/mpeg', '2 hours');
 select tst.put(:A || '/' || gen_random_uuid() || '.mp3', 100, 'audio/mpeg', '5 minutes');
