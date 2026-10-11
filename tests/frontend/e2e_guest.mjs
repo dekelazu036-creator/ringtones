@@ -46,7 +46,7 @@ try {
     ok(`[${name}] language from the device (${lang}, ${lang === 'he' ? 'rtl' : 'ltr'})`,
       await page.evaluate(() => document.documentElement.lang + document.documentElement.dir) === lang + (lang === 'he' ? 'rtl' : 'ltr'));
     ok(`[${name}] no horizontal scroll`, await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
-    ok(`[${name}] no signup wall: account button hidden for guests`, await page.evaluate(() => [...document.querySelectorAll('.acctbtn')].every((b) => b.hidden)));
+    ok(`[${name}] accounts are optional: a sign-in button exists, nothing asks for it`, await page.evaluate(() => !!document.querySelector('.acctbtn') && !document.querySelector('dialog[open]') && !/account\.html/.test(location.pathname)));
 
     await page.click('#tryDemo');
     await until(page, () => !document.getElementById('export').disabled, 20000);
