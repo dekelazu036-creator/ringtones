@@ -637,6 +637,12 @@ test('H6 test alert: janitor secret only, off by default, one per 10 minutes, ne
   r = await call(handleJanitor(req(SECRET), depsF, cfg));
   assert.deepEqual(r.body, { test_alert: 'failed' });
   assert.equal((await call(handleJanitor(req(SECRET), depsM, cfg))).body.test_alert, 'throttled');
+  // at most 5 per day even when the 10-minute window has passed
+  one(`delete from private.library_events where kind = 'alert_test_sent';
+       insert into private.library_events (kind, at) select 'alert_test_sent', now() - make_interval(hours => g) from generate_series(1, 5) g`);
+  assert.equal((await call(handleJanitor(req(SECRET), depsM, cfg))).body.test_alert, 'throttled');
+  one(`delete from private.library_events where kind = 'alert_test_sent' and at < now() - interval '4 hours 30 minutes'`);
+  assert.equal((await call(handleJanitor(req(SECRET), depsM, cfg))).body.test_alert, 'sent');
   // no mail configured / SQL op missing: fail closed
   assert.equal((await call(handleJanitor(req(SECRET), deps, cfg))).body.test_alert, 'not_configured');
   const depsOld: Deps = { ...depsM, async acct(op, a) { if (op === 'alert_test') throw new Error('svc_account: unknown op'); return deps.acct!(op, a); } };

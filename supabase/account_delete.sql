@@ -136,7 +136,8 @@ language sql security definer set search_path = '' as $$
 $$;
 
 -- test alert (owner checks that alert e-mails arrive, without a real fault). OFF unless the settings row
--- 'alert_test_enabled' is JSON true (missing row = off, the default everywhere). At most one per 10 minutes;
+-- 'alert_test_enabled' is JSON true (missing row = off, the default everywhere). At most one per 10 minutes and
+-- 5 per day (the Resend account's daily quota is shared with the sign-in code e-mails);
 -- the attempt is recorded BEFORE sending, so a failing mail provider cannot be used to send in a loop.
 -- Separate event kind: a test never touches the 6-hour throttle of real alerts.
 create or replace function private.alert_test() returns text
@@ -145,7 +146,9 @@ begin
   if not private.flag('alert_test_enabled') then return 'disabled'; end if;
   perform pg_advisory_xact_lock(hashtext('snipring.alert_test'));     -- two concurrent requests: one wins
   if exists (select 1 from private.library_events e
-              where e.kind = 'alert_test_sent' and e.at > now() - interval '10 minutes') then
+              where e.kind = 'alert_test_sent' and e.at > now() - interval '10 minutes')
+     or (select count(*) from private.library_events e
+          where e.kind = 'alert_test_sent' and e.at > now() - interval '24 hours') >= 5 then
     return 'throttled'; end if;
   perform private.log(null, null, 'alert_test_sent', null);
   return 'allowed';

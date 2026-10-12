@@ -45,7 +45,8 @@ with the names of the failing checks only (no user data). A failed send is retri
 ## Test-alert safety (what protects it)
 - Only the janitor secret opens it (a user session or the anon key gets 401). It runs no janitor work.
 - Off unless `private.settings.alert_test_enabled` is JSON `true` (missing row = off; SQL not applied = off).
-- One per 10 minutes, counted before sending (a failing provider cannot cause a loop); separate from the
+- One per 10 minutes and 5 per day (the Resend daily quota is shared with sign-in codes), counted before sending
+  (a failing provider cannot cause a loop); separate from the
   6-hour throttle of real alerts.
 - The answer is one word (`sent / disabled / throttled / failed / not_configured`): no address, key or provider text.
 
