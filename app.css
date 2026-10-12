@@ -502,7 +502,7 @@ html[dir=rtl] .back-ic{transform:rotate(-90deg)}
 .clip:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
 .clip.missing{background:var(--surface-3);border-style:dashed}
 .clip canvas{position:absolute;inset:0;width:100%;height:100%}
-.cname{position:absolute;left:6px;right:6px;top:2px;font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.clip .cname{position:absolute;left:6px;right:6px;top:2px;font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .clip .h{position:absolute;top:0;bottom:0;width:22px;cursor:ew-resize;z-index:3;display:flex;align-items:center;justify-content:center}
 .clip .h::after{content:"";width:5px;height:60%;border-radius:3px;background:var(--accent-text)}
 .clip .hl{left:-2px}.clip .hr{right:-2px}
