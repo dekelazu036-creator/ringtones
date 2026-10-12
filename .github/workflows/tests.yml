@@ -19,6 +19,8 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q postgresql-16 ffmpeg
           sudo systemctl start postgresql
+      - name: Smart cut quality bench (synthetic songs with known tempo, bars and chorus starts)
+        run: node --test --test-reporter=spec tests/smartcut/eval.test.mjs
       - name: Content-Security-Policy is up to date on every page (D6)
         run: python3 tools/csp.py --check
       - name: Bundles match the sources

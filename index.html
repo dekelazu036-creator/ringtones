@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-+1pxTsugEgi47izmNuqF3ecOBT7uaVZLnHj127nr0X4=' 'sha256-PAmDteUuKHEhpVKO6Wtgjvb5SWmHlBAM3gYPNYH4fKs=' 'sha256-uTb6mtDnck+JtDBVOgfLbMp/W4j5qqKZQ5Sc+1r5qjs=' https://cloud.umami.is https://connect.facebook.net; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://cloud.umami.is https://api-gateway.umami.dev https://connect.facebook.net https://www.facebook.com; img-src 'self' data: blob: https://www.facebook.com; media-src 'self' blob: data: https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co; font-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-0+R5gLodtFXM9W+CtfmwmF0dyCmZJo+vA3aD5JdUvYk=' 'sha256-PAmDteUuKHEhpVKO6Wtgjvb5SWmHlBAM3gYPNYH4fKs=' 'sha256-uTb6mtDnck+JtDBVOgfLbMp/W4j5qqKZQ5Sc+1r5qjs=' https://cloud.umami.is https://connect.facebook.net; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://cloud.umami.is https://api-gateway.umami.dev https://connect.facebook.net https://www.facebook.com; img-src 'self' data: blob: https://www.facebook.com; media-src 'self' blob: data: https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co; font-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <script src="/monitor.js"></script>
 <title>SnipRing</title>
 <script>/* snipring.com/?me turns analytics off on this device (owner testing); ?me=on turns it back on */
@@ -31,6 +31,7 @@
 <script src="config.js"></script>
 <script src="auth-state.js" defer></script>
 <script src="vendor/lame.min.js"></script>
+<script src="smartcut.js"></script>
 <link rel="stylesheet" href="app.css">
 
 </head>
@@ -554,96 +555,7 @@ function analyse(){
 }
 /* iPhone needs every ringtone/alarm sound under 30 s; Android alarms may run longer */
 const CAP=()=>M().cap||29.5;
-/* Chorus finder: chroma self-similarity + loudness.
-   A chorus is the loud part of a song that repeats, so we look for the window
-   whose harmony recurs elsewhere in the song most strongly. */
-function fftMag(re, im) { // in-place radix-2, returns nothing
-  const n = re.length;
-  for (let i = 1, j = 0; i < n; i++) {
-    let bit = n >> 1;
-    for (; j & bit; bit >>= 1) j ^= bit;
-    j ^= bit;
-    if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
-  }
-  for (let len = 2; len <= n; len <<= 1) {
-    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
-    for (let i = 0; i < n; i += len) {
-      let cr = 1, ci = 0;
-      for (let k = 0; k < len / 2; k++) {
-        const a = i + k, b = a + len / 2;
-        const xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
-        re[b] = re[a] - xr; im[b] = im[a] - xi; re[a] += xr; im[a] += xi;
-        const ncr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = ncr;
-      }
-    }
-  }
-}
-
-function songFeatures(song, hopSec) {
-  const sr0 = song.sampleRate, a = song.getChannelData(0), b = song.numberOfChannels > 1 ? song.getChannelData(1) : a;
-  const dec = Math.max(1, Math.round(sr0 / 11025)), sr = sr0 / dec;
-  const n = Math.floor(song.length / dec), x = new Float32Array(n);
-  for (let i = 0; i < n; i++) { let s = 0; const o = i * dec; for (let k = 0; k < dec; k++) s += a[o + k] + b[o + k]; x[i] = s / (2 * dec); }
-  const N = 4096, hop = Math.round(sr * hopSec), F = Math.max(1, Math.floor((n - N) / hop) + 1);
-  const win = new Float32Array(N); for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
-  const pc = new Int8Array(N / 2).fill(-1);
-  for (let k = 1; k < N / 2; k++) { const f = k * sr / N; if (f >= 80 && f <= 4000) pc[k] = ((Math.round(12 * Math.log2(f / 440)) + 69) % 12 + 12) % 12; }
-  const chroma = new Float32Array(F * 12), rms = new Float32Array(F), re = new Float32Array(N), im = new Float32Array(N);
-  for (let f = 0; f < F; f++) {
-    const o = f * hop; let e = 0;
-    for (let i = 0; i < N; i++) { const v = x[o + i] || 0; e += v * v; re[i] = v * win[i]; im[i] = 0; }
-    rms[f] = Math.sqrt(e / N);
-    fftMag(re, im);
-    const c = chroma.subarray(f * 12, f * 12 + 12);
-    for (let k = 1; k < N / 2; k++) if (pc[k] >= 0) c[pc[k]] += Math.hypot(re[k], im[k]);
-    let mx = 0; for (let i = 0; i < 12; i++) { c[i] = Math.sqrt(c[i]); mx += c[i] / 12; }
-    for (let i = 0; i < 12; i++) c[i] -= mx;              // centre: keep only which notes stand out
-    let nn = 0; for (let i = 0; i < 12; i++) nn += c[i] * c[i]; nn = Math.sqrt(nn) || 1;
-    for (let i = 0; i < 12; i++) c[i] /= nn;
-  }
-  return { chroma, rms, F, hopSec };
-}
-
-/* returns up to 3 candidate starts (seconds), best first */
-function chorusCandidates(song, winSec) {
-  const hopSec = 0.5, { chroma, rms, F } = songFeatures(song, hopSec);
-  const W = Math.max(4, Math.min(F - 1, Math.round(winSec / hopSec)));
-  if (F < W * 2 + 2) return [{ t: 0, score: 0 }];
-  // similarity matrix (cosine of unit chroma vectors), contrast-stretched
-  const S = new Float32Array(F * F);
-  for (let i = 0; i < F; i++) for (let j = i; j < F; j++) {
-    let d = 0; for (let k = 0; k < 12; k++) d += chroma[i * 12 + k] * chroma[j * 12 + k];
-    d = Math.max(0, d); S[i * F + j] = S[j * F + i] = d;
-  }
-  // loudness, normalised 0..1
-  let rmax = 0; for (let i = 0; i < F; i++) rmax = Math.max(rmax, rms[i]);
-  const loud = new Float32Array(F + 1); for (let i = 0; i < F; i++) loud[i + 1] = loud[i] + rms[i] / (rmax || 1);
-  const minLag = Math.round(W * 0.8), score = new Float32Array(F - W + 1);
-  const sims = new Float32Array(F);
-  for (let i = 0; i + W <= F; i++) {
-    sims.fill(-1);
-    for (let j = 0; j + W <= F; j++) {
-      if (Math.abs(i - j) < minLag) continue;
-      let v = 0; for (let k = 0; k < W; k++) v += S[(i + k) * F + j + k];
-      sims[j] = v / W;
-    }
-    // the two strongest repeats at clearly different places (a chorus comes back 2-3 times)
-    let j1 = -1; for (let j = 0; j < F; j++) if (sims[j] > (j1 < 0 ? -1 : sims[j1])) j1 = j;
-    let j2 = -1; for (let j = 0; j < F; j++) if (Math.abs(j - j1) >= minLag && sims[j] > (j2 < 0 ? -1 : sims[j2])) j2 = j;
-    const best = Math.max(0, j1 < 0 ? 0 : sims[j1]), second = Math.max(0, j2 < 0 ? 0 : sims[j2]);
-    const L = (loud[i + W] - loud[i]) / W;
-    score[i] = (best + second) * (0.6 + 0.4 * L);
-  }
-  const order = [...score.keys()].sort((p, q) => score[q] - score[p]), picked = [];
-  for (const i of order) { if (picked.length >= 3) break; if (picked.every(p => Math.abs(p - i) >= W * 0.75)) picked.push(i); }
-  return picked.map(i => {
-    // snap to the strongest loudness rise within ±3 s (section boundary)
-    let bi = i, bd = -1;
-    for (let k = Math.max(2, i - 6); k <= Math.min(F - W, i + 6); k++) { const d = (rms[k] + (rms[k + 1] || 0)) - (rms[k - 1] + rms[k - 2]); if (d > bd) { bd = d; bi = k; } }
-    return { t: bi * hopSec, score: score[i] };
-  });
-}
-
+/* chorus finder (chorusCandidates), beat grid (beatGrid/snapToGrid/beatLen): smartcut.js */
 function energyCandidates(){
   const F=energy.length,W=Math.min(F,Math.round(Math.min(M().def,song.duration)*FR));
   const pre=new Float64Array(F+1);for(let i=0;i<F;i++)pre[i+1]=pre[i]+energy[i];
@@ -675,18 +587,42 @@ function findCandidates(){
   const W=Math.min(F,Math.round(L*FR)),pk=[];for(let s0=0;s0+W<=F;s0+=5)pk.push([mean(s0,W),s0]);
   pk.sort((x,y)=>y[0]-x[0]);for(const [,s0] of pk){const t=s0/FR;if(far(t)){out.push({t,kind:'peak'});break}}
   if(!out.length)out.push({t:0,kind:'start'});
-  cands=out;renderCands();pickCand(0);
+  cands=out;renderCands();pickCand(0);scheduleBeat();
 }
-function candLen(c){return Math.min(Math.min(M().def,CAP()),song.duration-c.t)}
-function pickCand(i){S.cand=i;const t=cands[i].t,room=song.duration-t,L=Math.min(M().def,CAP());
-  if(room>=Math.min(L,12))setRange(t,t+Math.min(L,room),'start');else setRange(t,t+L,'move');markCand()}
+/* Create 2.0 smart cut: once the suggestions are on screen, measure the beat (smartcut.js, ~75 s around the
+   first suggestion) and move each suggestion to where its section really starts, on the bar line.
+   Songs without a steady pulse keep the plain cut. A selection the user already moved is never changed. */
+let GRID=null;
+function beatFade(on){if(S.mode==='ring'&&!S.fadeTouched){S.fin=on?.1:M().fin;$('fin').value=S.fin;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec')}}
+function scheduleBeat(){
+  const my=song;GRID=null;
+  setTimeout(()=>{
+    if(song!==my||!cands.length||cands[0].kind==='start')return;
+    let g=null;try{g=beatGrid(song,cands[0].t+12,75)}catch(e){}
+    if(song!==my||!g||!(g.conf>=.2))return;
+    GRID=g;const keep=S.cand<0;
+    cands.forEach(c=>{const t0=c.kind==='chorus'?sectionStart(song,g,c.t):snapToGrid(c.t,g,c.kind==='drop'?1:1.5);
+      if(t0>=0&&t0<song.duration-1){c.t=t0;c.beat=true}});
+    renderCands();
+    // align the CURRENT selection (whatever set it) to the beat: start on the nearest bar line, length in whole beats.
+    // Re-picking the suggestion would undo later adjustments (e.g. the 29-second fit after loading a song).
+    if(!keep){const st=snapToGrid(S.start,g,1.5),L=beatLen(S.len,g,M().min);setRange(st,st+L,'move');beatFade(true);invalidate()}
+    markCand();
+    track('smart_cut_beat',{bpm:Math.round(g.bpm/10)*10});
+  },60);
+}
+function candLen(c){const L=c.beat&&GRID?beatLen(Math.min(M().def,CAP()),GRID,M().min):Math.min(M().def,CAP());return Math.min(L,song.duration-c.t)}
+function pickCand(i){S.cand=i;const c=cands[i],at=c.t,room=song.duration-at,L=c.beat&&GRID?beatLen(Math.min(M().def,CAP()),GRID,M().min):Math.min(M().def,CAP());
+  // on the beat: a crisp 0.1 s fade-in instead of the soft default (ringtones only, and never over the user's own setting)
+  beatFade(!!c.beat);
+  if(room>=Math.min(L,12))setRange(at,at+Math.min(L,room),'start');else setRange(at,at+L,'move');markCand()}
 const KIND={chorus:['','kChorus','kChorusD'],drop:['','kDrop','kDropD'],peak:['','kPeak','kPeakD'],start:['','kStart','kStartD']};
 const svg=(n,c)=>'<svg class="ic'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>';
 function renderCands(){
   const box=$('cands');box.innerHTML='';
   cands.forEach((c,i)=>{const [ic,lk,dk]=KIND[c.kind]||KIND.start,card=document.createElement('div');card.className='best';
     card.innerHTML='<b>'+t(lk)+'</b><p class="bd">'+t(dk)+'</p>'
-      +'<p class="bt"><bdi class="num">'+fmtShort(c.t)+'</bdi> · <bdi class="num">'+candLen(c).toFixed(0)+'</bdi>'+t('secShort')+'</p>'
+      +'<p class="bt"><bdi class="num">'+fmtShort(c.t)+'</bdi> · <bdi class="num">'+candLen(c).toFixed(0)+'</bdi>'+t('secShort')+(c.beat&&GRID?' · <bdi class="num" dir="ltr">'+Math.round(GRID.bpm)+' BPM</bdi>':'')+'</p>'
       +'<div class="bb"><button type="button" class="btn bplay">'+svg('play','sm')+'<span>'+t('bListen')+'</span></button><button type="button" class="btn primary buse">'+svg('check','sm')+'<span>'+t('bUse')+'</span></button></div>';
     card.querySelector('.bplay').setAttribute('aria-label',t('bListen')+': '+t(lk));card.querySelector('.buse').setAttribute('aria-label',t('bUse')+': '+t(lk));
     card.querySelector('.bplay').addEventListener('click',()=>{const on=playing&&mode==='cand'&&candPlaying===i;stopPreview();if(on)return;
@@ -699,7 +635,7 @@ function markCand(){[...$('cands').children].forEach((b,i)=>{b.classList.toggle(
 
 /* selection: start + len, both handles free, length capped below 30 s */
 function setRange(a,b,mode){
-  const D=song.duration,r=v=>Math.round(v*10)/10;
+  const D=song.duration,r=v=>Math.round(v*100)/100;   // hundredths: beat-snapped cuts stay on the beat
   if(mode==='move'){const len=Math.min(b-a,CAP(),D);a=Math.max(0,Math.min(D-len,a));b=a+len}
   a=Math.max(0,Math.min(D,a));b=Math.max(0,Math.min(D,b));
   const MX=Math.min(CAP(),M().max),MN=Math.min(M().min,D);
@@ -832,8 +768,8 @@ $('lenR').addEventListener('change',()=>previewSel());
 $('startHere').addEventListener('click',()=>{S.cand=-1;markCand();startAt(playing&&mode==='full'?pos():(S.cursor||0))});
 
 /* ---------- controls ---------- */
-$('fin').addEventListener('input',e=>{S.fin=+e.target.value;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec')});
-$('fout').addEventListener('input',e=>{S.fout=+e.target.value;$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec')});
+$('fin').addEventListener('input',e=>{S.fadeTouched=true;S.fin=+e.target.value;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec')});
+$('fout').addEventListener('input',e=>{S.fadeTouched=true;S.fout=+e.target.value;$('foutV').textContent=S.fout.toFixed(1)+' '+t('sec')});
 $('norm').addEventListener('change',e=>{S.norm=e.target.checked});
 
 function selGain(){
