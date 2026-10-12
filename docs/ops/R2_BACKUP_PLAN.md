@@ -24,8 +24,8 @@ R2 copies without a live row are removed after 1 hour (orphan sweep).
 - The keys live only in production function secrets (`R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`,
   `R2_SECRET_ACCESS_KEY`), set by `supabase/rollout/prod_r2_backup.sh` from hidden prompts.
 - The browser never talks to R2. Only the janitor and account-delete functions do.
-- Follow-up before use: give `prod_r2_backup.sh` the same cleanup trap as `prod_alerts.sh` (today it removes the
-  temp file right after use but not on Ctrl+C between creation and removal). Small change; not in this task's scope.
+- `prod_r2_backup.sh` has the same cleanup trap as `prod_alerts.sh` (temp file mode 600, removed on success,
+  failure, Ctrl+C, HUP, TERM; tested with a fake CLI 2026-10-12).
 
 ## Cost (Cloudflare R2 public pricing; verify on the day)
 - Storage: first 10 GB-month free, then about $0.015 per GB-month. The project cap is 800 MB → inside the free tier.
