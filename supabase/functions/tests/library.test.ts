@@ -605,3 +605,49 @@ test('H5 janitor e-mails the owner once when something is wrong, then waits 6 ho
   one(`update public.library_items set purge_next_at = now() where id = '${s.body.id}'`);
   await runJanitor(deps, { ...cfg, holder: 'h5e' });
 });
+
+// ------------------------------------------------------------------ test alert (owner checks delivery, no real fault)
+test('H6 test alert: janitor secret only, off by default, one per 10 minutes, never touches real alerts or janitor work', async () => {
+  const mails: string[] = [];
+  const depsM: Deps = { ...deps, async sendAlert(subject) { mails.push(subject); return 'ok'; } };
+  const req = (tok: string, q = '?test_alert=1') =>
+    new Request('https://fn.test/library-janitor' + q, { method: 'POST', headers: { authorization: `Bearer ${tok}` } });
+  const runs = () => one(`select count(*) from private.library_events where kind = 'janitor_run'`);
+  const runsBefore = runs();
+  // a user session or a wrong secret never reaches it
+  assert.equal((await call(handleJanitor(req('hdr.userA.sig'), depsM, cfg))).status, 401);
+  assert.equal((await call(handleJanitor(req('x'.repeat(47)), depsM, cfg))).status, 401);
+  // the right secret, but the database does not allow it (no settings row = off)
+  one(`delete from private.settings where key = 'alert_test_enabled'`);
+  let r = await call(handleJanitor(req(SECRET), depsM, cfg));
+  assert.deepEqual([r.status, r.body], [200, { test_alert: 'disabled' }]);
+  one(`insert into private.settings (key, value) values ('alert_test_enabled', '"yes"')`);   // anything but JSON true = off
+  assert.equal((await call(handleJanitor(req(SECRET), depsM, cfg))).body.test_alert, 'disabled');
+  assert.equal(mails.length, 0);
+  // allowed: exactly one marked test mail, then throttled
+  one(`update private.settings set value = 'true' where key = 'alert_test_enabled'`);
+  r = await call(handleJanitor(req(SECRET), depsM, cfg));
+  assert.deepEqual(r.body, { test_alert: 'sent' });
+  assert.equal(mails.length, 1); assert.match(mails[0], /TEST alert/);
+  assert.equal((await call(handleJanitor(req(SECRET), depsM, cfg))).body.test_alert, 'throttled');
+  assert.equal(mails.length, 1);
+  // the answer is one word: no address, no key, no provider text; a failed send is still counted (no send loop)
+  one(`delete from private.library_events where kind = 'alert_test_sent'`);
+  const depsF: Deps = { ...deps, async sendAlert() { return { error: 'resend 401 re_SHOULD_NOT_LEAK' }; } };
+  r = await call(handleJanitor(req(SECRET), depsF, cfg));
+  assert.deepEqual(r.body, { test_alert: 'failed' });
+  assert.equal((await call(handleJanitor(req(SECRET), depsM, cfg))).body.test_alert, 'throttled');
+  // no mail configured / SQL op missing: fail closed
+  assert.equal((await call(handleJanitor(req(SECRET), deps, cfg))).body.test_alert, 'not_configured');
+  const depsOld: Deps = { ...depsM, async acct(op, a) { if (op === 'alert_test') throw new Error('svc_account: unknown op'); return deps.acct!(op, a); } };
+  assert.equal((await call(handleJanitor(req(SECRET), depsOld, cfg))).body.test_alert, 'disabled');
+  // the real-alert throttle and the janitor were never touched
+  assert.equal(one(`select count(*) from private.library_events where kind = 'alert_sent'`), '0');
+  assert.equal(runs(), runsBefore);
+  // API roles cannot call the gate directly
+  for (const role of ['anon', 'authenticated']) {
+    assert.throws(() => psql(`set role ${role}; select private.alert_test();`));
+    assert.throws(() => psql(`set request.jwt.claims = '{"role":"${role}"}'; set role ${role}; select public.svc_account('alert_test', '{}');`));
+  }
+  one(`delete from private.settings where key = 'alert_test_enabled'; delete from private.library_events where kind = 'alert_test_sent'`);
+});

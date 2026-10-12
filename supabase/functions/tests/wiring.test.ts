@@ -45,6 +45,7 @@ const fake = (globalThis as any).__fake = {
       if (a.p_op === 'health') return { data: { janitor_recent: true, no_stuck_deletes: !(globalThis as any).__fake.healthBad, uploads_paused: false }, error: null };
       if (a.p_op === 'alert_due') return { data: true, error: null };
       if (a.p_op === 'alert_sent') return { data: true, error: null };
+      if (a.p_op === 'alert_test') return { data: 'allowed', error: null };
     }
     return { data: true, error: null };
   },
@@ -169,4 +170,19 @@ test('W9 janitor e-mails the owner through Resend when unhealthy (key only in th
     assert.match(body.subject, /no_stuck_deletes/);
     assert.ok(!String(mail!.body).includes('re_TESTKEY'));
   } finally { (globalThis as any).__fake.healthBad = false; }
+});
+
+test('W10 test alert: one marked mail through Resend, one-word answer, no janitor work', async () => {
+  r2seen.length = 0; fake.calls.length = 0;
+  const h = await load('library-janitor');
+  const res = await h(new Request('https://f/library-janitor?test_alert=1', { method: 'POST', headers: { authorization: `Bearer ${'j'.repeat(40)}` } }));
+  const text = await res.text();
+  assert.equal(res.status, 200);
+  assert.deepEqual(JSON.parse(text), { test_alert: 'sent' });
+  assert.ok(!text.includes('owner@') && !text.includes('re_TESTKEY'));
+  const mail = r2seen.filter((x) => x.url === 'https://api.resend.com/emails');
+  assert.equal(mail.length, 1);
+  assert.match(JSON.parse(String(mail[0].body)).subject, /TEST alert/);
+  assert.ok(!fake.calls.some((c: any) => c[0] === 'rpc' && c[2]?.p_op === 'janitor_acquire'), 'janitor work ran');
+  assert.ok(!r2seen.some((x) => x.url.includes('r2.cloudflarestorage.com')), 'backup ran');
 });

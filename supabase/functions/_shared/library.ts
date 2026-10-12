@@ -188,6 +188,7 @@ export type JanitorReport = {
   backup?: 'off' | 'on'; backed_up?: number; backup_failed?: number; backup_orphans?: number;
   alert?: 'sent' | 'throttled' | 'failed';
 };
+export type TestAlertResult = 'sent' | 'disabled' | 'throttled' | 'failed' | 'not_configured';
 
 export async function handleJanitor(req: Request, deps: Deps, cfg: Config): Promise<Response> {
   const res = await janitorResponse(req, deps, cfg);
@@ -201,6 +202,10 @@ async function janitorResponse(req: Request, deps: Deps, cfg: Config): Promise<R
   const token = bearer(req) ?? '';
   if (secret.length < 32) return json({ error: 'janitor_not_configured' }, 500);   // refuse to run with a weak/missing secret
   if (!safeEqual(token, secret)) return json({ error: 'unauthorized' }, 401);
+  // ?test_alert=1: send one clearly marked test e-mail and do NOTHING else (no janitor work, no health query).
+  // Only the janitor secret opens this (never a user session), and the database must allow it
+  // (settings row alert_test_enabled, off by default). The answer is one word: no address, no key, no error text.
+  if (new URL(req.url).searchParams.get('test_alert') === '1') return json({ test_alert: await sendTestAlert(deps) }, 200);
   try {
     const report = await runJanitor(deps, cfg);
     return json(report ?? { skipped: 'another run holds the lease' }, 200);
@@ -208,6 +213,24 @@ async function janitorResponse(req: Request, deps: Deps, cfg: Config): Promise<R
     deps.log?.({ fn: 'library-janitor', event: 'exception', error: String(e) });
     return json({ error: 'server_error' }, 500);
   }
+}
+
+export async function sendTestAlert(deps: Deps): Promise<TestAlertResult> {
+  if (!deps.acct || !deps.sendAlert) return 'not_configured';
+  try {
+    const gate = await deps.acct('alert_test', {});
+    if (gate !== 'allowed') return gate === 'throttled' ? 'throttled' : 'disabled';
+  } catch {
+    deps.log?.({ fn: 'library-janitor', event: 'alert_test_gate_failed' });   // e.g. SQL not applied: fail closed
+    return 'disabled';
+  }
+  const sent = await deps.sendAlert('SnipRing: TEST alert (nothing is wrong)',
+    `This is a test of the SnipRing owner alerts, requested with the janitor secret.\n\n` +
+    `Nothing is wrong. Real alerts look like this one but name the failing checks.\n` +
+    `Turn test alerts off when you are done: delete from private.settings where key = 'alert_test_enabled';`);
+  if (sent === 'ok') { deps.log?.({ fn: 'library-janitor', event: 'alert_test_sent' }); return 'sent'; }
+  deps.log?.({ fn: 'library-janitor', event: 'alert_test_failed' });          // no provider text: it could echo input
+  return 'failed';
 }
 
 // Deleting media: the backup copy goes FIRST, so a row only becomes 'purged' when no copy is left anywhere.
