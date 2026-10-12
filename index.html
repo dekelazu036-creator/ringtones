@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PAmDteUuKHEhpVKO6Wtgjvb5SWmHlBAM3gYPNYH4fKs=' 'sha256-uTb6mtDnck+JtDBVOgfLbMp/W4j5qqKZQ5Sc+1r5qjs=' 'sha256-udKGEpTUvW+EmCjSHe+WMe6UGQ1ZbttaTVoWsPvf+VQ=' https://cloud.umami.is https://connect.facebook.net; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://cloud.umami.is https://api-gateway.umami.dev https://connect.facebook.net https://www.facebook.com; img-src 'self' data: blob: https://www.facebook.com; media-src 'self' blob: data: https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co; font-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-0+R5gLodtFXM9W+CtfmwmF0dyCmZJo+vA3aD5JdUvYk=' 'sha256-PAmDteUuKHEhpVKO6Wtgjvb5SWmHlBAM3gYPNYH4fKs=' 'sha256-uTb6mtDnck+JtDBVOgfLbMp/W4j5qqKZQ5Sc+1r5qjs=' https://cloud.umami.is https://connect.facebook.net; connect-src 'self' https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co https://cloud.umami.is https://api-gateway.umami.dev https://connect.facebook.net https://www.facebook.com; img-src 'self' data: blob: https://www.facebook.com; media-src 'self' blob: data: https://gtjtvfogqrnuiducvoqm.supabase.co https://kavomvsvufqnqjepbevs.supabase.co; font-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <script src="/monitor.js"></script>
 <title>SnipRing</title>
 <script>/* snipring.com/?me turns analytics off on this device (owner testing); ?me=on turns it back on */
@@ -593,6 +593,7 @@ function findCandidates(){
    first suggestion) and move each suggestion to where its section really starts, on the bar line.
    Songs without a steady pulse keep the plain cut. A selection the user already moved is never changed. */
 let GRID=null;
+function beatFade(on){if(S.mode==='ring'&&!S.fadeTouched){S.fin=on?.1:M().fin;$('fin').value=S.fin;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec')}}
 function scheduleBeat(){
   const my=song;GRID=null;
   setTimeout(()=>{
@@ -603,14 +604,17 @@ function scheduleBeat(){
     cands.forEach(c=>{const t0=c.kind==='chorus'?sectionStart(song,g,c.t):snapToGrid(c.t,g,c.kind==='drop'?1:1.5);
       if(t0>=0&&t0<song.duration-1){c.t=t0;c.beat=true}});
     renderCands();
-    if(!keep){pickCand(S.cand);invalidate()}else markCand();
+    // align the CURRENT selection (whatever set it) to the beat: start on the nearest bar line, length in whole beats.
+    // Re-picking the suggestion would undo later adjustments (e.g. the 29-second fit after loading a song).
+    if(!keep){const st=snapToGrid(S.start,g,1.5),L=beatLen(S.len,g,M().min);setRange(st,st+L,'move');beatFade(true);invalidate()}
+    markCand();
     track('smart_cut_beat',{bpm:Math.round(g.bpm/10)*10});
   },60);
 }
 function candLen(c){const L=c.beat&&GRID?beatLen(Math.min(M().def,CAP()),GRID,M().min):Math.min(M().def,CAP());return Math.min(L,song.duration-c.t)}
 function pickCand(i){S.cand=i;const c=cands[i],at=c.t,room=song.duration-at,L=c.beat&&GRID?beatLen(Math.min(M().def,CAP()),GRID,M().min):Math.min(M().def,CAP());
   // on the beat: a crisp 0.1 s fade-in instead of the soft default (ringtones only, and never over the user's own setting)
-  if(S.mode==='ring'&&!S.fadeTouched){S.fin=c.beat?.1:M().fin;$('fin').value=S.fin;$('finV').textContent=S.fin.toFixed(1)+' '+t('sec')}
+  beatFade(!!c.beat);
   if(room>=Math.min(L,12))setRange(at,at+Math.min(L,room),'start');else setRange(at,at+L,'move');markCand()}
 const KIND={chorus:['','kChorus','kChorusD'],drop:['','kDrop','kDropD'],peak:['','kPeak','kPeakD'],start:['','kStart','kStartD']};
 const svg=(n,c)=>'<svg class="ic'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>';
