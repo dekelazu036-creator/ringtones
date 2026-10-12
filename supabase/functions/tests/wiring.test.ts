@@ -13,7 +13,8 @@ const env: Record<string, string> = {
   JANITOR_SECRET: 'j'.repeat(40) + '\n',
   HEALTH_SECRET: 'k'.repeat(40) + '\n',
   R2_ENDPOINT: 'https://acct123.eu.r2.cloudflarestorage.com', R2_BUCKET: 'snipring-media-backup',
-  R2_ACCESS_KEY_ID: 'AKIDTEST', R2_SECRET_ACCESS_KEY: 'r2secretTEST',                // pasted in the dashboard with a trailing newline
+  R2_ACCESS_KEY_ID: 'AKIDTEST', R2_SECRET_ACCESS_KEY: 'r2secretTEST',
+  RESEND_API_KEY: 're_TESTKEY', ALERT_EMAIL: 'owner@example.invalid',                // pasted in the dashboard with a trailing newline
 };
 const handlers: Record<string, (r: Request) => Promise<Response>> = {};
 let current = '';
@@ -41,7 +42,9 @@ const fake = (globalThis as any).__fake = {
       if (a.p_op === 'purges') return { data: [], error: null };
       if (a.p_op === 'prepare') return { data: 'ready', error: null };
       if (a.p_op === 'done') return { data: 'done', error: null };
-      if (a.p_op === 'health') return { data: { janitor_recent: true, no_stuck_deletes: true, uploads_paused: false }, error: null };
+      if (a.p_op === 'health') return { data: { janitor_recent: true, no_stuck_deletes: !(globalThis as any).__fake.healthBad, uploads_paused: false }, error: null };
+      if (a.p_op === 'alert_due') return { data: true, error: null };
+      if (a.p_op === 'alert_sent') return { data: true, error: null };
     }
     return { data: true, error: null };
   },
@@ -51,7 +54,7 @@ const fake = (globalThis as any).__fake = {
 // R2 (S3 API) is reached with fetch: a recording stub for every test, so nothing leaves the machine
 const r2seen: { url: string; method: string; auth: string; body: number }[] = [];
 globalThis.fetch = (async (url: string, init: any = {}) => {
-  r2seen.push({ url: String(url), method: init.method, auth: init.headers?.authorization ?? '', body: init.body?.byteLength ?? 0 });
+  r2seen.push({ url: String(url), method: init.method, auth: init.headers?.authorization ?? '', body: init.body?.byteLength ?? (typeof init.body === 'string' ? init.body : 0) });
   if (init.method === 'GET') return new Response('<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>', { status: 200 });
   return new Response('', { status: 200 });
 }) as any;
@@ -150,4 +153,20 @@ test('W8 janitor backs up to R2 with SigV4 (keys from env, EU endpoint, bucket i
   assert.equal(put!.body, 1234);
   assert.ok(!JSON.stringify(r2seen).includes('r2secretTEST'));
   assert.ok(r2seen.some((x) => x.method === 'DELETE' && x.url.endsWith('/snipring-media-backup/u/x.mp3')));   // purge removes the backup first
+});
+test('W9 janitor e-mails the owner through Resend when unhealthy (key only in the auth header, address from env)', async () => {
+  r2seen.length = 0; (globalThis as any).__fake.healthBad = true;
+  try {
+    const h = await load('library-janitor');
+    const rep = await (await h(new Request('https://f', { method: 'POST', headers: { authorization: `Bearer ${'j'.repeat(40)}` } }))).json();
+    assert.equal(rep.alert, 'sent');
+    const mail = r2seen.find((x) => x.url === 'https://api.resend.com/emails');
+    assert.ok(mail, 'no Resend call');
+    assert.equal(mail!.auth, 'Bearer re_TESTKEY');
+    const body = JSON.parse(String(mail!.body));
+    assert.deepEqual(body.to, ['owner@example.invalid']);
+    assert.match(body.from, /noreply@mail\.snipring\.com/);
+    assert.match(body.subject, /no_stuck_deletes/);
+    assert.ok(!String(mail!.body).includes('re_TESTKEY'));
+  } finally { (globalThis as any).__fake.healthBad = false; }
 });

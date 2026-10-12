@@ -154,6 +154,10 @@ begin
     when 'later'   then perform private.acct_later(v_uid); return 'true'::jsonb;
     -- monitoring: yes/no checks only (no user data), consumed by the library-health function
     when 'health'  then return private.ops_health();
+    -- alert e-mails: at most one every 6 hours (the janitor asks, sends, then records it)
+    when 'alert_due'  then return to_jsonb(not exists (select 1 from private.library_events e
+                                where e.kind = 'alert_sent' and e.at > now() - interval '6 hours'));
+    when 'alert_sent' then perform private.log(null, null, 'alert_sent', jsonb_build_object('failing', a -> 'failing')); return 'true'::jsonb;
     else raise exception 'svc_account: unknown op %', p_op using errcode = '22023';
   end case;
 end $$;
