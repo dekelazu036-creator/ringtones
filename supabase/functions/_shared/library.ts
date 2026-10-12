@@ -25,6 +25,7 @@ export type Deps = {
   signOutAll?(token: string): Promise<void>;                               // revoke every session of that user
   // media backup (Cloudflare R2), optional: absent = backup off
   download?(path: string): Promise<Uint8Array | null>;                     // read an object from the user-media bucket
+  sendAlert?(subject: string, text: string): Promise<'ok' | { error: string }>;   // e-mail to the owner (Resend), optional
   backup?: {
     put(key: string, bytes: Uint8Array): Promise<'ok' | { error: string }>;
     del(key: string): Promise<'ok' | { error: string }>;
@@ -185,6 +186,7 @@ export type JanitorReport = {
   expired: number; purged: number; purge_failed: number; orphans: number; audited: number; drift: number;
   pruned: number; tombstones: number; accounts?: number; stopped_early: boolean;
   backup?: 'off' | 'on'; backed_up?: number; backup_failed?: number; backup_orphans?: number;
+  alert?: 'sent' | 'throttled' | 'failed';
 };
 
 export async function handleJanitor(req: Request, deps: Deps, cfg: Config): Promise<Response> {
@@ -310,6 +312,26 @@ export async function runJanitor(deps: Deps, cfg: Config): Promise<JanitorReport
         }
       } catch (e) {
         deps.log?.({ fn: 'library-janitor', event: 'backup_step_failed', error: String(e) });
+      }
+    }
+    // 10. alert the owner by e-mail when something needs a human (at most once per 6 h). 'janitor_recent' is
+    //     not checked here (this run IS the janitor); the hourly GitHub check covers a janitor that stopped.
+    if (deps.acct && deps.sendAlert) {
+      try {
+        const h = (await deps.acct('health', {})) as Record<string, boolean>;
+        const failing = Object.entries(h).filter(([k, v]) => k !== 'uploads_paused' && k !== 'janitor_recent' && v !== true).map(([k]) => k);
+        if (failing.length) {
+          if ((await deps.acct('alert_due', {})) === true) {
+            const sent = await deps.sendAlert(`SnipRing: needs attention (${failing.join(', ')})`,
+              `The SnipRing janitor found a problem in production.\n\nFailing checks: ${failing.join(', ')}\n\n` +
+              `Look at private.library_health and private.account_deletion_health in the Supabase SQL Editor.\n` +
+              `Emergency stop if needed: update private.settings set value = 'true' where key = 'emergency_stop';\n\n` +
+              `Next alert at the earliest in 6 hours.`);
+            if (sent === 'ok') { await deps.acct('alert_sent', { failing }); r.alert = 'sent'; } else r.alert = 'failed';
+          } else r.alert = 'throttled';
+        }
+      } catch (e) {
+        deps.log?.({ fn: 'library-janitor', event: 'alert_step_failed', error: String(e) });
       }
     }
     await deps.rpc('run_log', { detail: r });

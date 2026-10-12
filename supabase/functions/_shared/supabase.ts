@@ -76,6 +76,7 @@ export function createDeps(fn: string): Deps {
       return new Uint8Array(await data.arrayBuffer());
     },
     backup: backupFromEnv(),
+    sendAlert: alertFromEnv(),
     log(event) {
       console.log(JSON.stringify({ fn, at: new Date().toISOString(), ...event }));
     },
@@ -102,4 +103,19 @@ function backupFromEnv() {
   const accessKeyId = (Deno.env.get('R2_ACCESS_KEY_ID') ?? '').trim(), secretAccessKey = (Deno.env.get('R2_SECRET_ACCESS_KEY') ?? '').trim();
   if (!/^https:\/\/[a-z0-9.-]+\.r2\.cloudflarestorage\.com$/.test(endpoint) || !bucket || !accessKeyId || !secretAccessKey) return undefined;
   return r2Client({ endpoint, bucket, accessKeyId, secretAccessKey });
+}
+
+// owner alerts by e-mail through Resend: on only when RESEND_API_KEY and ALERT_EMAIL exist (function secrets)
+function alertFromEnv() {
+  const key = (Deno.env.get('RESEND_API_KEY') ?? '').trim(), to = (Deno.env.get('ALERT_EMAIL') ?? '').trim();
+  if (!key || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return undefined;
+  return async (subject: string, text: string) => {
+    try {
+      const r = await fetch('https://api.resend.com/emails', { method: 'POST',
+        headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ from: 'SnipRing alerts <noreply@mail.snipring.com>', to: [to], subject, text }) });
+      await r.arrayBuffer().catch(() => null);
+      return r.ok ? 'ok' as const : { error: `resend ${r.status}` };
+    } catch (e) { return { error: String(e).slice(0, 120) }; }
+  };
 }

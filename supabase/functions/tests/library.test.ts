@@ -581,3 +581,27 @@ test('R4 health: backup lag counts only when the backup is enabled', () => {
   one(`update private.settings set value = 'false' where key = 'backup_enabled'`);
   one(`update public.library_items set backup_at = now() where state = 'ready' and user_id = '${B}'`);
 });
+
+// ------------------------------------------------------------------ owner alert e-mails (janitor step 10)
+test('H5 janitor e-mails the owner once when something is wrong, then waits 6 hours; nothing when healthy', async () => {
+  const mails: string[] = [];
+  const depsM: Deps = { ...deps, async sendAlert(subject) { mails.push(subject); return 'ok'; } };
+  await runJanitor(depsM, { ...cfg, holder: 'h5a' });
+  assert.equal(mails.length, 0);                                            // healthy: silence
+  const s = await call(handleUpload(uploadReq('hdr.userA.sig', meta(), siteMp3(44100, 2)), deps, cfg));
+  // a deletion stuck for 2 days (deleted the real way, so the counters stay right)
+  assert.equal(asUser(A, `select public.library_delete('${s.body.id}')`), 'deleting');
+  one(`update public.library_items set deleted_at = now() - interval '2 days', updated_at = now() - interval '2 days',
+         purge_next_at = now() + interval '1 day' where id = '${s.body.id}'`);
+  const r1 = await runJanitor(depsM, { ...cfg, holder: 'h5b' });
+  assert.equal(r1!.alert, 'sent'); assert.equal(mails.length, 1); assert.match(mails[0], /no_stuck_deletes/);
+  const r2 = await runJanitor(depsM, { ...cfg, holder: 'h5c' });
+  assert.equal(r2!.alert, 'throttled'); assert.equal(mails.length, 1);
+  // a failed send is retried on the next run (nothing recorded as sent)
+  one(`delete from private.library_events where kind = 'alert_sent'`);
+  const depsF: Deps = { ...deps, async sendAlert() { return { error: 'resend 500' }; } };
+  assert.equal((await runJanitor(depsF, { ...cfg, holder: 'h5d' }))!.alert, 'failed');
+  assert.equal(one(`select count(*) from private.library_events where kind = 'alert_sent'`), '0');
+  one(`update public.library_items set purge_next_at = now() where id = '${s.body.id}'`);
+  await runJanitor(deps, { ...cfg, holder: 'h5e' });
+});
