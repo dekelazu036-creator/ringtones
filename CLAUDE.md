@@ -153,6 +153,17 @@ Known gaps accepted by the owner at release: no separate backup of cloud MP3 fil
 drill not done yet. Safety nets: per-user quotas, 300 uploads/hour site-wide, 800 MB project cap, hourly health alerts,
 `emergency_stop`. A pending account deletion blocks new uploads even with `cloud_for_all`.
 
+### After the release (2026-10-12)
+- Desktop layout (PR #12, other session) + desktop home hero with a demo frame (PR #13). Phones unchanged.
+- Demo video v2 (`tools/make_demo.mjs` records the real site; cards as stills, site at 1x upscaled — a 2x device scale
+  sometimes captured a quarter frame): 5 captioned steps, tap markers, zoom, ~32 s, he/en, 9:16.
+- Fix: the call preview's caller name could not be edited (Studio's `.cname` rule collided; now `.clip .cname`).
+- **Create 2.0 smart cut (PR #17):** `smartcut.js` (chorus finder moved out of index.html + beat grid). Suggestions move to
+  their section's bar line, lengths are whole beats, ringtones get a 0.1 s fade-in on the beat, cards show BPM; the
+  current selection is only aligned, never replaced; no steady pulse = old cut. Bench in CI (`tests/smartcut`):
+  chorus cut starts exactly at a chorus 16/16 synthetic songs (was 2/16). NOT TESTED on real songs by ear yet.
+- R2 media backup: code + DB live (backup off until `supabase/rollout/prod_r2_backup.sh` is run with the R2 keys).
+
 ### Core 1.0 build — branch `core-1.0` (2026-10-11, owner approved building per the master spec; **not merged** = not in production)
 Spec: branch `docs/snipring-master-spec-v1` → `docs/SnipRing_Handoff/` (Core First; Studio gated). `core-1.0` = `phase-1b-m0` + the commits below. CI: `.github/workflows/tests.yml` runs `run_all.sh` + bundle drift check on every push (green).
 - **Design v2** (lime/violet, dark-first) — see §2 Design. TESTED visually light/dark, mobile.
@@ -264,5 +275,5 @@ R1 closed on staging (9.2 MiB upload OK, 11 MiB refused promptly) · R2 verified
 - `index.html` creator (main app) · `studio.html/js` Sound Studio · `discover.html/js` gallery · `account.html` + `auth.js` + `auth-state.js` + `boot.js` accounts · `app.css` design system · `config.js` public config · `sw.js` offline · `legal.*`, `privacy.html`, `terms.html`, `accessibility.html` · guide pages `*-ringtone.html`.
 - `supabase/`: `schema.sql`, `auth_1a.sql` (+ rollback, tests), `library_1b.sql`, `library_1b_cron.sql`, `library_1b_teardown.sql`, `functions/`, `tests/`, `STAGING.md`, `email-templates/`.
 - Docs: `AUTH.md`, `ANALYTICS.md`, `supabase/STAGING.md`, `supabase/tests/TEST_MATRIX.md`, `supabase/tests/README.md`.
-- Tools: `tools/build_discover.py`, `tools/make_sounds.py`, `tools/bundle_functions.mjs`.
+- Tools: `tools/build_discover.py`, `tools/make_sounds.py`, `tools/bundle_functions.mjs`, `tools/csp.py`, `tools/make_demo.mjs`; `smartcut.js` (beat/chorus analysis).
 - Run local checks: `supabase/tests/run_all.sh` (needs Postgres 16, Node 22+, ffmpeg).
