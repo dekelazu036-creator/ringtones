@@ -135,6 +135,25 @@ language sql security definer set search_path = '' as $$
    where user_id = p_uid and state = 'pending'
 $$;
 
+-- test alert (owner checks that alert e-mails arrive, without a real fault). OFF unless the settings row
+-- 'alert_test_enabled' is JSON true (missing row = off, the default everywhere). At most one per 10 minutes and
+-- 5 per day (the Resend account's daily quota is shared with the sign-in code e-mails);
+-- the attempt is recorded BEFORE sending, so a failing mail provider cannot be used to send in a loop.
+-- Separate event kind: a test never touches the 6-hour throttle of real alerts.
+create or replace function private.alert_test() returns text
+language plpgsql security definer set search_path = '' as $$
+begin
+  if not private.flag('alert_test_enabled') then return 'disabled'; end if;
+  perform pg_advisory_xact_lock(hashtext('snipring.alert_test'));     -- two concurrent requests: one wins
+  if exists (select 1 from private.library_events e
+              where e.kind = 'alert_test_sent' and e.at > now() - interval '10 minutes')
+     or (select count(*) from private.library_events e
+          where e.kind = 'alert_test_sent' and e.at > now() - interval '24 hours') >= 5 then
+    return 'throttled'; end if;
+  perform private.log(null, null, 'alert_test_sent', null);
+  return 'allowed';
+end $$;
+
 -- service entry point for account ops (same rules as svc_library: service_role only + role claim)
 create or replace function public.svc_account(p_op text, p_args jsonb)
 returns jsonb language plpgsql security definer set search_path = '' as $$
@@ -157,6 +176,7 @@ begin
     -- alert e-mails: at most one every 6 hours (the janitor asks, sends, then records it)
     when 'alert_due'  then return to_jsonb(not exists (select 1 from private.library_events e
                                 where e.kind = 'alert_sent' and e.at > now() - interval '6 hours'));
+    when 'alert_test' then return to_jsonb(private.alert_test());
     when 'alert_sent' then perform private.log(null, null, 'alert_sent', jsonb_build_object('failing', a -> 'failing')); return 'true'::jsonb;
     else raise exception 'svc_account: unknown op %', p_op using errcode = '22023';
   end case;
@@ -191,7 +211,7 @@ revoke all on private.account_deletion_health from public, anon, authenticated, 
 revoke all on function private.ops_health() from public, anon, authenticated, service_role;
 revoke all on function private.acct_request(uuid), private.acct_purges(uuid), private.acct_due(int),
                        private.acct_prepare(uuid), private.acct_done(uuid), private.acct_failed(uuid, text),
-                       private.acct_later(uuid)
+                       private.acct_later(uuid), private.alert_test()
   from public, anon, authenticated, service_role;
 revoke all on function public.svc_account(text, jsonb) from public, anon, authenticated;
 grant execute on function public.svc_account(text, jsonb) to service_role;

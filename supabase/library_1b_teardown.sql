@@ -51,6 +51,7 @@ drop function if exists private.acct_prepare(uuid);
 drop function if exists private.acct_done(uuid);
 drop function if exists private.acct_failed(uuid, text);
 drop function if exists private.acct_later(uuid);
+drop function if exists private.alert_test();
 drop table    if exists private.account_deletions;
 
 drop function if exists public.svc_library(text, jsonb);

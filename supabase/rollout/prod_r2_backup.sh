@@ -2,11 +2,24 @@
 # PRODUCTION media backup to Cloudflare R2. OWNER RUNS THIS.
 # Asks for the bucket-scoped API token keys (hidden), PROVES they work on the EU endpoint with a real write +
 # delete of a tiny test object (stops if the bucket is not in the EU jurisdiction), then stores them as production function secrets and redeploys
-# library-janitor. The keys are never printed, never written to disk except a mode-600 temp file removed at once.
+# library-janitor. The keys are never printed and never written to disk except a mode-600 temp file, removed by
+# the cleanup below on success, failure, Ctrl+C, terminal close (HUP) or kill (TERM).
 set -u
 PROD=gtjtvfogqrnuiducvoqm
 BUCKET=snipring-media-backup
 cd "$(dirname "$0")/../.." || exit 1
+
+TMP=''
+cleanup() {
+  [[ -n "$TMP" && -e "$TMP" ]] && rm -f -- "$TMP"
+  TMP=''; unset R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY 2>/dev/null
+}
+trap cleanup EXIT                                   # normal end and every `exit`
+trap 'cleanup; exit 130' INT                        # Ctrl+C
+trap 'cleanup; exit 129' HUP                        # terminal closed
+trap 'cleanup; exit 143' TERM                       # kill
+umask 077                                           # anything created from here on is owner-only
+
 echo "Media backup setup for PRODUCTION ($PROD), R2 bucket $BUCKET."
 ACCOUNT=0eb78d7eac7eabc99d8e02dd80c2b0b3          # Cloudflare account id (public; part of the R2 endpoint)
 read -rs "R2_ACCESS_KEY_ID?Access Key ID (hidden): "; echo
@@ -42,11 +55,12 @@ export R2_ENDPOINT
 
 read -r "OK?Store these as PRODUCTION secrets and turn the backup on? Type the word production: "
 [[ "$OK" == "production" ]] || { unset R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; echo "Cancelled. Nothing stored."; exit 1; }
-TMP=$(mktemp); chmod 600 "$TMP"
+TMP=$(mktemp "${TMPDIR:-/tmp}/snipring-r2.XXXXXX") || { echo "FAILED: temp file"; exit 1; }
+chmod 600 "$TMP"
 { print -r -- "R2_ENDPOINT=$R2_ENDPOINT"; print -r -- "R2_BUCKET=$BUCKET"
   print -r -- "R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID"; print -r -- "R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY"; } > "$TMP"
 supabase secrets set --project-ref "$PROD" --env-file "$TMP" >/dev/null 2>&1; code=$?
-rm -f "$TMP"; unset R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY
+cleanup                                             # the key file is gone before anything else happens
 (( code == 0 )) || { echo "FAILED: supabase secrets set"; exit 1; }
 echo "   function secrets set"
 for f in library-janitor library-health; do
